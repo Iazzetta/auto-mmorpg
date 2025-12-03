@@ -180,7 +180,28 @@ async def sell_item(player_id: str, item_id: str):
     price = item_to_sell.power_score * 2 + 5
     player.gold += price
     
+    player.gold += price
+    
     return {"message": "Item sold", "gold_gained": price, "current_gold": player.gold}
+
+@router.post("/player/{player_id}/allocate_attributes")
+async def allocate_attributes(player_id: str, attributes: dict):
+    player = state_manager.get_player(player_id)
+    if not player:
+        raise HTTPException(status_code=404, detail="Player not found")
+        
+    cost = sum(attributes.values())
+    if cost > player.attribute_points:
+        raise HTTPException(status_code=400, detail="Not enough attribute points")
+        
+    for attr, amount in attributes.items():
+        if attr in player.attributes:
+            player.attributes[attr] += amount
+            
+    player.attribute_points -= cost
+    player.calculate_stats()
+    
+    return {"message": "Attributes allocated", "player": player}
 
 @router.post("/player/{player_id}/mission/start")
 async def start_mission(player_id: str, mission_id: str):

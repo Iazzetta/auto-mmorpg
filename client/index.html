@@ -31,25 +31,9 @@
             <div class="flex items-center gap-4">
                 <h1 class="text-xl font-bold text-yellow-500">⚔️ Auto RPG</h1>
 
-                <!-- Map Selection Menu -->
-                <div v-if="player" class="flex items-center gap-2 bg-gray-700 p-1 rounded px-3">
-                    <span class="text-xs text-gray-400">Auto-Farm:</span>
-                    <select v-model="selectedMapId"
-                        class="bg-gray-800 text-white text-sm rounded border border-gray-600 p-1">
-                        <option value="map_forest_1">Forest 1</option>
-                        <option value="map_castle_1">Castle</option>
-                    </select>
-                    <select v-model="selectedTargetId"
-                        class="bg-gray-800 text-white text-sm rounded border border-gray-600 p-1">
-                        <option value="">-- Any --</option>
-                        <option value="mob_goblin_01">Goblin</option>
-                        <option value="mob_wolf_01">Wolf</option>
-                        <option value="mob_bear_01">Bear</option>
-                    </select>
-                    <button @click="toggleFreeFarm" class="text-xs font-bold px-2 py-1 rounded transition-colors"
-                        :class="isFreeFarming ? 'bg-red-600 hover:bg-red-500' : 'bg-green-600 hover:bg-green-500'">
-                        {{ isFreeFarming ? 'STOP' : 'START' }}
-                    </button>
+                <!-- Interactive Map Hint -->
+                <div v-if="player" class="text-xs text-gray-400 bg-gray-700 px-2 py-1 rounded">
+                    Click Map to Move/Attack
                 </div>
             </div>
 
@@ -83,7 +67,16 @@
                                 class="text-red-400">{{ player.stats.hp }} / {{ player.stats.max_hp }}</span></div>
                         <div class="flex justify-between"><span class="text-gray-400">Gold:</span> <span
                                 class="text-yellow-300">{{ player.gold }} 💰</span></div>
+                        <div class="flex justify-between border-t border-gray-600 pt-1 mt-1">
+                            <span class="text-gray-400">CP:</span>
+                            <span class="font-bold text-purple-400">{{ player.combat_power || '?' }}</span>
+                        </div>
+                        <button @click="showAttributeModal = true"
+                            class="w-full bg-blue-700 hover:bg-blue-600 text-xs py-1 rounded mt-1">
+                            Attributes {{ player.attribute_points > 0 ? '(+' + player.attribute_points + ')' : '' }}
+                        </button>
                     </div>
+
                 </div>
 
                 <!-- Missions List -->
@@ -138,7 +131,8 @@
 
                     <!-- Canvas for Map Visualization -->
                     <canvas ref="mapCanvas" width="400" height="250"
-                        class="bg-gray-900 border border-gray-800 rounded"></canvas>
+                        class="bg-gray-900 border border-gray-800 rounded cursor-crosshair"
+                        @click="handleMapClick"></canvas>
 
                     <!-- Enemy Status Overlay -->
                     <div v-if="currentMonster"
@@ -211,7 +205,8 @@
                             class="bg-gray-700 p-2 rounded border border-gray-600 hover:border-gray-400 cursor-pointer relative group"
                             @click="openItemModal(item)">
                             <div class="text-2xl text-center mb-1">{{ item.icon || '📦' }}</div>
-                            <div class="text-xs font-bold truncate" :class="getRarityColor(item.rarity)">{{ item.name }}
+                            <div class="text-xs font-bold truncate" :class="getRarityColor(item.rarity)">{{
+                                item.name }}
                             </div>
                             <div class="text-xs text-gray-400 text-center">Lvl {{ item.power_score }}</div>
                             <div v-if="item.quantity > 1"
@@ -240,7 +235,8 @@
                             selectedItem.name }}</h3>
                         <div class="text-sm text-gray-400 capitalize">{{ selectedItem.rarity }} {{
                             selectedItem.type }}</div>
-                        <div v-if="selectedItem.quantity > 1" class="text-sm text-yellow-400 font-bold mt-1">Quantity:
+                        <div v-if="selectedItem.quantity > 1" class="text-sm text-yellow-400 font-bold mt-1">
+                            Quantity:
                             x{{ selectedItem.quantity }}</div>
                     </div>
 
@@ -275,11 +271,62 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Attribute Modal -->
+            <div v-if="showAttributeModal && player"
+                class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50"
+                @click.self="showAttributeModal = false">
+                <div class="bg-gray-800 p-6 rounded-lg border border-gray-600 shadow-2xl max-w-sm w-full relative">
+                    <button @click="showAttributeModal = false"
+                        class="absolute top-2 right-2 text-gray-400 hover:text-white">✕</button>
+                    <h3 class="text-xl font-bold mb-4 text-center">Attributes</h3>
+
+                    <div class="text-center mb-4">
+                        <span class="text-gray-400">Points Available:</span>
+                        <span class="text-yellow-400 font-bold text-xl ml-2">{{ player.attribute_points }}</span>
+                    </div>
+
+                    <div class="space-y-3 mb-6">
+                        <div v-for="(val, attr) in tempAttributes" :key="attr"
+                            class="flex items-center justify-between bg-gray-700 p-2 rounded">
+                            <span class="uppercase font-bold w-12">{{ attr }}</span>
+                            <div class="flex items-center gap-3">
+                                <button @click="adjustAttribute(attr, -1)"
+                                    class="w-6 h-6 bg-gray-600 rounded hover:bg-gray-500">-</button>
+                                <span class="w-6 text-center font-bold">{{ val }}</span>
+                                <button @click="adjustAttribute(attr, 1)"
+                                    class="w-6 h-6 bg-green-600 rounded hover:bg-green-500"
+                                    :disabled="availablePoints <= 0">+</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-2">
+                        <button @click="confirmAttributes"
+                            class="w-full bg-blue-600 hover:bg-blue-500 py-2 rounded font-bold text-white"
+                            :disabled="!hasChanges">
+                            Confirm
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Toast Notifications -->
+            <div class="fixed bottom-20 right-4 flex flex-col gap-2 pointer-events-none z-50">
+                <div v-for="toast in toasts" :key="toast.id"
+                    class="bg-gray-800 border border-gray-600 text-white px-4 py-2 rounded shadow-lg flex items-center gap-2 animate-fade-in-up">
+                    <span class="text-2xl">{{ toast.icon }}</span>
+                    <div>
+                        <div class="font-bold text-sm" :class="toast.color">{{ toast.title }}</div>
+                        <div class="text-xs text-gray-400">{{ toast.message }}</div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
     <script>
-        const { createApp, ref, onMounted, nextTick, watch, onUnmounted } = Vue;
+        const { createApp, ref, computed, onMounted, nextTick, watch, onUnmounted } = Vue;
 
         createApp({
             setup() {
@@ -293,12 +340,22 @@
                 const mapCanvas = ref(null);
 
                 // Auto-Farm State
-                const selectedMapId = ref('map_forest_1');
+                const selectedMapId = ref('map_forest_1'); // Keep for internal tracking
                 const selectedTargetId = ref('');
                 const isFreeFarming = ref(false);
                 let autoFarmInterval = null;
                 let mapDrawInterval = null;
                 let mapMonsters = []; // Cache for map visualization
+
+                // UI State
+                const showAttributeModal = ref(false);
+                const tempAttributes = ref({});
+                const toasts = ref([]);
+                let toastCounter = 0;
+
+                // Visual Interpolation
+                const playerVisualPos = ref({ x: 0, y: 0 });
+                const targetVisualPos = ref({ x: 0, y: 0 });
 
                 const API_URL = 'http://localhost:8000';
                 const WS_URL = 'ws://localhost:8000/ws';
@@ -316,6 +373,14 @@
                             logContainer.value.scrollTop = logContainer.value.scrollHeight;
                         }
                     });
+                };
+
+                const showToast = (icon, title, message, color = 'text-gray-300') => {
+                    const id = toastCounter++;
+                    toasts.value.push({ id, icon, title, message, color });
+                    setTimeout(() => {
+                        toasts.value = toasts.value.filter(toast => toast.id !== id);
+                    }, 5000);
                 };
 
                 const getRarityColor = (rarity) => {
@@ -339,6 +404,10 @@
                         const res = await fetch(`${API_URL}/player/${id}`);
                         if (res.ok) {
                             player.value = await res.json();
+                            // Init temp attributes
+                            if (player.value.attributes) {
+                                tempAttributes.value = { ...player.value.attributes };
+                            }
                             connectWebSocket(id);
                             fetchMissions();
                         } else {
@@ -391,6 +460,10 @@
                             if (isFreeFarming.value || player.value.active_mission_id) {
                                 checkAndAct();
                             }
+                        } else if (data.type === 'player_moved') {
+                            player.value.x = data.x;
+                            player.value.y = data.y;
+                            player.value.current_map_id = data.map_id;
                         }
                     };
 
@@ -432,6 +505,13 @@
                         refreshPlayer();
                         stopAutoFarm();
                     }
+
+                    // Check drops
+                    if (data.drops && data.drops.length > 0) {
+                        data.drops.forEach(drop => {
+                            showToast(drop.icon || '📦', drop.name, `x${drop.quantity || 1}`, getRarityColor(drop.rarity));
+                        });
+                    }
                 };
 
                 const refreshPlayer = async () => {
@@ -439,6 +519,10 @@
                     const res = await fetch(`${API_URL}/player/${player.value.id}`);
                     if (res.ok) {
                         player.value = await res.json();
+                        // Sync temp attributes if modal is closed
+                        if (!showAttributeModal.value && player.value.attributes) {
+                            tempAttributes.value = { ...player.value.attributes };
+                        }
                     }
                 };
 
@@ -509,7 +593,7 @@
                     // 1. Check Map
                     if (player.value.current_map_id !== selectedMapId.value) {
                         addLog(`Moving to ${formatMapName(selectedMapId.value)}...`);
-                        await fetch(`${API_URL}/player/${player.value.id}/move?target_map_id=${selectedMapId.value}&x=0&y=0`, { method: 'POST' });
+                        await movePlayerTo(selectedMapId.value, 0, 0);
                         await refreshPlayer();
                         return;
                     }
@@ -628,7 +712,122 @@
                     }
                 };
 
+
+
+                // --- Attributes ---
+
+                const availablePoints = Vue.computed(() => {
+                    if (!player.value) return 0;
+                    const currentSpent = Object.values(tempAttributes.value).reduce((a, b) => a + b, 0);
+                    const originalSpent = Object.values(player.value.attributes).reduce((a, b) => a + b, 0);
+                    return player.value.attribute_points - (currentSpent - originalSpent);
+                });
+
+                const hasChanges = Vue.computed(() => {
+                    if (!player.value) return false;
+                    return JSON.stringify(tempAttributes.value) !== JSON.stringify(player.value.attributes);
+                });
+
+                const adjustAttribute = (attr, amount) => {
+                    if (amount > 0 && availablePoints.value <= 0) return;
+                    if (amount < 0 && tempAttributes.value[attr] <= player.value.attributes[attr]) return;
+                    tempAttributes.value[attr] += amount;
+                };
+
+                const confirmAttributes = async () => {
+                    const diff = {};
+                    for (const k in tempAttributes.value) {
+                        const d = tempAttributes.value[k] - player.value.attributes[k];
+                        if (d > 0) diff[k] = d;
+                    }
+
+                    if (Object.keys(diff).length === 0) return;
+
+                    try {
+                        const res = await fetch(`${API_URL}/player/${player.value.id}/allocate_attributes`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(diff)
+                        });
+
+                        if (res.ok) {
+                            addLog('Attributes updated!', 'text-purple-400');
+                            showAttributeModal.value = false;
+                            refreshPlayer();
+                        }
+                    } catch (e) {
+                        console.error(e);
+                    }
+                };
+
+
+
+                // --- Interactive Map Logic ---
+
+                const handleMapClick = async (e) => {
+                    if (!player.value || !mapCanvas.value) return;
+                    const rect = mapCanvas.value.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+
+                    // Check for monsters click
+                    // Simple distance check
+                    let clickedMonster = null;
+                    for (const m of mapMonsters) {
+                        if (m.hp <= 0) continue;
+                        // Calculate visual position (same hash logic as draw)
+                        const hash = m.id.split('').reduce((a, b) => a + b.charCodeAt(0), 0);
+                        const mx = (hash % (mapCanvas.value.width - 20)) + 10;
+                        const my = ((hash * 13) % (mapCanvas.value.height - 20)) + 10;
+
+                        const dist = Math.sqrt((x - mx) ** 2 + (y - my) ** 2);
+                        if (dist < 20) { // Hitbox
+                            clickedMonster = m;
+                            break;
+                        }
+                    }
+
+                    if (clickedMonster) {
+                        addLog(`Moving to attack ${clickedMonster.name}...`);
+                        // Simulate movement delay then attack
+                        // In real game, backend handles pathing. Here we fake it.
+                        targetVisualPos.value = { x, y }; // For visual lerp
+
+                        // Stop any auto-farm
+                        stopAutoFarm();
+
+                        // Attack
+                        await attackMonster(clickedMonster.id);
+                        return;
+                    }
+
+                    // Check Portals (Edges)
+                    // Forest <-> Castle
+                    // If in Castle, Forest portal is Right Edge
+                    // If in Forest, Castle portal is Left Edge
+                    if (player.value.current_map_id === 'map_castle_1') {
+                        if (x > mapCanvas.value.width - 50) {
+                            addLog("Traveling to Forest...", "text-blue-400");
+                            await fetch(`${API_URL}/player/${player.value.id}/move?target_map_id=map_forest_1&x=0&y=0`, { method: 'POST' });
+                            refreshPlayer();
+                        }
+                    } else if (player.value.current_map_id === 'map_forest_1') {
+                        if (x < 50) {
+                            addLog("Returning to Castle...", "text-blue-400");
+                            await fetch(`${API_URL}/player/${player.value.id}/move?target_map_id=map_castle_1&x=0&y=0`, { method: 'POST' });
+                            refreshPlayer();
+                        }
+                    }
+                };
+
                 // --- Visual Map ---
+
+                const movePlayerTo = async (mapId, x, y) => {
+                    if (!player.value) return;
+                    await fetch(`${API_URL}/player/${player.value.id}/move?target_map_id=${mapId}&x=${x}&y=${y}`, { method: 'POST' });
+                };
+
+
 
                 const drawMap = () => {
                     const canvas = mapCanvas.value;
@@ -648,6 +847,40 @@
                     }
                     for (let y = 0; y < canvas.height; y += gridSize) {
                         ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+                    }
+
+                    // Interpolate player position
+                    const targetPx = (player.value.x / 100) * canvas.width;
+                    const targetPy = (player.value.y / 100) * canvas.height;
+                    playerVisualPos.value.x += (targetPx - playerVisualPos.value.x) * 0.1;
+                    playerVisualPos.value.y += (targetPy - playerVisualPos.value.y) * 0.1;
+
+                    // Draw Player
+                    ctx.fillStyle = '#22c55e'; // green-500
+                    ctx.beginPath();
+                    const radius = 6 + Math.sin(Date.now() / 500) * 2; // Pulse effect
+                    ctx.arc(playerVisualPos.value.x, playerVisualPos.value.y, radius, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Draw Portals
+                    if (player.value.current_map_id === 'map_castle_1') {
+                        // Portal to Forest (Right)
+                        ctx.fillStyle = '#2563eb'; // blue-600
+                        ctx.beginPath();
+                        ctx.arc(canvas.width - 20, canvas.height / 2, 15, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.fillStyle = '#fff';
+                        ctx.font = '10px sans-serif';
+                        ctx.fillText("FOREST", canvas.width - 45, canvas.height / 2 + 4);
+                    } else {
+                        // Portal to Castle (Left)
+                        ctx.fillStyle = '#9333ea'; // purple-600
+                        ctx.beginPath();
+                        ctx.arc(20, canvas.height / 2, 15, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.fillStyle = '#fff';
+                        ctx.font = '10px sans-serif';
+                        ctx.fillText("CASTLE", 40, canvas.height / 2 + 4);
                     }
 
                     // Draw Monsters
@@ -673,20 +906,39 @@
                     // Draw Player
                     ctx.fillStyle = '#22c55e'; // green-500
                     ctx.beginPath();
-                    // Center player for now as "camera" or just put in center
-                    const px = canvas.width / 2;
-                    const py = canvas.height / 2;
 
-                    // Pulse effect
-                    const time = Date.now() / 500;
-                    const radius = 6 + Math.sin(time) * 2;
+                    // Interpolate visual position
+                    // Target is center unless moving
+                    let targetX = canvas.width / 2;
+                    let targetY = canvas.height / 2;
 
-                    ctx.arc(px, py, radius, 0, Math.PI * 2);
+                    // If we clicked somewhere, move towards it visually
+                    if (targetVisualPos.value.x !== 0) {
+                        // Simple lerp
+                        playerVisualPos.value.x += (targetVisualPos.value.x - playerVisualPos.value.x) * 0.1;
+                        playerVisualPos.value.y += (targetVisualPos.value.y - playerVisualPos.value.y) * 0.1;
+
+                        // Reset if close
+                        if (Math.abs(playerVisualPos.value.x - targetVisualPos.value.x) < 1) {
+                            targetVisualPos.value = { x: 0, y: 0 };
+                        }
+                    } else {
+                        // Return to center
+                        playerVisualPos.value.x += (targetX - playerVisualPos.value.x) * 0.1;
+                        playerVisualPos.value.y += (targetY - playerVisualPos.value.y) * 0.1;
+                    }
+
+                    // Initialize if 0
+                    if (playerVisualPos.value.x === 0) {
+                        playerVisualPos.value = { x: targetX, y: targetY };
+                    }
+
+                    ctx.arc(playerVisualPos.value.x, playerVisualPos.value.y, 6, 0, Math.PI * 2);
                     ctx.fill();
 
                     ctx.fillStyle = '#ffffff';
                     ctx.font = 'bold 12px sans-serif';
-                    ctx.fillText("YOU", px - 12, py - 15);
+                    ctx.fillText("YOU", playerVisualPos.value.x - 12, playerVisualPos.value.y - 15);
                 };
 
                 // Helpers
@@ -777,7 +1029,15 @@
                     isMissionCompleted,
                     toggleFreeFarm,
                     getHotkeyItem,
-                    useHotkey
+                    useHotkey,
+                    showAttributeModal,
+                    tempAttributes,
+                    adjustAttribute,
+                    confirmAttributes,
+                    availablePoints,
+                    hasChanges,
+                    toasts,
+                    handleMapClick
                 };
             }
         }).mount('#app');
@@ -785,3 +1045,4 @@
 </body>
 
 </html>
+```
