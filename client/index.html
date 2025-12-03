@@ -1061,6 +1061,17 @@
                     ctx.fillStyle = '#ffffff';
                     ctx.font = 'bold 12px sans-serif';
                     ctx.fillText("YOU", playerVisualPos.value.x - 12, playerVisualPos.value.y - 15);
+
+                    // FPS Calculation
+                    const now = performance.now();
+                    frameCount++;
+                    if (now - lastFpsTime >= 1000) {
+                        fps.value = frameCount;
+                        frameCount = 0;
+                        lastFpsTime = now;
+                    }
+
+                    requestAnimationFrame(drawMap);
                 };
 
                 // Helpers
@@ -1112,7 +1123,8 @@
                         fetchPlayer(savedId);
                     }
                     window.addEventListener('keydown', handleKeypress);
-                    mapDrawInterval = setInterval(drawMap, 100);
+                    window.addEventListener('keydown', handleKeypress);
+                    requestAnimationFrame(drawMap);
                 });
 
                 onUnmounted(() => {
