@@ -9,7 +9,7 @@ import Hotbar from './components/Hotbar.js';
 import InventoryModal from './components/InventoryModal.js';
 import MissionsModal from './components/MissionsModal.js';
 import AttributesModal from './components/AttributesModal.js';
-import EventsModal from './components/EventsModal.js';
+import RewardsModal from './components/RewardsModal.js';
 
 export default {
     components: {
@@ -19,7 +19,7 @@ export default {
         InventoryModal,
         MissionsModal,
         AttributesModal,
-        EventsModal
+        RewardsModal
     },
     template: `
         <div class="relative w-screen h-screen bg-gray-900 text-gray-100 font-sans overflow-hidden">
@@ -36,7 +36,7 @@ export default {
                         @open-inventory="showInventory = true"
                         @open-missions="showMissions = true"
                         @open-attributes="showAttributes = true"
-                        @open-events="showEvents = true"
+                        @open-rewards="showRewards = true"
                     />
                 </div>
 
@@ -72,7 +72,7 @@ export default {
             <InventoryModal :isOpen="showInventory" @close="showInventory = false" />
             <MissionsModal :isOpen="showMissions" @close="showMissions = false" />
             <AttributesModal :isOpen="showAttributes" @close="showAttributes = false" />
-            <EventsModal :isOpen="showEvents" @close="showEvents = false" />
+            <RewardsModal :isOpen="showRewards" @close="showRewards = false" />
 
             <!-- Toasts -->
             <div class="fixed bottom-24 right-4 flex flex-col gap-2 pointer-events-none z-50">
@@ -92,7 +92,7 @@ export default {
         const showInventory = ref(false);
         const showMissions = ref(false);
         const showAttributes = ref(false);
-        const showEvents = ref(false);
+        const showRewards = ref(false);
         const logContainer = ref(null);
 
         const createPlayer = async () => {
@@ -113,11 +113,20 @@ export default {
             if (e.key === 'e' || e.key === 'E') {
                 showInventory.value = !showInventory.value;
             }
+            if (e.key === 'm' || e.key === 'M') {
+                showMissions.value = !showMissions.value;
+            }
+            if (e.key === 's' || e.key === 'S') {
+                showAttributes.value = !showAttributes.value;
+            }
+            if (e.key === 'r' || e.key === 'R') {
+                showRewards.value = !showRewards.value;
+            }
             if (e.key === 'Escape') {
                 showInventory.value = false;
                 showMissions.value = false;
                 showAttributes.value = false;
-                showEvents.value = false;
+                showRewards.value = false;
             }
             // Hotkeys 1-5
             if (['1', '2', '3', '4', '5'].includes(e.key)) {
@@ -146,7 +155,7 @@ export default {
             showInventory,
             showMissions,
             showAttributes,
-            showEvents,
+            showRewards,
             logContainer
         };
     }

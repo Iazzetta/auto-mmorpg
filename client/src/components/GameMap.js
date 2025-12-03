@@ -5,7 +5,7 @@ import { stopAutoFarm } from '../services/autoFarm.js';
 
 export default {
     template: `
-        <div class="relative w-full h-full bg-gray-950 overflow-hidden">
+        <div class="absolute top-14 bottom-20 w-full bg-gray-950 overflow-hidden">
             <!-- Map Info -->
             <div class="absolute top-4 left-4 text-xs text-gray-500 font-mono z-10 bg-black/50 px-2 py-1 rounded">
                 MAP: {{ formatMapName(player?.current_map_id) }}
@@ -209,7 +209,16 @@ export default {
             ctx.fillText(`FPS: ${fps.value}`, canvas.width - 55, 14);
         };
 
+        watch(() => player.value?.current_map_id, (newMapId) => {
+            if (newMapId) {
+                api.fetchMapMonsters(newMapId);
+            }
+        });
+
         onMounted(() => {
+            if (player.value?.current_map_id) {
+                api.fetchMapMonsters(player.value.current_map_id);
+            }
             requestAnimationFrame(drawMap);
         });
 

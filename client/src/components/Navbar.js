@@ -1,7 +1,7 @@
 import { player } from '../state.js';
 
 export default {
-    emits: ['open-inventory', 'open-missions', 'open-attributes', 'open-events'],
+    emits: ['open-inventory', 'open-missions', 'open-attributes', 'open-rewards'],
     template: `
         <header class="fixed top-0 left-0 w-full bg-gray-900/90 backdrop-blur-sm p-2 border-b border-gray-700 flex justify-between items-center z-40 h-14">
             <div class="flex items-center gap-4">
@@ -10,17 +10,17 @@ export default {
 
             <div v-if="player" class="flex gap-2">
                 <button @click="$emit('open-missions')" class="bg-gray-800 hover:bg-gray-700 border border-gray-600 px-3 py-1 rounded text-sm flex items-center gap-2">
-                    📜 Missions
+                    📜 Missions (M)
                 </button>
                 <button @click="$emit('open-inventory')" class="bg-gray-800 hover:bg-gray-700 border border-gray-600 px-3 py-1 rounded text-sm flex items-center gap-2">
                     🎒 Bag (E)
                 </button>
                 <button @click="$emit('open-attributes')" class="bg-gray-800 hover:bg-gray-700 border border-gray-600 px-3 py-1 rounded text-sm flex items-center gap-2 relative">
-                    💪 Stats
+                    💪 Stats (S)
                     <span v-if="player.attribute_points > 0" class="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-ping"></span>
                 </button>
-                <button @click="$emit('open-events')" class="bg-gray-800 hover:bg-gray-700 border border-gray-600 px-3 py-1 rounded text-sm flex items-center gap-2">
-                    🎉 Events
+                <button @click="$emit('open-rewards')" class="bg-gray-800 hover:bg-gray-700 border border-gray-600 px-3 py-1 rounded text-sm flex items-center gap-2">
+                    🎉 Rewards (R)
                 </button>
             </div>
 

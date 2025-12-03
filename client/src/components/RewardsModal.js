@@ -7,7 +7,7 @@ export default {
         <div v-if="isOpen" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50" @click.self="$emit('close')">
             <div class="bg-gray-800 p-6 rounded-lg border border-gray-600 shadow-2xl max-w-sm w-full relative">
                 <button @click="$emit('close')" class="absolute top-2 right-2 text-gray-400 hover:text-white">✕</button>
-                <h3 class="text-xl font-bold mb-4 text-center">Events</h3>
+                <h3 class="text-xl font-bold mb-4 text-center">Rewards</h3>
                 
                 <div class="space-y-4">
                     <div class="bg-gray-700 p-4 rounded border border-gray-600">
