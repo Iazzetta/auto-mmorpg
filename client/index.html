@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auto RPG Client</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom Scrollbar for Log */
+        .log-container::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .log-container::-webkit-scrollbar-track {
+            background: #1f2937;
+        }
+
+        .log-container::-webkit-scrollbar-thumb {
+            background: #4b5563;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-900 text-gray-100 font-sans h-screen overflow-hidden flex flex-col">
+    <div id="app" class="h-full flex flex-col">
+        <!-- Header -->
+        <header class="bg-gray-800 p-4 border-b border-gray-700 flex justify-between items-center shrink-0">
+            <div class="flex items-center gap-4">
+                <h1 class="text-xl font-bold text-yellow-500">⚔️ Auto RPG</h1>
+
+                <!-- Map Selection Menu -->
+                <div v-if="player" class="flex items-center gap-2 bg-gray-700 p-1 rounded px-3">
+                    <span class="text-xs text-gray-400">Auto-Farm:</span>
+                    <select v-model="selectedMapId"
+                        class="bg-gray-800 text-white text-sm rounded border border-gray-600 p-1">
+                        <option value="map_forest_1">Forest 1</option>
+                        <option value="map_castle_1">Castle</option>
+                    </select>
+                    <select v-model="selectedTargetId"
+                        class="bg-gray-800 text-white text-sm rounded border border-gray-600 p-1">
+                        <option value="">-- Any --</option>
+                        <option value="mob_goblin_01">Goblin</option>
+                        <option value="mob_wolf_01">Wolf</option>
+                        <option value="mob_bear_01">Bear</option>
+                    </select>
+                    <button @click="toggleFreeFarm" class="text-xs font-bold px-2 py-1 rounded transition-colors"
+                        :class="isFreeFarming ? 'bg-red-600 hover:bg-red-500' : 'bg-green-600 hover:bg-green-500'">
+                        {{ isFreeFarming ? 'STOP' : 'START' }}
+                    </button>
+                </div>
+            </div>
+
+            <div v-if="player" class="text-sm text-gray-400">
+                ID: {{ player.id.substring(0, 8) }}...
+            </div>
+            <div v-else>
+                <button @click="createPlayer" class="bg-blue-600 hover:bg-blue-500 px-4 py-2 rounded">Create
+                    Hero</button>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div v-if="player" class="flex-1 flex overflow-hidden">
+
+            <!-- LEFT: Stats & Missions -->
+            <div class="w-1/4 bg-gray-800 p-4 border-r border-gray-700 flex flex-col gap-4 overflow-y-auto">
+                <!-- Stats -->
+                <div class="bg-gray-700 p-4 rounded-lg shadow-lg shrink-0">
+                    <h2 class="text-lg font-bold text-white mb-2 border-b border-gray-600 pb-1">Stats</h2>
+                    <div class="space-y-1 text-sm">
+                        <div class="flex justify-between"><span class="text-gray-400">Name:</span> <span
+                                class="font-bold text-yellow-400">{{ player.name }}</span></div>
+                        <div class="flex justify-between"><span class="text-gray-400">Class:</span> <span
+                                class="capitalize">{{ player.p_class }}</span></div>
+                        <div class="flex justify-between"><span class="text-gray-400">Level:</span> <span>{{
+                                player.level }}</span></div>
+                        <div class="flex justify-between"><span class="text-gray-400">XP:</span> <span>{{ player.xp
+                                }}</span></div>
+                        <div class="flex justify-between"><span class="text-gray-400">HP:</span> <span
+                                class="text-red-400">{{ player.stats.hp }} / {{ player.stats.max_hp }}</span></div>
+                        <div class="flex justify-between"><span class="text-gray-400">Gold:</span> <span
+                                class="text-yellow-300">{{ player.gold }} 💰</span></div>
+                    </div>
+                </div>
+
+                <!-- Missions List -->
+                <div class="bg-gray-700 p-4 rounded-lg shadow-lg flex-1 flex flex-col">
+                    <h2 class="text-lg font-bold text-white mb-2 border-b border-gray-600 pb-1">Missions</h2>
+
+                    <div v-if="!player" class="text-gray-500 text-center py-4">Loading...</div>
+
+                    <div v-else class="flex-1 flex flex-col gap-2 overflow-y-auto">
+                        <div class="text-sm text-gray-400 mb-2">Missions:</div>
+                        <div v-for="(mission, id) in availableMissions" :key="id"
+                            class="p-2 rounded cursor-pointer text-sm border transition-colors"
+                            :class="getMissionClass(id)" @click="selectMission(id)">
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="font-bold">{{ mission.title }}</span>
+                                <span v-if="isMissionCompleted(id)" class="text-green-500 text-xs">✓ Done</span>
+                                <span v-else-if="player.active_mission_id === id" class="text-blue-400 text-xs">▶
+                                    Active</span>
+                            </div>
+                            <div class="text-xs text-gray-400 mb-1">{{ mission.description }}</div>
+
+                            <!-- Progress Bar -->
+                            <div class="w-full bg-gray-700 rounded-full h-1.5 mb-1">
+                                <div class="bg-blue-500 h-1.5 rounded-full transition-all"
+                                    :style="{ width: getMissionProgressPercent(id) + '%' }"></div>
+                            </div>
+                            <div class="flex justify-between text-xs text-gray-500">
+                                <span>{{ getMissionProgress(id) }} / {{ mission.target_count }}</span>
+                                <span :class="isMissionCompleted(id) ? 'text-gray-600' : 'text-yellow-200'">
+                                    {{ mission.reward_xp }} XP, {{ mission.reward_gold }} G
+                                </span>
+                            </div>
+
+                            <!-- Claim Button -->
+                            <button v-if="canClaim(id)" @click.stop="claimMission"
+                                class="w-full mt-2 bg-green-600 hover:bg-green-500 text-white text-xs font-bold py-1 rounded animate-pulse">
+                                Claim Reward!
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MIDDLE: Visual Map & Log -->
+            <div class="w-1/2 bg-gray-900 flex flex-col relative">
+
+                <!-- Visual Map Preview -->
+                <div
+                    class="h-64 bg-gray-950 border-b border-gray-700 relative overflow-hidden flex items-center justify-center">
+                    <div class="absolute top-2 left-2 text-xs text-gray-500 font-mono">MAP: {{
+                        formatMapName(player.current_map_id) }}</div>
+
+                    <!-- Canvas for Map Visualization -->
+                    <canvas ref="mapCanvas" width="400" height="250"
+                        class="bg-gray-900 border border-gray-800 rounded"></canvas>
+
+                    <!-- Enemy Status Overlay -->
+                    <div v-if="currentMonster"
+                        class="absolute top-4 right-4 bg-gray-800 p-2 rounded border border-red-900 shadow-xl z-10 w-48">
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="font-bold text-red-400 text-xs truncate">{{ currentMonster.name }}</span>
+                            <span class="text-xs text-gray-400">{{ currentMonster.hp }}/{{ currentMonster.max_hp
+                                }}</span>
+                        </div>
+                        <div class="w-full bg-gray-700 rounded-full h-2 overflow-hidden">
+                            <div class="bg-red-600 h-full transition-all duration-300"
+                                :style="{ width: (currentMonster.hp / currentMonster.max_hp * 100) + '%' }"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Log Terminal -->
+                <div class="flex-1 p-4 overflow-y-auto log-container font-mono text-sm space-y-1 bg-gray-900"
+                    ref="logContainer">
+                    <div v-for="(log, index) in logs" :key="index" class="break-words">
+                        <span class="text-gray-500">[{{ log.time }}]</span>
+                        <span :class="log.color">{{ log.message }}</span>
+                    </div>
+                </div>
+
+                <!-- Hotkey Bar -->
+                <div
+                    class="h-16 bg-gray-800 border-t border-gray-700 flex items-center justify-center gap-2 p-2 shrink-0">
+                    <div v-for="i in 5" :key="i"
+                        class="w-12 h-12 bg-gray-700 border border-gray-600 rounded flex flex-col items-center justify-center relative cursor-pointer hover:border-gray-400 transition-colors"
+                        @click="useHotkey(i)">
+                        <span class="absolute top-0 left-1 text-[10px] text-gray-500 font-bold">{{ i }}</span>
+
+                        <!-- Slot Content -->
+                        <div v-if="getHotkeyItem(i)" class="flex flex-col items-center">
+                            <span class="text-xl">{{ getHotkeyItem(i).icon }}</span>
+                            <span class="text-[10px] font-bold text-white absolute bottom-0 right-1">x{{
+                                getHotkeyItem(i).quantity }}</span>
+                        </div>
+                        <div v-else class="text-gray-600 text-xs">Empty</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT: Inventory -->
+            <div class="w-1/4 bg-gray-800 p-4 border-l border-gray-700 flex flex-col gap-4 overflow-y-auto">
+                <!-- Equipment -->
+                <div class="bg-gray-700 p-4 rounded-lg shadow-lg shrink-0">
+                    <h2 class="text-lg font-bold text-white mb-3 border-b border-gray-600 pb-2">Equipment</h2>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div v-for="(item, slot) in player.equipment" :key="slot"
+                            class="bg-gray-600 p-2 rounded flex flex-col items-center justify-center min-h-[80px] text-center border border-gray-500 relative group">
+                            <span class="text-xs text-gray-400 uppercase mb-1">{{ slot.replace('_', ' ') }}</span>
+                            <div v-if="item">
+                                <span :class="getRarityColor(item.rarity)" class="font-bold text-sm">{{ item.name
+                                    }}</span>
+                                <div class="text-xs text-gray-300">PS: {{ item.power_score }}</div>
+                            </div>
+                            <div v-else class="text-gray-500 text-2xl">+</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Inventory -->
+                <div class="bg-gray-700 p-4 rounded-lg shadow-lg flex-1">
+                    <h2 class="text-lg font-bold text-white mb-3 border-b border-gray-600 pb-2">Bag ({{
+                        player.inventory.length }})</h2>
+                    <div class="grid grid-cols-4 gap-2">
+                        <div v-for="item in player.inventory" :key="item.id"
+                            class="bg-gray-700 p-2 rounded border border-gray-600 hover:border-gray-400 cursor-pointer relative group"
+                            @click="openItemModal(item)">
+                            <div class="text-2xl text-center mb-1">{{ item.icon || '📦' }}</div>
+                            <div class="text-xs font-bold truncate" :class="getRarityColor(item.rarity)">{{ item.name }}
+                            </div>
+                            <div class="text-xs text-gray-400 text-center">Lvl {{ item.power_score }}</div>
+                            <div v-if="item.quantity > 1"
+                                class="absolute top-0 right-0 bg-gray-900 text-white text-[10px] px-1 rounded-bl font-bold">
+                                x{{ item.quantity }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <button @click="openChest"
+                    class="w-full bg-yellow-600 hover:bg-yellow-500 py-2 rounded font-bold text-white shadow-lg shrink-0">
+                    🎁 Open Starter Chest
+                </button>
+            </div>
+
+            <!-- Item Modal -->
+            <div v-if="selectedItem" class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50"
+                @click.self="selectedItem = null">
+                <div class="bg-gray-800 p-6 rounded-lg border border-gray-600 shadow-2xl max-w-sm w-full relative">
+                    <button @click="selectedItem = null"
+                        class="absolute top-2 right-2 text-gray-400 hover:text-white">✕</button>
+
+                    <div class="text-center mb-4">
+                        <div class="text-4xl mb-2">{{ selectedItem.type === 'consumable' ? '🧪' : '🗡️' }}</div>
+                        <h3 :class="getRarityColor(selectedItem.rarity)" class="text-xl font-bold">{{
+                            selectedItem.name }}</h3>
+                        <div class="text-sm text-gray-400 capitalize">{{ selectedItem.rarity }} {{
+                            selectedItem.type }}</div>
+                        <div v-if="selectedItem.quantity > 1" class="text-sm text-yellow-400 font-bold mt-1">Quantity:
+                            x{{ selectedItem.quantity }}</div>
+                    </div>
+
+                    <div class="bg-gray-700 p-3 rounded mb-4 text-sm space-y-1">
+                        <div v-if="selectedItem.power_score" class="flex justify-between"><span>Power Score:</span>
+                            <span class="text-yellow-400">{{ selectedItem.power_score }}</span>
+                        </div>
+                        <div v-if="selectedItem.stats.hp" class="flex justify-between"><span>Heals:</span> <span
+                                class="text-green-400">{{ selectedItem.stats.hp }} HP</span></div>
+                        <div v-if="selectedItem.stats.atk" class="flex justify-between"><span>Attack:</span>
+                            <span>+{{ selectedItem.stats.atk }}</span>
+                        </div>
+                        <div v-if="selectedItem.stats.def_" class="flex justify-between"><span>Defense:</span>
+                            <span>+{{ selectedItem.stats.def_ }}</span>
+                        </div>
+                        <div v-if="selectedItem.stats.strength" class="flex justify-between">
+                            <span>Strength:</span> <span>+{{ selectedItem.stats.strength }}</span>
+                        </div>
+                        <div v-if="selectedItem.stats.intelligence" class="flex justify-between">
+                            <span>Intelligence:</span> <span>+{{ selectedItem.stats.intelligence }}</span>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-2">
+                        <button v-if="selectedItem.type === 'consumable'" @click="useItem(selectedItem.id)"
+                            class="flex-1 bg-green-600 hover:bg-green-500 py-2 rounded font-bold text-white">Use</button>
+                        <button v-else @click="equipItem(selectedItem.id)"
+                            class="flex-1 bg-blue-600 hover:bg-blue-500 py-2 rounded font-bold text-white">Equip</button>
+
+                        <button @click="sellItem(selectedItem.id)"
+                            class="flex-1 bg-red-700 hover:bg-red-600 py-2 rounded font-bold text-white">Sell</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted, nextTick, watch, onUnmounted } = Vue;
+
+        createApp({
+            setup() {
+                const player = ref(null);
+                const logs = ref([]);
+                const socket = ref(null);
+                const currentMonster = ref(null);
+                const logContainer = ref(null);
+                const availableMissions = ref({});
+                const selectedItem = ref(null);
+                const mapCanvas = ref(null);
+
+                // Auto-Farm State
+                const selectedMapId = ref('map_forest_1');
+                const selectedTargetId = ref('');
+                const isFreeFarming = ref(false);
+                let autoFarmInterval = null;
+                let mapDrawInterval = null;
+                let mapMonsters = []; // Cache for map visualization
+
+                const API_URL = 'http://localhost:8000';
+                const WS_URL = 'ws://localhost:8000/ws';
+
+                const addLog = (message, color = 'text-gray-300') => {
+                    const time = new Date().toLocaleTimeString();
+                    // Prevent spam: don't add if same as last message
+                    if (logs.value.length > 0 && logs.value[logs.value.length - 1].message === message) return;
+
+                    logs.value.push({ time, message, color });
+                    if (logs.value.length > 50) logs.value.shift(); // Reduce log history
+
+                    nextTick(() => {
+                        if (logContainer.value) {
+                            logContainer.value.scrollTop = logContainer.value.scrollHeight;
+                        }
+                    });
+                };
+
+                const getRarityColor = (rarity) => {
+                    const colors = {
+                        common: 'text-gray-400',
+                        uncommon: 'text-green-400',
+                        rare: 'text-purple-400',
+                        epic: 'text-red-500',
+                        legendary: 'text-yellow-400'
+                    };
+                    return colors[rarity] || 'text-gray-300';
+                };
+
+                const formatMapName = (id) => {
+                    if (!id) return '';
+                    return id.replace('map_', '').replace('_', ' ').toUpperCase();
+                };
+
+                const fetchPlayer = async (id) => {
+                    try {
+                        const res = await fetch(`${API_URL}/player/${id}`);
+                        if (res.ok) {
+                            player.value = await res.json();
+                            connectWebSocket(id);
+                            fetchMissions();
+                        } else {
+                            localStorage.removeItem('rpg_player_id');
+                        }
+                    } catch (e) {
+                        console.error(e);
+                    }
+                };
+
+                const fetchMissions = async () => {
+                    const res = await fetch(`${API_URL}/content/missions`);
+                    availableMissions.value = await res.json();
+                };
+
+                const createPlayer = async () => {
+                    try {
+                        const res = await fetch(`${API_URL}/player?name=Hero&p_class=warrior`, { method: 'POST' });
+                        const data = await res.json();
+                        player.value = data;
+                        localStorage.setItem('rpg_player_id', data.id);
+                        connectWebSocket(data.id);
+                        fetchMissions();
+                        addLog(`Welcome, ${data.name}!`, 'text-yellow-400');
+                    } catch (e) {
+                        console.error(e);
+                    }
+                };
+
+                const connectWebSocket = (playerId) => {
+                    if (socket.value) return;
+
+                    socket.value = new WebSocket(`${WS_URL}/${playerId}`);
+
+                    socket.value.onopen = () => {
+                        addLog('Connected to server.', 'text-green-500');
+                    };
+
+                    socket.value.onmessage = (event) => {
+                        const data = JSON.parse(event.data);
+
+                        if (data.type === 'combat_update') {
+                            handleCombatUpdate(data);
+                        } else if (data.type === 'monster_respawn') {
+                            // Only log if it's relevant to us
+                            if (shouldAttack(data.monster)) {
+                                addLog(`A ${data.monster.name} has appeared!`, 'text-orange-300');
+                            }
+                            // Trigger check
+                            if (isFreeFarming.value || player.value.active_mission_id) {
+                                checkAndAct();
+                            }
+                        }
+                    };
+
+                    socket.value.onclose = () => {
+                        addLog('Disconnected from server.', 'text-red-500');
+                        socket.value = null;
+                        stopAutoFarm(); // Stop auto-farm if disconnected
+                    };
+                };
+
+                const attackMonster = async (monsterId) => {
+                    await fetch(`${API_URL}/player/${player.value.id}/attack?monster_id=${monsterId}`, { method: 'POST' });
+                };
+
+                const handleCombatUpdate = (data) => {
+                    if (player.value && data.player_hp !== undefined) {
+                        player.value.stats.hp = data.player_hp;
+                    }
+
+                    if (data.monster_hp > 0) {
+                        if (!currentMonster.value) {
+                            currentMonster.value = { name: "Enemy", hp: data.monster_hp, max_hp: 50, level: 1 };
+                        }
+                        currentMonster.value.hp = data.monster_hp;
+                    } else {
+                        currentMonster.value = null;
+                    }
+
+                    const log = data.log;
+                    if (log.player_dmg) addLog(`You hit monster for ${log.player_dmg} dmg.`, 'text-blue-300');
+                    if (log.monster_dmg) addLog(`Monster hit you for ${log.monster_dmg} dmg.`, 'text-red-300');
+                    if (log.monster_died) {
+                        addLog(`Monster died! Gained ${log.xp_gained} XP.`, 'text-yellow-400');
+                        refreshPlayer();
+                        setTimeout(checkAndAct, 2000);
+                    }
+                    if (log.player_died) {
+                        addLog(`You died! Respawning at Castle...`, 'text-red-600 font-bold');
+                        refreshPlayer();
+                        stopAutoFarm();
+                    }
+                };
+
+                const refreshPlayer = async () => {
+                    if (!player.value) return;
+                    const res = await fetch(`${API_URL}/player/${player.value.id}`);
+                    if (res.ok) {
+                        player.value = await res.json();
+                    }
+                };
+
+                const openChest = async () => {
+                    if (!player.value) return;
+                    await fetch(`${API_URL}/player/${player.value.id}/open_chest`, { method: 'POST' });
+                    addLog('Opened Starter Chest!', 'text-purple-400');
+                    refreshPlayer();
+                };
+
+                // --- Mission & Auto-Farm Logic ---
+
+                const startMission = async (missionId) => {
+                    if (!player.value) return;
+                    stopAutoFarm(); // Reset state
+
+                    try {
+                        const res = await fetch(`${API_URL}/player/${player.value.id}/mission/start?mission_id=${missionId}`, {
+                            method: 'POST'
+                        });
+                        if (!res.ok) throw new Error("Failed to start mission");
+
+                        const data = await res.json();
+                        addLog(`Mission Started: ${data.mission.title}`, 'text-green-400');
+                        await refreshPlayer();
+
+                        // Set auto-farm parameters based on mission
+                        const mission = availableMissions.value[missionId];
+                        selectedMapId.value = mission.map_id;
+                        selectedTargetId.value = mission.target_monster_id;
+
+                        startAutoFarm();
+
+                    } catch (e) {
+                        console.error(e);
+                        addLog("Error starting mission.", "text-red-500");
+                    }
+                };
+
+                const toggleFreeFarm = () => {
+                    if (isFreeFarming.value) {
+                        stopAutoFarm();
+                    } else {
+                        addLog("Starting Free Farm...", "text-green-400");
+                        isFreeFarming.value = true;
+                        startAutoFarm();
+                    }
+                };
+
+                const startAutoFarm = () => {
+                    if (autoFarmInterval) clearInterval(autoFarmInterval);
+                    checkAndAct();
+                    autoFarmInterval = setInterval(checkAndAct, 4000);
+                };
+
+                const stopAutoFarm = () => {
+                    if (autoFarmInterval) {
+                        clearInterval(autoFarmInterval);
+                        autoFarmInterval = null;
+                    }
+                    isFreeFarming.value = false;
+                };
+
+                const checkAndAct = async () => {
+                    if (!player.value) return;
+                    if (player.value.state === 'combat') return;
+
+                    // 1. Check Map
+                    if (player.value.current_map_id !== selectedMapId.value) {
+                        addLog(`Moving to ${formatMapName(selectedMapId.value)}...`);
+                        await fetch(`${API_URL}/player/${player.value.id}/move?target_map_id=${selectedMapId.value}&x=0&y=0`, { method: 'POST' });
+                        await refreshPlayer();
+                        return;
+                    }
+
+                    // 2. Scan for Targets
+                    findAndAttackTarget();
+                };
+
+                const findAndAttackTarget = async () => {
+                    if (!player.value) return;
+                    if (player.value.state === 'combat') return;
+
+                    // Fetch monsters
+                    const res = await fetch(`${API_URL}/map/${player.value.current_map_id}/monsters`);
+                    const monsters = await res.json();
+                    mapMonsters = monsters; // Update cache for visualizer
+
+                    // Find target
+                    const target = monsters.find(m => shouldAttack(m));
+
+                    if (target) {
+                        addLog(`Found ${target.name}! Engaging...`, 'text-red-400');
+                        attackMonster(target.id);
+                    } else {
+                        // addLog(`Scanning... No targets.`, 'text-gray-600');
+                    }
+                };
+
+                const shouldAttack = (monster) => {
+                    if (!selectedTargetId.value) return true; // Attack anything if no specific target
+                    return monster.template_id === selectedTargetId.value;
+                };
+
+                const claimMission = async () => {
+                    if (!player.value) return;
+                    stopAutoFarm();
+
+                    try {
+                        const res = await fetch(`${API_URL}/player/${player.value.id}/mission/claim`, {
+                            method: 'POST'
+                        });
+                        if (!res.ok) throw new Error("Failed to claim mission");
+
+                        const data = await res.json();
+                        addLog(`Mission Complete! Rewards: ${data.rewards.xp} XP, ${data.rewards.gold} Gold`, "text-yellow-400 font-bold");
+                        await refreshPlayer();
+                    } catch (e) {
+                        console.error(e);
+                        addLog("Error claiming mission.", "text-red-500");
+                    }
+                };
+
+                // --- Hotkey Bar & Inventory ---
+
+                const getHotkeyItem = (slot) => {
+                    if (!player.value) return null;
+                    // Slot 1: Auto-assign Potion
+                    if (slot === 1) {
+                        return player.value.inventory.find(i => i.type === 'consumable');
+                    }
+                    return null; // Future: Allow custom assignment
+                };
+
+                const useHotkey = (slot) => {
+                    const item = getHotkeyItem(slot);
+                    if (item) {
+                        useItem(item.id);
+                    } else {
+                        addLog(`Slot ${slot} is empty.`, 'text-gray-500');
+                    }
+                };
+
+                const handleKeypress = (e) => {
+                    if (['1', '2', '3', '4', '5'].includes(e.key)) {
+                        useHotkey(parseInt(e.key));
+                    }
+                };
+
+                const openItemModal = (item) => {
+                    selectedItem.value = item;
+                };
+
+                const equipItem = async (itemId) => {
+                    if (!player.value) return;
+                    await fetch(`${API_URL}/player/${player.value.id}/equip?item_id=${itemId}`, { method: 'POST' });
+                    addLog('Item equipped.', 'text-blue-400');
+                    selectedItem.value = null;
+                    refreshPlayer();
+                };
+
+                const useItem = async (itemId) => {
+                    if (!player.value) return;
+                    const res = await fetch(`${API_URL}/player/${player.value.id}/use_item?item_id=${itemId}`, { method: 'POST' });
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data.hp_healed) {
+                            addLog(`Used Potion. Healed ${data.hp_healed} HP.`, 'text-green-400');
+                        } else {
+                            addLog(data.message);
+                        }
+                        selectedItem.value = null;
+                        refreshPlayer();
+                    }
+                };
+
+                const sellItem = async (itemId) => {
+                    if (!player.value) return;
+                    if (!confirm('Sell this item?')) return;
+
+                    const res = await fetch(`${API_URL}/player/${player.value.id}/sell_item?item_id=${itemId}`, { method: 'POST' });
+                    if (res.ok) {
+                        const data = await res.json();
+                        addLog(`Sold item for ${data.gold_gained} Gold.`, 'text-yellow-300');
+                        selectedItem.value = null;
+                        refreshPlayer();
+                    }
+                };
+
+                // --- Visual Map ---
+
+                const drawMap = () => {
+                    const canvas = mapCanvas.value;
+                    if (!canvas || !player.value) return;
+                    const ctx = canvas.getContext('2d');
+
+                    // Clear
+                    ctx.fillStyle = '#111827'; // gray-900
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                    // Draw Grid
+                    ctx.strokeStyle = '#1f2937'; // gray-800
+                    ctx.lineWidth = 1;
+                    const gridSize = 20;
+                    for (let x = 0; x < canvas.width; x += gridSize) {
+                        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+                    }
+                    for (let y = 0; y < canvas.height; y += gridSize) {
+                        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+                    }
+
+                    // Draw Monsters
+                    mapMonsters.forEach(m => {
+                        if (m.hp <= 0) return;
+                        ctx.fillStyle = '#ef4444'; // red-500
+                        ctx.beginPath();
+                        // Simple random position simulation since backend pos is static for now
+                        // Use hash of ID to keep it consistent but spread out
+                        const hash = m.id.split('').reduce((a, b) => a + b.charCodeAt(0), 0);
+                        const mx = (hash % (canvas.width - 20)) + 10;
+                        const my = ((hash * 13) % (canvas.height - 20)) + 10;
+
+                        ctx.arc(mx, my, 6, 0, Math.PI * 2);
+                        ctx.fill();
+
+                        // Name
+                        ctx.fillStyle = '#9ca3af'; // gray-400
+                        ctx.font = '10px sans-serif';
+                        ctx.fillText(m.name, mx - 10, my - 10);
+                    });
+
+                    // Draw Player
+                    ctx.fillStyle = '#22c55e'; // green-500
+                    ctx.beginPath();
+                    // Center player for now as "camera" or just put in center
+                    const px = canvas.width / 2;
+                    const py = canvas.height / 2;
+
+                    // Pulse effect
+                    const time = Date.now() / 500;
+                    const radius = 6 + Math.sin(time) * 2;
+
+                    ctx.arc(px, py, radius, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    ctx.fillStyle = '#ffffff';
+                    ctx.font = 'bold 12px sans-serif';
+                    ctx.fillText("YOU", px - 12, py - 15);
+                };
+
+                // Helpers
+                const getMissionClass = (id) => {
+                    if (isMissionCompleted(id)) return 'bg-gray-800 border-gray-700 opacity-60';
+                    if (player.value && player.value.active_mission_id === id) return 'bg-gray-700 border-blue-500 shadow-md';
+                    return 'bg-gray-700 border-transparent hover:border-gray-500 hover:bg-gray-600';
+                };
+
+                const selectMission = (id) => {
+                    if (isMissionCompleted(id)) return;
+                    if (player.value.active_mission_id === id) return; // Already active
+                    startMission(id);
+                };
+
+                const getMissionProgress = (id) => {
+                    if (!player.value) return 0;
+                    if (player.value.active_mission_id === id) return player.value.mission_progress;
+                    if (isMissionCompleted(id)) return availableMissions.value[id]?.target_count || 0;
+                    return 0;
+                };
+
+                const getMissionProgressPercent = (id) => {
+                    if (!player.value) return 0;
+                    const target = availableMissions.value[id]?.target_count || 1;
+                    let current = 0;
+
+                    if (player.value.active_mission_id === id) {
+                        current = player.value.mission_progress;
+                    } else if (isMissionCompleted(id)) {
+                        current = target;
+                    }
+
+                    return Math.min(100, (current / target) * 100);
+                };
+
+                const canClaim = (id) => {
+                    if (!player.value || player.value.active_mission_id !== id) return false;
+                    const target = availableMissions.value[id]?.target_count || 1;
+                    return player.value.mission_progress >= target;
+                };
+
+                const isMissionCompleted = (id) => {
+                    return player.value && player.value.completed_missions.includes(id);
+                };
+
+                onMounted(() => {
+                    const savedId = localStorage.getItem('rpg_player_id');
+                    if (savedId) {
+                        fetchPlayer(savedId);
+                    }
+                    window.addEventListener('keydown', handleKeypress);
+                    mapDrawInterval = setInterval(drawMap, 100);
+                });
+
+                onUnmounted(() => {
+                    window.removeEventListener('keydown', handleKeypress);
+                    if (mapDrawInterval) clearInterval(mapDrawInterval);
+                    if (autoFarmInterval) clearInterval(autoFarmInterval);
+                });
+
+                return {
+                    player,
+                    logs,
+                    logContainer,
+                    currentMonster,
+                    availableMissions,
+                    selectedItem,
+                    mapCanvas,
+                    selectedMapId,
+                    selectedTargetId,
+                    isFreeFarming,
+                    createPlayer,
+                    openChest,
+                    startMission,
+                    claimMission,
+                    openItemModal,
+                    equipItem,
+                    useItem,
+                    sellItem,
+                    getRarityColor,
+                    formatMapName,
+                    getMissionClass,
+                    selectMission,
+                    getMissionProgress,
+                    getMissionProgressPercent,
+                    canClaim,
+                    isMissionCompleted,
+                    toggleFreeFarm,
+                    getHotkeyItem,
+                    useHotkey
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>
