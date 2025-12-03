@@ -28,6 +28,19 @@ class GameLoop:
         
         # Cap dt to prevent massive jumps if server hangs
         if dt > 0.5: dt = 0.5
+        
+        # Performance Logging
+        if not hasattr(self, 'tick_count'): self.tick_count = 0
+        self.tick_count += 1
+        
+        if self.tick_count % 100 == 0:
+            player_count = len(self.state_manager.players)
+            monster_count = len(self.state_manager.monsters)
+            respawn_count = len(getattr(self.state_manager, 'respawn_queue', []))
+            print(f"[PERF] Tick: {self.tick_count} | FPS: {1/dt:.2f} | Players: {player_count} | Monsters: {monster_count} | RespawnQueue: {respawn_count}")
+
+        if dt > 0.15:
+            print(f"[WARN] Slow Tick! dt={dt:.4f}s")
 
         # Iterate over all players
         for player_id, player in self.state_manager.players.items():

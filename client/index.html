@@ -350,6 +350,11 @@
                 const availableMissions = ref({});
                 const selectedItem = ref(null);
                 const mapCanvas = ref(null);
+                const mapContext = ref(null);
+                const fps = ref(0);
+                let lastFrameTime = performance.now();
+                let frameCount = 0;
+                let lastFpsTime = performance.now();
 
                 // Auto-Farm State
                 const selectedMapId = ref('map_forest_1'); // Keep for internal tracking
@@ -390,12 +395,13 @@
                 const WS_URL = 'ws://localhost:8000/ws';
 
                 const addLog = (message, color = 'text-gray-300') => {
-                    const time = new Date().toLocaleTimeString();
                     // Prevent spam: don't add if same as last message
-                    if (logs.value.length > 0 && logs.value[logs.value.length - 1].message === message) return;
+                    if (logs.value.length > 0 && logs.value[0].message === message) return;
 
-                    logs.value.push({ time, message, color });
-                    if (logs.value.length > 50) logs.value.shift(); // Reduce log history
+                    logs.value.unshift({ time: new Date().toLocaleTimeString(), message, color, id: Date.now() });
+                    if (logs.value.length > 50) {
+                        logs.value = logs.value.slice(0, 50);
+                    }
 
                     nextTick(() => {
                         if (logContainer.value) {
