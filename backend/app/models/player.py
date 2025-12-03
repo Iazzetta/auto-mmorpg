@@ -82,7 +82,7 @@ class Player(BaseModel):
         base_hp = 100 + (vit_val * 10)
         base_atk = 5 + (str_val * 2) + (agi_val * 1)
         base_def = 0 + (vit_val * 1) + (agi_val * 1)
-        base_speed = 1.0 + (agi_val * 0.02)
+        base_speed = 20.0 + (agi_val * 0.1)
 
         # Add Equipment Bonuses
         for slot, item in self.equipment.items():
