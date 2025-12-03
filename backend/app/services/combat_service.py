@@ -31,6 +31,10 @@ class CombatService:
         if monster.stats.hp <= 0:
             monster.stats.hp = 0
             log['monster_died'] = True
+            
+            # Update Mission Progress
+            CombatService.check_mission_progress(player, monster)
+            
             # Generate Loot
             CombatService.generate_loot(player, monster)
             

@@ -347,6 +347,22 @@
                 let mapDrawInterval = null;
                 let mapMonsters = []; // Cache for map visualization
 
+                // Watch for map changes to fetch monsters
+                watch(() => player.value?.current_map_id, (newMapId) => {
+                    if (newMapId) {
+                        fetchMapMonsters(newMapId);
+                    }
+                });
+
+                const fetchMapMonsters = async (mapId) => {
+                    try {
+                        const res = await fetch(`${API_URL}/map/${mapId}/monsters`);
+                        mapMonsters = await res.json();
+                    } catch (e) {
+                        console.error("Error fetching monsters:", e);
+                    }
+                };
+
                 // UI State
                 const showAttributeModal = ref(false);
                 const tempAttributes = ref({});
@@ -461,8 +477,9 @@
                                 checkAndAct();
                             }
                         } else if (data.type === 'player_moved') {
-                            player.value.x = data.x;
-                            player.value.y = data.y;
+                            if (!player.value.position) player.value.position = { x: 0, y: 0 };
+                            player.value.position.x = data.x;
+                            player.value.position.y = data.y;
                             player.value.current_map_id = data.map_id;
                         }
                     };
@@ -848,18 +865,15 @@
                     for (let y = 0; y < canvas.height; y += gridSize) {
                         ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
                     }
-
                     // Interpolate player position
-                    const targetPx = (player.value.x / 100) * canvas.width;
-                    const targetPy = (player.value.y / 100) * canvas.height;
+                    const px = player.value.position ? player.value.position.x : 0;
+                    const py = player.value.position ? player.value.position.y : 0;
+
+                    const targetPx = (px / 100) * canvas.width;
+                    const targetPy = (py / 100) * canvas.height;
                     playerVisualPos.value.x += (targetPx - playerVisualPos.value.x) * 0.1;
                     playerVisualPos.value.y += (targetPy - playerVisualPos.value.y) * 0.1;
 
-                    // Draw Player
-                    ctx.fillStyle = '#22c55e'; // green-500
-                    ctx.beginPath();
-                    const radius = 6 + Math.sin(Date.now() / 500) * 2; // Pulse effect
-                    ctx.arc(playerVisualPos.value.x, playerVisualPos.value.y, radius, 0, Math.PI * 2);
                     ctx.fill();
 
                     // Draw Portals
