@@ -36,6 +36,16 @@ class CombatService:
             # Award XP
             player.xp += monster.xp_reward
             
+            # Level Up Check
+            while player.xp >= player.next_level_xp:
+                player.xp -= player.next_level_xp
+                player.level += 1
+                player.attribute_points += 5 # 5 points per level
+                player.calculate_stats() # Recalculate stats (HP/MP might increase)
+                player.stats.hp = player.stats.max_hp # Heal on level up
+                log['level_up'] = True
+                log['new_level'] = player.level
+            
             # Update Mission Progress
             CombatService.check_mission_progress(player, monster)
             
@@ -108,7 +118,8 @@ class CombatService:
                         rarity=item_data["rarity"],
                         stats=item_data["stats"].copy(),
                         power_score=item_data["power_score"],
-                        icon=item_data.get("icon", "📦")
+                        icon=item_data.get("icon", "📦"),
+                        stackable=item_data["type"] in ["consumable", "material"]
                     )
                     InventoryService.add_item(player, new_item)
 

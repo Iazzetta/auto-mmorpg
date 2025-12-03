@@ -72,18 +72,18 @@ async def open_starter_chest(player_id: str):
     InventoryService.add_item(player, armor)
     
     # Add Potions
-    # Add Potions
-    for _ in range(10):
-        potion = Item(
-            id=f"potion_hp_{uuid.uuid4().hex[:8]}",
-            name="Health Potion",
-            type=ItemType.CONSUMABLE,
-            slot=ItemSlot.NONE,
-            rarity=ItemRarity.COMMON,
-            stats=ItemStats(hp=50), # Heals 50 HP
-            power_score=10
-        )
-        InventoryService.add_item(player, potion)
+    potion = Item(
+        id=f"potion_hp_{uuid.uuid4().hex[:8]}",
+        name="Health Potion",
+        type=ItemType.CONSUMABLE,
+        slot=ItemSlot.NONE,
+        rarity=ItemRarity.COMMON,
+        stats=ItemStats(hp=50), # Heals 50 HP
+        power_score=10,
+        quantity=10,
+        stackable=True
+    )
+    InventoryService.add_item(player, potion)
     
     return {"message": "Chest opened", "inventory": player.inventory, "equipment": player.equipment}
 
@@ -110,7 +110,12 @@ async def use_item(player_id: str, item_id: str):
     if "Potion" in item_to_use.name:
         healed = 50
         player.stats.hp = min(player.stats.hp + healed, player.stats.max_hp)
-        player.inventory.remove(item_to_use)
+        
+        if item_to_use.stackable and item_to_use.quantity > 1:
+            item_to_use.quantity -= 1
+        else:
+            player.inventory.remove(item_to_use)
+            
         return {"message": "Potion used", "hp_healed": healed, "current_hp": player.stats.hp}
         
     return {"message": "Item used (no effect)"}

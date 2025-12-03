@@ -564,6 +564,11 @@
                             showToast(drop.icon || '📦', drop.name, `x${drop.quantity || 1}`, getRarityColor(drop.rarity));
                         });
                     }
+
+                    if (log.level_up) {
+                        showToast('🆙', 'Level Up!', `You reached level ${log.new_level}!`, 'text-yellow-400');
+                        addLog(`Level Up! You are now level ${log.new_level}.`, 'text-yellow-400 font-bold');
+                    }
                 };
 
                 const refreshPlayer = async () => {

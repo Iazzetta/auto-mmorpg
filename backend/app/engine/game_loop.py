@@ -16,7 +16,7 @@ class GameLoop:
         self.running = True
         while self.running:
             await self.tick()
-            await asyncio.sleep(0.5) # 0.5s Server Tick
+            await asyncio.sleep(0.1) # 0.1s Server Tick for smoother movement
 
     async def tick(self):
         # Iterate over all players
@@ -49,8 +49,8 @@ class GameLoop:
             
             elif player.state == PlayerState.MOVING and player.target_position:
                 # Calculate movement
-                # Speed is units per second. Tick is 0.5s.
-                dt = 0.5
+                # Speed is units per second. Tick is 0.1s.
+                dt = 0.1
                 reached = MovementService.move_towards_target(player, player.target_position.x, player.target_position.y, dt)
                 
                 # Broadcast movement

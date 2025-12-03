@@ -9,7 +9,14 @@ class InventoryService:
         Adds an item to the player's inventory.
         Triggers auto-equip logic.
         """
-        # Auto-equip logic
+        # Check for stacking
+        if item.stackable:
+            for existing_item in player.inventory:
+                if existing_item.name == item.name and existing_item.type == item.type:
+                    existing_item.quantity += item.quantity
+                    return
+
+        # Auto-equip logic (only for equipment)
         if item.slot != ItemSlot.NONE:
             current_equipped = player.equipment.get(item.slot)
             

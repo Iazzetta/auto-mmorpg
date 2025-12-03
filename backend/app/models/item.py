@@ -29,6 +29,7 @@ class ItemStats(BaseModel):
     intelligence: int = 0
     atk: int = 0
     def_: int = 0
+    speed: float = 0.0
     hp: int = 0 # For consumables (healing) # Pydantic alias might be needed or just use def_ to avoid keyword collision
 
 class Item(BaseModel):
