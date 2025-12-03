@@ -643,6 +643,7 @@
                 const checkAndAct = async () => {
                     if (!player.value) return;
                     if (player.value.state === 'combat') return;
+                    if (player.value.state === 'moving') return; // Don't interrupt movement
 
                     // 1. Check Map
                     if (player.value.current_map_id !== selectedMapId.value) {
@@ -683,8 +684,30 @@
                     const target = monsters.find(m => shouldAttack(m));
 
                     if (target) {
-                        addLog(`Found ${target.name}! Engaging...`, 'text-red-400');
-                        attackMonster(target.id);
+                        // Check distance
+                        const mx = target.position_x;
+                        const my = target.position_y;
+                        const px = player.value.position.x;
+                        const py = player.value.position.y;
+                        const dist = Math.sqrt((px - mx) ** 2 + (py - my) ** 2);
+
+                        if (dist > 5) {
+                            addLog(`Moving to ${target.name}...`, 'text-blue-300');
+                            // Calculate stopping point
+                            const angle = Math.atan2(my - py, mx - px);
+                            const stopDist = 4;
+                            const tx = mx - Math.cos(angle) * stopDist;
+                            const ty = my - Math.sin(angle) * stopDist;
+
+                            // Visual marker
+                            destinationMarker.value = { x: (tx / 100) * mapCanvas.value.width, y: (ty / 100) * mapCanvas.value.height, time: Date.now() };
+
+                            await movePlayerTo(player.value.current_map_id, tx, ty);
+                            pendingAttackId.value = target.id;
+                        } else {
+                            addLog(`Found ${target.name}! Engaging...`, 'text-red-400');
+                            attackMonster(target.id);
+                        }
                     } else {
                         // addLog(`Scanning... No targets.`, 'text-gray-600');
                     }

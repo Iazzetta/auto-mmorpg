@@ -44,10 +44,11 @@ SPAWNS = {
     "map_forest_1": [
         {"template_id": "mob_wolf_01", "x": 10, "y": 10},
         {"template_id": "mob_wolf_01", "x": 15, "y": 15},
-        {"template_id": "mob_goblin_01", "x": 20, "y": 20},
-        {"template_id": "mob_goblin_01", "x": 25, "y": 25},
-        {"template_id": "mob_goblin_01", "x": 30, "y": 30},
-        {"template_id": "mob_bear_01", "x": 40, "y": 40}
+        {"template_id": "mob_wolf_01", "x": 5, "y": 20},
+        {"template_id": "mob_goblin_01", "x": 80, "y": 20},
+        {"template_id": "mob_goblin_01", "x": 90, "y": 30},
+        {"template_id": "mob_goblin_01", "x": 75, "y": 40},
+        {"template_id": "mob_bear_01", "x": 40, "y": 80}
     ],
     "map_castle_1": [] 
 }
