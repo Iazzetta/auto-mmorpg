@@ -954,6 +954,8 @@
 
 
                 const drawMap = () => {
+                    requestAnimationFrame(drawMap);
+
                     const canvas = mapCanvas.value;
                     if (!canvas || !player.value) return;
                     const ctx = canvas.getContext('2d');
@@ -1070,8 +1072,6 @@
                         frameCount = 0;
                         lastFpsTime = now;
                     }
-
-                    requestAnimationFrame(drawMap);
                 };
 
                 // Helpers
