@@ -53,6 +53,12 @@ async def startup_event():
     logger.info("Starting Game Loop...")
     asyncio.create_task(game_loop.start())
     
+    # Persistence
+    from .app.services.persistence_service import PersistenceService
+    persistence = PersistenceService.get_instance()
+    persistence.load_players()
+    asyncio.create_task(persistence.save_players_loop())
+    
     # Initialize some dummy data
     # Load initial spawns
     from .app.data.monsters import SPAWNS, MONSTERS
@@ -88,3 +94,4 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
             
     except WebSocketDisconnect:
         manager.disconnect(websocket)
+        await manager.broadcast({"type": "player_left", "player_id": client_id})

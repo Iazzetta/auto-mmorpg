@@ -27,6 +27,7 @@ class PlayerStats(BaseModel):
 
 class Player(BaseModel):
     id: str
+    token: str
     name: str
     p_class: PlayerClass
     level: int = 1
@@ -64,6 +65,7 @@ class Player(BaseModel):
         ItemSlot.HAND_OFF: None
     }
     gold: int = 0
+    diamonds: int = 0
     
     # Runtime State (Not persisted usually, but needed for game loop)
     last_attack_time: float = 0.0

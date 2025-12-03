@@ -1,5 +1,5 @@
 import { ref, onMounted, onUnmounted, watch } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.js';
-import { player, mapMonsters, destinationMarker, currentMonster, addLog, selectedTargetId, isFreeFarming, pendingAttackId } from '../state.js';
+import { player, mapMonsters, mapPlayers, destinationMarker, currentMonster, addLog, selectedTargetId, isFreeFarming, pendingAttackId, inspectedPlayer } from '../state.js';
 import { api } from '../services/api.js';
 import { stopAutoFarm } from '../services/autoFarm.js';
 
@@ -45,6 +45,18 @@ export default {
             const rect = mapCanvas.value.getBoundingClientRect();
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
+
+            // Check for players click
+            for (const p of mapPlayers.value) {
+                if (p.id === player.value.id) continue;
+                const px = (p.position.x / 100) * mapCanvas.value.width;
+                const py = (p.position.y / 100) * mapCanvas.value.height;
+                const dist = Math.sqrt((x - px) ** 2 + (y - py) ** 2);
+                if (dist < 20) {
+                    inspectedPlayer.value = p;
+                    return;
+                }
+            }
 
             // Check for monsters click
             let clickedMonster = null;
@@ -157,6 +169,20 @@ export default {
                 ctx.fillText(m.name, mx - 15, my - 15);
             });
 
+            // Other Players
+            mapPlayers.value.forEach(p => {
+                if (p.id === player.value.id) return; // Don't draw self here
+                ctx.fillStyle = '#3b82f6'; // Blue
+                ctx.beginPath();
+                const px = (p.position.x / 100) * canvas.width;
+                const py = (p.position.y / 100) * canvas.height;
+                ctx.arc(px, py, 8, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#ffffff';
+                ctx.font = '12px sans-serif';
+                ctx.fillText(p.name, px - 15, py - 15);
+            });
+
             // Destination Marker
             if (destinationMarker.value) {
                 ctx.strokeStyle = '#fbbf24';
@@ -192,7 +218,7 @@ export default {
 
             ctx.fillStyle = '#ffffff';
             ctx.font = 'bold 14px sans-serif';
-            ctx.fillText("YOU", playerVisualPos.value.x - 15, playerVisualPos.value.y - 18);
+            ctx.fillText(player.value.name, playerVisualPos.value.x - 15, playerVisualPos.value.y - 18);
 
             // FPS
             const now = performance.now();
@@ -212,12 +238,14 @@ export default {
         watch(() => player.value?.current_map_id, (newMapId) => {
             if (newMapId) {
                 api.fetchMapMonsters(newMapId);
+                api.fetchMapPlayers(newMapId);
             }
         });
 
         onMounted(() => {
             if (player.value?.current_map_id) {
                 api.fetchMapMonsters(player.value.current_map_id);
+                api.fetchMapPlayers(player.value.current_map_id);
             }
             requestAnimationFrame(drawMap);
         });

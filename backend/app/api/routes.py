@@ -13,6 +13,11 @@ state_manager = StateManager.get_instance()
 
 @router.post("/player", response_model=Player)
 async def create_player(name: str, p_class: PlayerClass):
+    # Check if name exists
+    for p in state_manager.players.values():
+        if p.name == name:
+            raise HTTPException(status_code=409, detail="Name already taken")
+
     # Initial stats based on class
     if p_class == PlayerClass.WARRIOR:
         stats = PlayerStats(hp=100, max_hp=100, atk=10, def_=5, speed=20.0)
@@ -23,6 +28,7 @@ async def create_player(name: str, p_class: PlayerClass):
 
     player = Player(
         id=str(uuid.uuid4()),
+        token=str(uuid.uuid4()),
         name=name,
         p_class=p_class,
         stats=stats,
@@ -32,6 +38,25 @@ async def create_player(name: str, p_class: PlayerClass):
     
     state_manager.add_player(player)
     return player
+
+@router.get("/map/{map_id}/players")
+async def get_map_players(map_id: str):
+    # Return list of players in the map (basic info only)
+    players = []
+    for p in state_manager.players.values():
+        if p.current_map_id == map_id:
+            # Return subset of info to avoid leaking tokens/state
+            players.append({
+                "id": p.id,
+                "name": p.name,
+                "level": p.level,
+                "p_class": p.p_class,
+                "position": p.position,
+                "hp": p.stats.hp,
+                "max_hp": p.stats.max_hp,
+                "state": p.state
+            })
+    return players
 
 @router.get("/player/{player_id}", response_model=Player)
 async def get_player(player_id: str):

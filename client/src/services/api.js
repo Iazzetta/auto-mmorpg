@@ -1,4 +1,4 @@
-import { player, logs, socket, currentMonster, addLog, showToast, mapMonsters, isFreeFarming, selectedTargetId, pendingAttackId, destinationMarker } from '../state.js';
+import { player, logs, socket, currentMonster, addLog, showToast, mapMonsters, mapPlayers, isFreeFarming, selectedTargetId, pendingAttackId, destinationMarker, inspectedPlayer, autoSellInferior } from '../state.js';
 import { checkAndAct, stopAutoFarm } from './autoFarm.js';
 
 const API_URL = 'http://localhost:8000';
@@ -20,18 +20,37 @@ export const api = {
         }
     },
 
-    async createPlayer() {
+    async createPlayer(name) {
         try {
-            const res = await fetch(`${API_URL}/player?name=Hero&p_class=warrior`, { method: 'POST' });
+            const res = await fetch(`${API_URL}/player?name=${encodeURIComponent(name)}&p_class=warrior`, { method: 'POST' });
+            if (!res.ok) {
+                if (res.status === 409) {
+                    alert("Name already taken!");
+                    return false;
+                }
+                throw new Error("Failed to create player");
+            }
             const data = await res.json();
             player.value = data;
             localStorage.setItem('rpg_player_id', data.id);
+            localStorage.setItem('rpg_player_token', data.token);
             connectWebSocket(data.id);
             addLog(`Welcome, ${data.name}!`, 'text-yellow-400');
             return true;
         } catch (e) {
             console.error(e);
             return false;
+        }
+    },
+
+    async fetchMapPlayers(mapId) {
+        try {
+            const res = await fetch(`${API_URL}/map/${mapId}/players`);
+            if (res.ok) {
+                mapPlayers.value = await res.json();
+            }
+        } catch (e) {
+            console.error("Error fetching players:", e);
         }
     },
 
@@ -87,7 +106,12 @@ export const api = {
 
     async sellItem(itemId) {
         if (!player.value) return;
-        if (!confirm('Sell this item?')) return;
+        // if (!confirm('Sell this item?')) return; // Removed confirm for auto-sell, or handled by caller? 
+        // Wait, manual sell needs confirm. Auto-sell doesn't.
+        // I should probably separate them or pass a flag.
+        // For now, let's assume manual sell calls this and we want confirm.
+        // But auto-sell calls this too.
+        // I'll remove confirm here and put it in UI component for manual sell.
         const res = await fetch(`${API_URL}/player/${player.value.id}/sell_item?item_id=${itemId}`, { method: 'POST' });
         if (res.ok) {
             const data = await res.json();
@@ -109,6 +133,44 @@ export const api = {
             return true;
         }
         return false;
+    },
+
+    async triggerAutoSell() {
+        if (!player.value) return;
+        const rarityValue = { common: 1, uncommon: 2, rare: 3, epic: 4, legendary: 5 };
+        let soldCount = 0;
+
+        const inventory = [...player.value.inventory];
+
+        for (const item of inventory) {
+            if (item.type === 'weapon' || item.type === 'armor') {
+                if (item.rarity !== 'rare' && item.rarity !== 'epic' && item.rarity !== 'legendary') {
+                    const equipped = player.value.equipment[item.slot];
+                    if (equipped) {
+                        const itemRarityVal = rarityValue[item.rarity] || 0;
+                        const equippedRarityVal = rarityValue[equipped.rarity] || 0;
+
+                        let shouldSell = false;
+                        if (itemRarityVal < equippedRarityVal) shouldSell = true;
+                        else if (itemRarityVal === equippedRarityVal && item.power_score <= equipped.power_score) shouldSell = true;
+
+                        if (shouldSell) {
+                            // We use fetch directly or call sellItem? sellItem refreshes player every time.
+                            // That's slow for bulk. But safer.
+                            // Let's use sellItem but maybe suppress refresh?
+                            // api.sellItem does refresh.
+                            // Let's just call it. It will be sequential.
+                            await this.sellItem(item.id);
+                            soldCount++;
+                        }
+                    }
+                }
+            }
+        }
+
+        if (soldCount > 0) {
+            showToast('💰', 'Auto-Clean', `Sold ${soldCount} items`, 'text-yellow-500');
+        }
     }
 };
 
@@ -134,25 +196,50 @@ export const connectWebSocket = (playerId) => {
                 checkAndAct();
             }
         } else if (data.type === 'player_moved') {
-            if (!player.value.position) player.value.position = { x: 0, y: 0 };
-            player.value.position.x = data.x;
-            player.value.position.y = data.y;
-            player.value.current_map_id = data.map_id;
+            if (data.player_id === player.value.id) {
+                if (!player.value.position) player.value.position = { x: 0, y: 0 };
+                player.value.position.x = data.x;
+                player.value.position.y = data.y;
+                player.value.current_map_id = data.map_id;
 
-            if (pendingAttackId.value) {
-                const target = mapMonsters.value.find(m => m.id === pendingAttackId.value);
-                if (target) {
-                    const mx_game = target.position_x;
-                    const my_game = target.position_y;
-                    const dx = player.value.position.x - mx_game;
-                    const dy = player.value.position.y - my_game;
-                    const dist = Math.sqrt(dx * dx + dy * dy);
+                if (pendingAttackId.value) {
+                    const target = mapMonsters.value.find(m => m.id === pendingAttackId.value);
+                    if (target) {
+                        const mx_game = target.position_x;
+                        const my_game = target.position_y;
+                        const dx = player.value.position.x - mx_game;
+                        const dy = player.value.position.y - my_game;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
 
-                    if (dist < 5) {
-                        api.attackMonster(pendingAttackId.value);
-                        pendingAttackId.value = null;
+                        if (dist < 5) {
+                            api.attackMonster(pendingAttackId.value);
+                            pendingAttackId.value = null;
+                        }
                     }
                 }
+            } else {
+                // Update other player
+                const other = mapPlayers.value.find(p => p.id === data.player_id);
+                if (other) {
+                    if (!other.position) other.position = { x: 0, y: 0 };
+                    other.position.x = data.x;
+                    other.position.y = data.y;
+
+                    // If they moved to a different map, remove them
+                    if (data.map_id !== player.value.current_map_id) {
+                        mapPlayers.value = mapPlayers.value.filter(p => p.id !== data.player_id);
+                    }
+                } else {
+                    // If new player entered our map, fetch list
+                    if (data.map_id === player.value.current_map_id) {
+                        api.fetchMapPlayers(player.value.current_map_id);
+                    }
+                }
+            }
+        } else if (data.type === 'player_left') {
+            mapPlayers.value = mapPlayers.value.filter(p => p.id !== data.player_id);
+            if (inspectedPlayer.value && inspectedPlayer.value.id === data.player_id) {
+                inspectedPlayer.value = null;
             }
         }
     };
@@ -165,6 +252,9 @@ export const connectWebSocket = (playerId) => {
 };
 
 const handleCombatUpdate = (data) => {
+    // Only process updates for the local player
+    if (data.player_id !== player.value.id) return;
+
     if (player.value && data.player_hp !== undefined) {
         player.value.stats.hp = data.player_hp;
     }
@@ -202,8 +292,42 @@ const handleCombatUpdate = (data) => {
     }
 
     if (data.drops && data.drops.length > 0) {
-        data.drops.forEach(drop => {
-            showToast(drop.icon || '📦', drop.name, `x${drop.quantity || 1}`, getRarityColor(drop.rarity));
+        const rarityValue = { common: 1, uncommon: 2, rare: 3, epic: 4, legendary: 5 };
+
+        data.drops.forEach(async drop => {
+            let sold = false;
+
+            // Only consider auto-selling if enabled and item is equipment
+            if (autoSellInferior.value && (drop.type === 'weapon' || drop.type === 'armor')) {
+                // NEVER auto-sell Rare, Epic, or Legendary drops
+                if (drop.rarity !== 'rare' && drop.rarity !== 'epic' && drop.rarity !== 'legendary') {
+
+                    const equipped = player.value.equipment[drop.slot];
+                    if (equipped) {
+                        const dropRarityVal = rarityValue[drop.rarity] || 0;
+                        const equippedRarityVal = rarityValue[equipped.rarity] || 0;
+
+                        // Rule: Sell Common/Uncommon if equipped is strictly better rarity
+                        // Common (1) < Uncommon (2) -> Sell
+                        // Uncommon (2) < Rare (3) -> Sell
+                        if (dropRarityVal < equippedRarityVal) {
+                            api.sellItem(drop.id);
+                            showToast('💰', 'Auto-sold (Low Rarity)', `${drop.name}`, 'text-yellow-500');
+                            sold = true;
+                        }
+                        // Rule: If same rarity (Common/Uncommon only), sell if inferior Power Score
+                        else if (dropRarityVal === equippedRarityVal && drop.power_score <= equipped.power_score) {
+                            api.sellItem(drop.id);
+                            showToast('💰', 'Auto-sold (Inferior)', `${drop.name}`, 'text-yellow-500');
+                            sold = true;
+                        }
+                    }
+                }
+            }
+
+            if (!sold) {
+                showToast(drop.icon || '📦', drop.name, `x${drop.quantity || 1}`, getRarityColor(drop.rarity));
+            }
         });
     }
 

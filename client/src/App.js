@@ -1,5 +1,5 @@
 import { ref, onMounted, onUnmounted, nextTick, watch } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.js';
-import { player, logs, toasts } from './state.js';
+import { player, logs, toasts, inspectedPlayer } from './state.js';
 import { api } from './services/api.js';
 import { toggleFreeFarm } from './services/autoFarm.js';
 
@@ -10,6 +10,7 @@ import InventoryModal from './components/InventoryModal.js';
 import MissionsModal from './components/MissionsModal.js';
 import AttributesModal from './components/AttributesModal.js';
 import RewardsModal from './components/RewardsModal.js';
+import InspectModal from './components/InspectModal.js';
 
 export default {
     components: {
@@ -19,7 +20,8 @@ export default {
         InventoryModal,
         MissionsModal,
         AttributesModal,
-        RewardsModal
+        RewardsModal,
+        InspectModal
     },
     template: `
         <div class="relative w-screen h-screen bg-gray-900 text-gray-100 font-sans overflow-hidden">
@@ -59,12 +61,19 @@ export default {
 
             <!-- Login Screen -->
             <div v-if="!player" class="absolute inset-0 bg-gray-900 flex items-center justify-center z-50">
-                <div class="text-center">
+                <div class="text-center bg-gray-800 p-8 rounded-lg border border-gray-700 shadow-2xl">
                     <h1 class="text-6xl font-bold text-yellow-500 mb-8">⚔️ Auto RPG</h1>
-                    <button @click="createPlayer" class="bg-blue-600 hover:bg-blue-500 px-8 py-4 rounded text-2xl font-bold text-white shadow-lg animate-bounce">
+                    <div class="mb-4">
+                        <input v-model="playerName" type="text" placeholder="Enter Hero Name" 
+                            class="bg-gray-700 text-white px-4 py-2 rounded text-xl w-full border border-gray-600 focus:border-blue-500 outline-none"
+                            @keyup.enter="createPlayer">
+                    </div>
+                    <button @click="createPlayer" 
+                        class="bg-blue-600 hover:bg-blue-500 px-8 py-4 rounded text-2xl font-bold text-white shadow-lg w-full transition-transform active:scale-95"
+                        :disabled="!playerName">
                         Start Adventure
                     </button>
-                    <div class="mt-4 text-gray-500">Press Start to Create or Load Hero</div>
+                    <div class="mt-4 text-gray-500 text-sm">Enter a unique name to start or resume.</div>
                 </div>
             </div>
 
@@ -73,6 +82,7 @@ export default {
             <MissionsModal :isOpen="showMissions" @close="showMissions = false" />
             <AttributesModal :isOpen="showAttributes" @close="showAttributes = false" />
             <RewardsModal :isOpen="showRewards" @close="showRewards = false" />
+            <InspectModal :isOpen="!!inspectedPlayer" :player="inspectedPlayer" @close="inspectedPlayer = null" />
 
             <!-- Toasts -->
             <div class="fixed bottom-24 right-4 flex flex-col gap-2 pointer-events-none z-50">
@@ -94,9 +104,11 @@ export default {
         const showAttributes = ref(false);
         const showRewards = ref(false);
         const logContainer = ref(null);
+        const playerName = ref('');
 
         const createPlayer = async () => {
-            await api.createPlayer();
+            if (!playerName.value) return;
+            await api.createPlayer(playerName.value);
         };
 
         // Auto-scroll logs
@@ -127,6 +139,7 @@ export default {
                 showMissions.value = false;
                 showAttributes.value = false;
                 showRewards.value = false;
+                inspectedPlayer.value = null;
             }
             // Hotkeys 1-5
             if (['1', '2', '3', '4', '5'].includes(e.key)) {
@@ -156,7 +169,9 @@ export default {
             showMissions,
             showAttributes,
             showRewards,
-            logContainer
+            logContainer,
+            playerName,
+            inspectedPlayer
         };
     }
 };

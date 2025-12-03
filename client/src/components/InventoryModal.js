@@ -1,5 +1,5 @@
-import { ref, computed } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.js';
-import { player } from '../state.js';
+import { ref, computed, watch } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.js';
+import { player, autoSellInferior } from '../state.js';
 import { api, getRarityColor } from '../services/api.js';
 
 export default {
@@ -27,10 +27,13 @@ export default {
 
                 <!-- Right: Bag -->
                 <div class="w-2/3 bg-gray-800 rounded-lg border border-gray-700 p-4 flex flex-col">
-                    <h2 class="text-xl font-bold text-white mb-4 border-b border-gray-600 pb-2 flex justify-between">
-                        <span>Inventory</span>
-                        <span class="text-sm text-gray-400">{{ player.inventory.length }} items</span>
-                    </h2>
+                    <div class="flex justify-between items-center mb-4 border-b border-gray-600 pb-2">
+                        <h2 class="text-xl font-bold text-white">Inventory <span class="text-sm text-gray-400">({{ player.inventory.length }})</span></h2>
+                        <label class="flex items-center gap-2 text-xs text-gray-300 cursor-pointer select-none">
+                            <input type="checkbox" v-model="autoSellInferior" class="form-checkbox bg-gray-700 border-gray-600 rounded text-blue-500">
+                            Auto-sell inferior
+                        </label>
+                    </div>
                     <div class="flex-1 overflow-y-auto grid grid-cols-5 gap-2 content-start">
                         <div v-for="item in player.inventory" :key="item.id"
                             class="bg-gray-700 p-2 rounded border border-gray-600 hover:border-gray-400 cursor-pointer relative group flex flex-col items-center justify-center h-24"
@@ -82,6 +85,13 @@ export default {
     setup() {
         const selectedItem = ref(null);
 
+        watch(autoSellInferior, (val) => {
+            localStorage.setItem('rpg_auto_sell', val);
+            if (val) {
+                api.triggerAutoSell();
+            }
+        });
+
         const isEquipped = (item) => {
             return Object.values(player.value.equipment).some(e => e && e.id === item.id);
         };
@@ -108,7 +118,8 @@ export default {
             isEquipped,
             useItem,
             equipItem,
-            sellItem
+            sellItem,
+            autoSellInferior
         };
     }
 };
