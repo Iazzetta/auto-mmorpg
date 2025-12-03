@@ -895,11 +895,11 @@
                     // Add equipment (simplified, assuming equipment doesn't change during attribute allocation)
                     if (player.value.equipment) {
                         Object.values(player.value.equipment).forEach(item => {
-                            if (item) {
-                                hp += item.stats.hp;
-                                atk += item.stats.atk;
-                                def += item.stats.def_;
-                                speed += item.stats.speed;
+                            if (item && item.stats) {
+                                hp += (item.stats.hp || 0);
+                                atk += (item.stats.atk || 0);
+                                def += (item.stats.def_ || 0);
+                                speed += (item.stats.speed || 0);
                             }
                         });
                     }
