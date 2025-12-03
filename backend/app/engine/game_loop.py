@@ -67,6 +67,7 @@ class GameLoop:
                                     "log": log,
                                     "player_hp": player.stats.hp,
                                     "monster_hp": monster.stats.hp,
+                                    "monster_max_hp": monster.stats.max_hp,
                                     "monster_name": monster.name
                                 })
 

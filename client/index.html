@@ -74,7 +74,7 @@
                                     class="text-purple-400">{{ player.xp }} / {{ player.next_level_xp }}</span></div>
                             <div class="w-full bg-gray-800 rounded-full h-2">
                                 <div class="bg-purple-600 h-2 rounded-full transition-all duration-300"
-                                    :style="{ width: (player.xp / player.next_level_xp * 100) + '%' }"></div>
+                                    :style="{ width: ((player.xp / (player.next_level_xp || 100)) * 100) + '%' }"></div>
                             </div>
                         </div>
                         <div class="flex justify-between"><span class="text-gray-400">Gold:</span> <span
@@ -589,9 +589,15 @@
 
                     if (data.monster_hp > 0) {
                         if (!currentMonster.value) {
-                            currentMonster.value = { name: data.monster_name || "Enemy", hp: data.monster_hp, max_hp: 50, level: 1 };
-                        } else if (data.monster_name) {
-                            currentMonster.value.name = data.monster_name;
+                            currentMonster.value = {
+                                name: data.monster_name || "Enemy",
+                                hp: data.monster_hp,
+                                max_hp: data.monster_max_hp || 50,
+                                level: 1
+                            };
+                        } else {
+                            if (data.monster_name) currentMonster.value.name = data.monster_name;
+                            if (data.monster_max_hp) currentMonster.value.max_hp = data.monster_max_hp;
                         }
                         currentMonster.value.hp = data.monster_hp;
                     } else {
@@ -599,6 +605,7 @@
                     }
 
                     const log = data.log;
+                    if (log.next_level_xp) player.value.next_level_xp = log.next_level_xp;
                     if (log.player_dmg) addLog(`You hit monster for ${log.player_dmg} dmg.`, 'text-blue-300');
                     if (log.monster_dmg) addLog(`Monster hit you for ${log.monster_dmg} dmg.`, 'text-red-300');
                     if (log.monster_died) {
@@ -1254,7 +1261,8 @@
                     availablePoints,
                     hasChanges,
                     toasts,
-                    handleMapClick
+                    handleMapClick,
+                    projectedStats
                 };
             }
         }).mount('#app');

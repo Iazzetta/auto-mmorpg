@@ -46,6 +46,8 @@ class CombatService:
                 log['level_up'] = True
                 log['new_level'] = player.level
             
+            log['next_level_xp'] = player.next_level_xp # Send next level XP for UI update
+            
             # Update Mission Progress
             CombatService.check_mission_progress(player, monster)
             

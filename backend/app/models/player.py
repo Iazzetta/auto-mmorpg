@@ -31,6 +31,7 @@ class Player(BaseModel):
     p_class: PlayerClass
     level: int = 1
     xp: int = 0
+    next_level_xp: int = 100
     stats: PlayerStats
     current_map_id: str
     position: Position
@@ -106,10 +107,8 @@ class Player(BaseModel):
         # Clamp current HP
         if self.stats.hp > self.stats.max_hp:
             self.stats.hp = self.stats.max_hp
+        
+        self.next_level_xp = self.level * 100
             
     def get_combat_power(self) -> int:
         return self.stats.atk + self.stats.def_ + (self.stats.max_hp // 10)
-
-    @property
-    def next_level_xp(self) -> int:
-        return self.level * 100
