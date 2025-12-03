@@ -31,6 +31,10 @@ class CombatService:
         if monster.stats.hp <= 0:
             monster.stats.hp = 0
             log['monster_died'] = True
+            log['xp_gained'] = monster.xp_reward
+            
+            # Award XP
+            player.xp += monster.xp_reward
             
             # Update Mission Progress
             CombatService.check_mission_progress(player, monster)

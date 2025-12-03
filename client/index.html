@@ -549,6 +549,7 @@
                     if (log.monster_died) {
                         addLog(`Monster died! Gained ${log.xp_gained} XP.`, 'text-yellow-400');
                         refreshPlayer();
+                        // Continue farming
                         setTimeout(checkAndAct, 2000);
                     }
                     if (log.player_died) {
@@ -857,6 +858,10 @@
                     if (clickedMonster) {
                         addLog(`Moving to attack ${clickedMonster.name}...`);
                         stopAutoFarm();
+
+                        // Set specific target for auto-farm continuation
+                        selectedTargetId.value = clickedMonster.template_id;
+                        isFreeFarming.value = true; // Enable auto-farm for this target type
 
                         // Convert click (pixels) to Game Coordinates (0-100)
                         const clickGameX = (x / mapCanvas.value.width) * 100;
