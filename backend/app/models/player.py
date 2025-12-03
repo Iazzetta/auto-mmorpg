@@ -23,6 +23,7 @@ class PlayerStats(BaseModel):
     atk: int
     def_: int
     speed: float
+    attack_cooldown: float = 1.0
 
 class Player(BaseModel):
     id: str
@@ -70,7 +71,7 @@ class Player(BaseModel):
     def calculate_stats(self):
         # Base stats from attributes
         # STR: +2 Atk
-        # AGI: +1 Atk, +1 Def, +0.02 Speed
+        # AGI: +1 Atk, +1 Def, +0.02 Speed, -0.05 Cooldown
         # VIT: +10 HP, +1 Def
         # INT: +0.5 Atk (Magic), +0.5 Def (Magic Res) - Simplified for now
         
@@ -83,6 +84,10 @@ class Player(BaseModel):
         base_atk = 5 + (str_val * 2) + (agi_val * 1)
         base_def = 0 + (vit_val * 1) + (agi_val * 1)
         base_speed = 20.0 + (agi_val * 0.1)
+        
+        # Cooldown: Starts at 1.5s, reduced by AGI. Min 0.3s.
+        base_cooldown = 1.5 - (agi_val * 0.05)
+        if base_cooldown < 0.3: base_cooldown = 0.3
 
         # Add Equipment Bonuses
         for slot, item in self.equipment.items():
@@ -96,6 +101,7 @@ class Player(BaseModel):
         self.stats.atk = int(base_atk)
         self.stats.def_ = int(base_def)
         self.stats.speed = round(base_speed, 2)
+        self.stats.attack_cooldown = round(base_cooldown, 2)
         
         # Clamp current HP
         if self.stats.hp > self.stats.max_hp:

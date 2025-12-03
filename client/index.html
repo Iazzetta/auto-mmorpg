@@ -320,6 +320,54 @@
                             Confirm
                         </button>
                     </div>
+
+                    <!-- Projected Stats -->
+                    <div class="mt-4 border-t border-gray-600 pt-4">
+                        <h4 class="font-bold text-gray-400 text-sm mb-2">Projected Stats</h4>
+                        <div class="grid grid-cols-2 gap-2 text-xs">
+                            <div class="flex justify-between">
+                                <span>HP:</span>
+                                <span
+                                    :class="projectedStats.hp > player.stats.max_hp ? 'text-green-400' : 'text-gray-300'">
+                                    {{ player.stats.max_hp }} <span v-if="projectedStats.hp > player.stats.max_hp">-> {{
+                                        projectedStats.hp }}</span>
+                                </span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Atk:</span>
+                                <span
+                                    :class="projectedStats.atk > player.stats.atk ? 'text-green-400' : 'text-gray-300'">
+                                    {{ player.stats.atk }} <span v-if="projectedStats.atk > player.stats.atk">-> {{
+                                        projectedStats.atk }}</span>
+                                </span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Def:</span>
+                                <span
+                                    :class="projectedStats.def > player.stats.def_ ? 'text-green-400' : 'text-gray-300'">
+                                    {{ player.stats.def_ }} <span v-if="projectedStats.def > player.stats.def_">-> {{
+                                        projectedStats.def }}</span>
+                                </span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Speed:</span>
+                                <span
+                                    :class="projectedStats.speed > player.stats.speed ? 'text-green-400' : 'text-gray-300'">
+                                    {{ player.stats.speed }} <span v-if="projectedStats.speed > player.stats.speed">->
+                                        {{ projectedStats.speed }}</span>
+                                </span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Cooldown:</span>
+                                <span
+                                    :class="projectedStats.cooldown < player.stats.attack_cooldown ? 'text-green-400' : 'text-gray-300'">
+                                    {{ player.stats.attack_cooldown }}s <span
+                                        v-if="projectedStats.cooldown < player.stats.attack_cooldown">-> {{
+                                        projectedStats.cooldown }}s</span>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -555,8 +603,8 @@
                     if (log.monster_died) {
                         addLog(`Monster died! Gained ${log.xp_gained} XP.`, 'text-yellow-400');
                         refreshPlayer();
-                        // Continue farming
-                        setTimeout(checkAndAct, 2000);
+                        // Continue farming FAST
+                        setTimeout(checkAndAct, 200);
                     }
                     if (log.player_died) {
                         addLog(`You died! Respawning at Castle...`, 'text-red-600 font-bold');
@@ -828,6 +876,41 @@
                 const hasChanges = Vue.computed(() => {
                     if (!player.value) return false;
                     return JSON.stringify(tempAttributes.value) !== JSON.stringify(player.value.attributes);
+                });
+
+                const projectedStats = Vue.computed(() => {
+                    if (!player.value) return {};
+                    const str = tempAttributes.value.str;
+                    const agi = tempAttributes.value.agi;
+                    const vit = tempAttributes.value.vit;
+
+                    // Base calculations matching backend
+                    let hp = 100 + (vit * 10);
+                    let atk = 5 + (str * 2) + (agi * 1);
+                    let def = 0 + (vit * 1) + (agi * 1);
+                    let speed = 20.0 + (agi * 0.1);
+                    let cooldown = 1.5 - (agi * 0.05);
+                    if (cooldown < 0.3) cooldown = 0.3;
+
+                    // Add equipment (simplified, assuming equipment doesn't change during attribute allocation)
+                    if (player.value.equipment) {
+                        Object.values(player.value.equipment).forEach(item => {
+                            if (item) {
+                                hp += item.stats.hp;
+                                atk += item.stats.atk;
+                                def += item.stats.def_;
+                                speed += item.stats.speed;
+                            }
+                        });
+                    }
+
+                    return {
+                        hp: Math.floor(hp),
+                        atk: Math.floor(atk),
+                        def: Math.floor(def),
+                        speed: parseFloat(speed.toFixed(2)),
+                        cooldown: parseFloat(cooldown.toFixed(2))
+                    };
                 });
 
                 const adjustAttribute = (attr, amount) => {

@@ -45,8 +45,9 @@ class GameLoop:
         # Iterate over all players
         for player_id, player in self.state_manager.players.items():
             if player.state == PlayerState.COMBAT:
-                # Combat Cooldown (e.g., 1.0s attack speed)
-                attack_cooldown = 1.0 # Could be based on stats
+                # Combat Cooldown (Dynamic based on stats)
+                attack_cooldown = getattr(player.stats, 'attack_cooldown', 1.0)
+                
                 if not hasattr(player, 'last_attack_time'):
                     player.last_attack_time = 0
                 
