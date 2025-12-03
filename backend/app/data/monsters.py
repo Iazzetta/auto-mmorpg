@@ -10,7 +10,7 @@ MONSTERS = {
         "respawn_time": 20.0,
         "drops": [
             {"item_id": "item_sword_01", "chance": 0.1},
-            {"item_id": "item_potion_hp_01", "chance": 0.2}
+            {"item_id": "item_potion_hp_01", "chance": 1}
         ]
     },
     "mob_goblin_01": {
@@ -22,7 +22,8 @@ MONSTERS = {
         "respawn_time": 25.0,
         "drops": [
             {"item_id": "item_sword_01", "chance": 0.15},
-            {"item_id": "item_armor_01", "chance": 0.1}
+            {"item_id": "item_armor_01", "chance": 0.1},
+            {"item_id": "item_potion_hp_01", "chance": 1}
         ]
     },
     "mob_bear_01": {
@@ -35,7 +36,7 @@ MONSTERS = {
         "drops": [
             {"item_id": "item_sword_02", "chance": 0.2},
             {"item_id": "item_sword_03", "chance": 0.1},
-            {"item_id": "item_potion_hp_01", "chance": 0.5}
+            {"item_id": "item_potion_hp_01", "chance": 1}
         ]
     }
 }

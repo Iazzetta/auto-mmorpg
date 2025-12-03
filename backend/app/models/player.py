@@ -62,6 +62,10 @@ class Player(BaseModel):
         ItemSlot.HAND_OFF: None
     }
     gold: int = 0
+    
+    # Runtime State (Not persisted usually, but needed for game loop)
+    last_attack_time: float = 0.0
+    last_movement_broadcast: float = 0.0
 
     def calculate_stats(self):
         # Base stats from attributes
