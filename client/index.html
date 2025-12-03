@@ -346,6 +346,7 @@
                 let autoFarmInterval = null;
                 let mapDrawInterval = null;
                 let mapMonsters = []; // Cache for map visualization
+                const pendingAttackId = ref(null); // For move-then-attack logic
 
                 // Watch for map changes to fetch monsters
                 watch(() => player.value?.current_map_id, (newMapId) => {
@@ -371,7 +372,7 @@
 
                 // Visual Interpolation
                 const playerVisualPos = ref({ x: 0, y: 0 });
-                const targetVisualPos = ref({ x: 0, y: 0 });
+                const destinationMarker = ref(null); // {x, y, time} for visual feedback
 
                 const API_URL = 'http://localhost:8000';
                 const WS_URL = 'ws://localhost:8000/ws';
@@ -481,6 +482,25 @@
                             player.value.position.x = data.x;
                             player.value.position.y = data.y;
                             player.value.current_map_id = data.map_id;
+
+                            // Check pending attack
+                            if (pendingAttackId.value) {
+                                const target = mapMonsters.find(m => m.id === pendingAttackId.value);
+                                if (target) {
+                                    // Use real game coordinates
+                                    const mx_game = target.position_x;
+                                    const my_game = target.position_y;
+
+                                    const dx = player.value.position.x - mx_game;
+                                    const dy = player.value.position.y - my_game;
+                                    const dist = Math.sqrt(dx * dx + dy * dy);
+
+                                    if (dist < 5) { // Close enough (5 units)
+                                        attackMonster(pendingAttackId.value);
+                                        pendingAttackId.value = null;
+                                    }
+                                }
+                            }
                         }
                     };
 
@@ -601,6 +621,8 @@
                         autoFarmInterval = null;
                     }
                     isFreeFarming.value = false;
+                    pendingAttackId.value = null; // Clear pending attacks
+                    destinationMarker.value = null; // Clear visual marker
                 };
 
                 const checkAndAct = async () => {
@@ -788,17 +810,17 @@
                     const y = e.clientY - rect.top;
 
                     // Check for monsters click
-                    // Simple distance check
                     let clickedMonster = null;
                     for (const m of mapMonsters) {
                         if (m.hp <= 0) continue;
-                        // Calculate visual position (same hash logic as draw)
-                        const hash = m.id.split('').reduce((a, b) => a + b.charCodeAt(0), 0);
-                        const mx = (hash % (mapCanvas.value.width - 20)) + 10;
-                        const my = ((hash * 13) % (mapCanvas.value.height - 20)) + 10;
+
+                        // Use real coordinates
+                        // Game coords (0-100) -> Canvas coords
+                        const mx = (m.position_x / 100) * mapCanvas.value.width;
+                        const my = (m.position_y / 100) * mapCanvas.value.height;
 
                         const dist = Math.sqrt((x - mx) ** 2 + (y - my) ** 2);
-                        if (dist < 20) { // Hitbox
+                        if (dist < 20) { // Hitbox (visual pixels)
                             clickedMonster = m;
                             break;
                         }
@@ -806,34 +828,52 @@
 
                     if (clickedMonster) {
                         addLog(`Moving to attack ${clickedMonster.name}...`);
-                        // Simulate movement delay then attack
-                        // In real game, backend handles pathing. Here we fake it.
-                        targetVisualPos.value = { x, y }; // For visual lerp
-
-                        // Stop any auto-farm
                         stopAutoFarm();
 
-                        // Attack
-                        await attackMonster(clickedMonster.id);
+                        // Convert click (pixels) to Game Coordinates (0-100)
+                        const clickGameX = (x / mapCanvas.value.width) * 100;
+                        const clickGameY = (y / mapCanvas.value.height) * 100;
+
+                        // Calculate angle in Game Coordinates
+                        const angle = Math.atan2(clickGameY - player.value.position.y, clickGameX - player.value.position.x);
+
+                        // Stop slightly before the monster (e.g., 4 game units)
+                        const stopDist = 4;
+                        const targetX = clickGameX - Math.cos(angle) * stopDist;
+                        const targetY = clickGameY - Math.sin(angle) * stopDist;
+
+                        // Set visual marker
+                        destinationMarker.value = { x: (targetX / 100) * mapCanvas.value.width, y: (targetY / 100) * mapCanvas.value.height, time: Date.now() };
+
+                        await movePlayerTo(player.value.current_map_id, targetX, targetY);
+
+                        pendingAttackId.value = clickedMonster.id;
                         return;
                     }
 
                     // Check Portals (Edges)
-                    // Forest <-> Castle
-                    // If in Castle, Forest portal is Right Edge
-                    // If in Forest, Castle portal is Left Edge
                     if (player.value.current_map_id === 'map_castle_1') {
                         if (x > mapCanvas.value.width - 50) {
-                            addLog("Traveling to Forest...", "text-blue-400");
-                            await fetch(`${API_URL}/player/${player.value.id}/move?target_map_id=map_forest_1&x=0&y=0`, { method: 'POST' });
-                            refreshPlayer();
+                            addLog("Moving to Forest Portal...", "text-blue-400");
+                            // Move to the edge (Portal location)
+                            await movePlayerTo(player.value.current_map_id, 95, 50);
                         }
                     } else if (player.value.current_map_id === 'map_forest_1') {
                         if (x < 50) {
-                            addLog("Returning to Castle...", "text-blue-400");
-                            await fetch(`${API_URL}/player/${player.value.id}/move?target_map_id=map_castle_1&x=0&y=0`, { method: 'POST' });
-                            refreshPlayer();
+                            addLog("Moving to Castle Portal...", "text-blue-400");
+                            // Move to the edge
+                            await movePlayerTo(player.value.current_map_id, 5, 50);
                         }
+                    } else {
+                        // Normal Move
+                        // Convert canvas coordinates to game coordinates (0-100)
+                        const gameX = (x / mapCanvas.value.width) * 100;
+                        const gameY = (y / mapCanvas.value.height) * 100;
+
+                        // Visual Marker
+                        destinationMarker.value = { x, y, time: Date.now() };
+
+                        movePlayerTo(player.value.current_map_id, gameX, gameY);
                     }
                 };
 
@@ -869,10 +909,7 @@
                     const px = player.value.position ? player.value.position.x : 0;
                     const py = player.value.position ? player.value.position.y : 0;
 
-                    const targetPx = (px / 100) * canvas.width;
-                    const targetPy = (py / 100) * canvas.height;
-                    playerVisualPos.value.x += (targetPx - playerVisualPos.value.x) * 0.1;
-                    playerVisualPos.value.y += (targetPy - playerVisualPos.value.y) * 0.1;
+
 
                     ctx.fill();
 
@@ -902,11 +939,10 @@
                         if (m.hp <= 0) return;
                         ctx.fillStyle = '#ef4444'; // red-500
                         ctx.beginPath();
-                        // Simple random position simulation since backend pos is static for now
-                        // Use hash of ID to keep it consistent but spread out
-                        const hash = m.id.split('').reduce((a, b) => a + b.charCodeAt(0), 0);
-                        const mx = (hash % (canvas.width - 20)) + 10;
-                        const my = ((hash * 13) % (canvas.height - 20)) + 10;
+
+                        // Use real coordinates
+                        const mx = (m.position_x / 100) * canvas.width;
+                        const my = (m.position_y / 100) * canvas.height;
 
                         ctx.arc(mx, my, 6, 0, Math.PI * 2);
                         ctx.fill();
@@ -917,35 +953,40 @@
                         ctx.fillText(m.name, mx - 10, my - 10);
                     });
 
+                    // Draw Destination Marker
+                    if (destinationMarker.value) {
+                        ctx.strokeStyle = '#fbbf24'; // yellow-400
+                        ctx.lineWidth = 2;
+                        const mx = destinationMarker.value.x;
+                        const my = destinationMarker.value.y;
+
+                        ctx.beginPath();
+                        ctx.moveTo(mx - 5, my - 5);
+                        ctx.lineTo(mx + 5, my + 5);
+                        ctx.moveTo(mx + 5, my - 5);
+                        ctx.lineTo(mx - 5, my + 5);
+                        ctx.stroke();
+
+                        // Fade out effect (optional, or just keep it until arrival)
+                        // For now, keep it.
+                    }
+
                     // Draw Player
                     ctx.fillStyle = '#22c55e'; // green-500
                     ctx.beginPath();
 
-                    // Interpolate visual position
-                    // Target is center unless moving
-                    let targetX = canvas.width / 2;
-                    let targetY = canvas.height / 2;
+                    // Interpolate visual position towards REAL backend position
+                    // We trust the backend.
+                    const targetPx = (px / 100) * canvas.width;
+                    const targetPy = (py / 100) * canvas.height;
 
-                    // If we clicked somewhere, move towards it visually
-                    if (targetVisualPos.value.x !== 0) {
-                        // Simple lerp
-                        playerVisualPos.value.x += (targetVisualPos.value.x - playerVisualPos.value.x) * 0.1;
-                        playerVisualPos.value.y += (targetVisualPos.value.y - playerVisualPos.value.y) * 0.1;
+                    // Smooth lerp
+                    playerVisualPos.value.x += (targetPx - playerVisualPos.value.x) * 0.2;
+                    playerVisualPos.value.y += (targetPy - playerVisualPos.value.y) * 0.2;
 
-                        // Reset if close
-                        if (Math.abs(playerVisualPos.value.x - targetVisualPos.value.x) < 1) {
-                            targetVisualPos.value = { x: 0, y: 0 };
-                        }
-                    } else {
-                        // Return to center
-                        playerVisualPos.value.x += (targetX - playerVisualPos.value.x) * 0.1;
-                        playerVisualPos.value.y += (targetY - playerVisualPos.value.y) * 0.1;
-                    }
-
-                    // Initialize if 0
-                    if (playerVisualPos.value.x === 0) {
-                        playerVisualPos.value = { x: targetX, y: targetY };
-                    }
+                    // If very close, snap
+                    if (Math.abs(playerVisualPos.value.x - targetPx) < 0.5) playerVisualPos.value.x = targetPx;
+                    if (Math.abs(playerVisualPos.value.y - targetPy) < 0.5) playerVisualPos.value.y = targetPy;
 
                     ctx.arc(playerVisualPos.value.x, playerVisualPos.value.y, 6, 0, Math.PI * 2);
                     ctx.fill();
@@ -963,8 +1004,7 @@
                 };
 
                 const selectMission = (id) => {
-                    if (isMissionCompleted(id)) return;
-                    if (player.value.active_mission_id === id) return; // Already active
+                    // Allow re-selecting active mission to restart/focus
                     startMission(id);
                 };
 

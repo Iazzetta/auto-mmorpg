@@ -35,6 +35,7 @@ class Player(BaseModel):
     position: Position
     state: PlayerState = PlayerState.IDLE
     target_monster_id: Optional[str] = None
+    target_position: Optional[Position] = None
     
     # Mission System
     active_mission_id: Optional[str] = None

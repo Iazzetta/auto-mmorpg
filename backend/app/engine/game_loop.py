@@ -45,6 +45,50 @@ class GameLoop:
                         # Monster gone
                         player.state = PlayerState.IDLE
                         player.target_monster_id = None
+            
+            elif player.state == PlayerState.MOVING and player.target_position:
+                # Calculate movement
+                # Speed is units per second. Tick is 0.5s.
+                dt = 0.5
+                reached = MovementService.move_towards_target(player, player.target_position.x, player.target_position.y, dt)
+                
+                # Broadcast movement
+                if hasattr(self, 'connection_manager'):
+                    await self.connection_manager.broadcast({
+                        "type": "player_moved",
+                        "player_id": player.id,
+                        "x": player.position.x,
+                        "y": player.position.y,
+                        "map_id": player.current_map_id
+                    })
+                
+                if reached:
+                    player.state = PlayerState.IDLE
+                    player.target_position = None
+                    
+                    # Check for Portal / Map Transition
+                    # Castle (map_castle_1) -> Forest (Right Edge > 90)
+                    # Portal is at Y=50, radius ~15. Range 35-65.
+                    if player.current_map_id == "map_castle_1" and player.position.x >= 90 and 35 <= player.position.y <= 65:
+                        player.current_map_id = "map_forest_1"
+                        player.position.x = 5 # Enter from Left
+                        player.position.y = 50
+                    
+                    # Forest (map_forest_1) -> Castle (Left Edge < 10)
+                    elif player.current_map_id == "map_forest_1" and player.position.x <= 10 and 35 <= player.position.y <= 65:
+                        player.current_map_id = "map_castle_1"
+                        player.position.x = 95 # Enter from Right
+                        player.position.y = 50
+                        
+                    # Broadcast final position (especially if map changed)
+                    if hasattr(self, 'connection_manager'):
+                        await self.connection_manager.broadcast({
+                            "type": "player_moved",
+                            "player_id": player.id,
+                            "x": player.position.x,
+                            "y": player.position.y,
+                            "map_id": player.current_map_id
+                        })
         
         # Check Respawns
         to_respawn = self.state_manager.check_respawns()
@@ -77,9 +121,4 @@ class GameLoop:
                         "monster": new_monster.dict()
                     })
             
-            elif player.state == PlayerState.MOVING:
-                # Handle movement
-                # We need a target position. 
-                # For this prototype, let's assume we move towards (10, 10) if moving
-                # In a real app, we'd have a destination queue.
-                pass
+
