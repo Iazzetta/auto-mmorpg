@@ -61,10 +61,22 @@
                                 class="capitalize">{{ player.p_class }}</span></div>
                         <div class="flex justify-between"><span class="text-gray-400">Level:</span> <span>{{
                                 player.level }}</span></div>
-                        <div class="flex justify-between"><span class="text-gray-400">XP:</span> <span>{{ player.xp
-                                }}</span></div>
-                        <div class="flex justify-between"><span class="text-gray-400">HP:</span> <span
-                                class="text-red-400">{{ player.stats.hp }} / {{ player.stats.max_hp }}</span></div>
+                        <div class="flex flex-col gap-1">
+                            <div class="flex justify-between text-xs"><span class="text-gray-400">HP:</span> <span
+                                    class="text-red-400">{{ player.stats.hp }} / {{ player.stats.max_hp }}</span></div>
+                            <div class="w-full bg-gray-800 rounded-full h-2">
+                                <div class="bg-red-600 h-2 rounded-full transition-all duration-300"
+                                    :style="{ width: (player.stats.hp / player.stats.max_hp * 100) + '%' }"></div>
+                            </div>
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <div class="flex justify-between text-xs"><span class="text-gray-400">XP:</span> <span
+                                    class="text-purple-400">{{ player.xp }} / {{ player.next_level_xp }}</span></div>
+                            <div class="w-full bg-gray-800 rounded-full h-2">
+                                <div class="bg-purple-600 h-2 rounded-full transition-all duration-300"
+                                    :style="{ width: (player.xp / player.next_level_xp * 100) + '%' }"></div>
+                            </div>
+                        </div>
                         <div class="flex justify-between"><span class="text-gray-400">Gold:</span> <span
                                 class="text-yellow-300">{{ player.gold }} 💰</span></div>
                         <div class="flex justify-between border-t border-gray-600 pt-1 mt-1">
@@ -522,7 +534,9 @@
 
                     if (data.monster_hp > 0) {
                         if (!currentMonster.value) {
-                            currentMonster.value = { name: "Enemy", hp: data.monster_hp, max_hp: 50, level: 1 };
+                            currentMonster.value = { name: data.monster_name || "Enemy", hp: data.monster_hp, max_hp: 50, level: 1 };
+                        } else if (data.monster_name) {
+                            currentMonster.value.name = data.monster_name;
                         }
                         currentMonster.value.hp = data.monster_hp;
                     } else {
@@ -632,7 +646,21 @@
                     // 1. Check Map
                     if (player.value.current_map_id !== selectedMapId.value) {
                         addLog(`Moving to ${formatMapName(selectedMapId.value)}...`);
-                        await movePlayerTo(selectedMapId.value, 0, 0);
+
+                        // Determine Portal Coordinates
+                        let targetX = 0;
+                        let targetY = 0;
+
+                        if (player.value.current_map_id === 'map_castle_1' && selectedMapId.value === 'map_forest_1') {
+                            targetX = 95; targetY = 50;
+                        } else if (player.value.current_map_id === 'map_forest_1' && selectedMapId.value === 'map_castle_1') {
+                            targetX = 5; targetY = 50;
+                        } else {
+                            // Default fallback (should not happen in this prototype)
+                            targetX = 50; targetY = 50;
+                        }
+
+                        await movePlayerTo(player.value.current_map_id, targetX, targetY);
                         await refreshPlayer();
                         return;
                     }

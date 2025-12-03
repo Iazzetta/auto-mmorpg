@@ -99,3 +99,7 @@ class Player(BaseModel):
             
     def get_combat_power(self) -> int:
         return self.stats.atk + self.stats.def_ + (self.stats.max_hp // 10)
+
+    @property
+    def next_level_xp(self) -> int:
+        return self.level * 100
