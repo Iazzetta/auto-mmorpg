@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException
 from ..engine.state_manager import StateManager
 import json
 import os
+from ..data.items import ITEMS
 
 router = APIRouter()
 state_manager = StateManager.get_instance()
@@ -25,3 +26,7 @@ async def save_world_data(data: dict):
         return {"message": "World saved"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/editor/items")
+async def get_items():
+    return [{"id": k, "name": v["name"]} for k, v in ITEMS.items()]

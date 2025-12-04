@@ -207,23 +207,41 @@
             "id": "rat",
             "name": "Giant Rat",
             "level": 1,
-            "m_type": "melee",
+            "m_type": "passive",
             "stats": {
-                "hp": 30,
-                "max_hp": 30,
-                "atk": 5,
-                "def_": 0,
+                "hp": 300,
+                "max_hp": 300,
+                "atk": 20,
+                "def_": 15,
                 "speed": 10,
                 "attack_cooldown": 2
             },
             "xp_reward": 10,
-            "drops": []
+            "drops": [
+                {
+                    "item_id": "item_sword_03",
+                    "chance": 0.1
+                },
+                {
+                    "item_id": "item_sword_02",
+                    "chance": 0.3
+                },
+                {
+                    "item_id": "item_armor_01",
+                    "chance": 0.1
+                },
+                {
+                    "item_id": "item_potion_hp_01",
+                    "chance": 0.4
+                }
+            ],
+            "respawn_time": 3
         },
         "goblin": {
             "id": "goblin",
             "name": "Goblin",
             "level": 3,
-            "m_type": "melee",
+            "m_type": "passive",
             "stats": {
                 "hp": 60,
                 "max_hp": 60,
@@ -233,13 +251,23 @@
                 "attack_cooldown": 1.8
             },
             "xp_reward": 25,
-            "drops": []
+            "drops": [
+                {
+                    "item_id": "item_sword_02",
+                    "chance": 0.1
+                },
+                {
+                    "item_id": "item_potion_hp_01",
+                    "chance": 0.5
+                }
+            ],
+            "respawn_time": 4
         },
         "wolf": {
             "id": "wolf",
             "name": "Dire Wolf",
             "level": 5,
-            "m_type": "melee",
+            "m_type": "aggressive",
             "stats": {
                 "hp": 100,
                 "max_hp": 100,
@@ -249,13 +277,23 @@
                 "attack_cooldown": 1.5
             },
             "xp_reward": 50,
-            "drops": []
+            "drops": [
+                {
+                    "item_id": "item_sword_01",
+                    "chance": 0.1
+                },
+                {
+                    "item_id": "item_potion_hp_01",
+                    "chance": 0.5
+                }
+            ],
+            "respawn_time": 2
         },
         "bear": {
             "id": "bear",
             "name": "Cave Bear",
             "level": 8,
-            "m_type": "melee",
+            "m_type": "passive",
             "stats": {
                 "hp": 250,
                 "max_hp": 250,
@@ -265,7 +303,17 @@
                 "attack_cooldown": 2.5
             },
             "xp_reward": 120,
-            "drops": []
+            "drops": [
+                {
+                    "item_id": "item_sword_02",
+                    "chance": 0.1
+                },
+                {
+                    "item_id": "item_potion_hp_01",
+                    "chance": 0.3
+                }
+            ],
+            "respawn_time": 8
         }
     }
 }
