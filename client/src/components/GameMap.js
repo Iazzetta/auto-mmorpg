@@ -167,12 +167,16 @@ export default {
 
                 // Move towards monster
                 const angle = Math.atan2(clickedMonster.position_y - player.value.position.y, clickedMonster.position_x - player.value.position.x);
-                const stopDist = 3;
+                const stopDist = 0;
                 const targetX = clickedMonster.position_x - Math.cos(angle) * stopDist;
                 const targetY = clickedMonster.position_y - Math.sin(angle) * stopDist;
 
-                destinationMarker.value = { x: targetX, y: targetY, time: Date.now(), isGameCoords: true };
                 await api.movePlayer(player.value.current_map_id, targetX, targetY);
+                destinationMarker.value = { x: targetX, y: targetY, isGameCoords: true };
+
+                setTimeout(() => {
+                    destinationMarker.value = null;
+                }, 500);
                 pendingAttackId.value = clickedMonster.id;
                 return;
             }
@@ -294,7 +298,7 @@ export default {
 
             // Monsters
             mapMonsters.value.forEach(m => {
-                if (m.hp <= 0) return;
+                if (!m.stats || m.stats.hp <= 0) return;
                 ctx.fillStyle = '#ef4444';
                 ctx.beginPath();
                 const mx = m.position_x * GAME_SCALE;
@@ -302,17 +306,22 @@ export default {
                 ctx.arc(mx, my, 0.5 * GAME_SCALE, 0, Math.PI * 2); // Radius 0.5 units
                 ctx.fill();
 
-                // Name
-                ctx.fillStyle = '#9ca3af';
-                ctx.font = `${10 / ZOOM}px sans-serif`;
-                ctx.textAlign = 'center';
-                ctx.fillText(m.name, mx, my - 0.8 * GAME_SCALE);
+                // HP Bar (Background)
+                ctx.fillStyle = '#1f2937'; // Darker gray, less intrusive
+                const barWidth = 1.5 * GAME_SCALE;
+                const barHeight = 0.2 * GAME_SCALE;
+                const barY = my - 1.0 * GAME_SCALE;
+                ctx.fillRect(mx - barWidth / 2, barY, barWidth, barHeight);
 
-                // HP Bar
-                ctx.fillStyle = '#374151';
-                ctx.fillRect(mx - 1 * GAME_SCALE, my - 1.2 * GAME_SCALE, 2 * GAME_SCALE, 0.3 * GAME_SCALE);
+                // HP Bar (Foreground)
                 ctx.fillStyle = '#ef4444';
-                ctx.fillRect(mx - 1 * GAME_SCALE, my - 1.2 * GAME_SCALE, (m.hp / m.max_hp) * 2 * GAME_SCALE, 0.3 * GAME_SCALE);
+                ctx.fillRect(mx - barWidth / 2, barY, (m.stats.hp / m.stats.max_hp) * barWidth, barHeight);
+
+                // Name (Above HP Bar)
+                ctx.fillStyle = '#e5e7eb'; // Lighter text
+                ctx.font = `bold ${10 / ZOOM}px sans-serif`;
+                ctx.textAlign = 'center';
+                ctx.fillText(m.name, mx, barY - 0.2 * GAME_SCALE);
             });
 
             // Other Players
@@ -382,7 +391,8 @@ export default {
 
         watch(() => player.value?.current_map_id, async (newMapId) => {
             if (newMapId) {
-                api.fetchMapMonsters(newMapId);
+                stopAutoFarm(); // Stop auto-farm on map change/load
+                await api.fetchMapMonsters(newMapId);
                 api.fetchMapPlayers(newMapId);
 
                 // Fetch Map Data
@@ -391,7 +401,7 @@ export default {
                     if (res.ok) currentMapData.value = await res.json();
                 } catch (e) { console.error(e); }
 
-                setTimeout(checkAndAct, 500); // Wait a bit for state to settle
+                // Removed automatic checkAndAct to prevent auto-attack on load
             }
         }, { immediate: true });
 

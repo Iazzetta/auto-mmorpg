@@ -189,6 +189,14 @@ export const connectWebSocket = (playerId) => {
         if (data.type === 'combat_update') {
             handleCombatUpdate(data);
         } else if (data.type === 'monster_respawn') {
+            // Add to local list if on same map
+            if (data.monster.map_id === player.value.current_map_id) {
+                // Check if already exists to avoid duplicates
+                if (!mapMonsters.value.find(m => m.id === data.monster.id)) {
+                    mapMonsters.value.push(data.monster);
+                }
+            }
+
             if (shouldAttack(data.monster)) {
                 addLog(`A ${data.monster.name} has appeared!`, 'text-orange-300');
             }
@@ -277,6 +285,15 @@ const handleCombatUpdate = (data) => {
     }
 
     const log = data.log;
+
+    // Update map monster HP
+    if (data.monster_id && data.monster_hp !== undefined) {
+        const m = mapMonsters.value.find(m => m.id === data.monster_id);
+        if (m && m.stats) {
+            m.stats.hp = data.monster_hp;
+        }
+    }
+
     if (log.next_level_xp) player.value.next_level_xp = log.next_level_xp;
     if (log.player_dmg) addLog(`You hit monster for ${log.player_dmg} dmg.`, 'text-blue-300');
     if (log.monster_dmg) addLog(`Monster hit you for ${log.monster_dmg} dmg.`, 'text-red-300');

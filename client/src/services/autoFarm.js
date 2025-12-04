@@ -86,7 +86,7 @@ const findAndAttackTarget = async () => {
         if (dist > 5) {
             addLog(`Moving to ${target.name}...`, 'text-blue-300');
             const angle = Math.atan2(my - py, mx - px);
-            const stopDist = 4;
+            const stopDist = 0;
             const tx = mx - Math.cos(angle) * stopDist;
             const ty = my - Math.sin(angle) * stopDist;
 

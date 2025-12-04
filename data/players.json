@@ -531,24 +531,24 @@
     "name": "zero",
     "p_class": "warrior",
     "level": 35,
-    "xp": 37865,
+    "xp": 53915,
     "next_level_xp": 122500,
     "stats": {
-      "hp": 194,
+      "hp": 200,
       "max_hp": 200,
       "atk": 290,
       "def_": 123,
       "speed": 21.0,
       "attack_cooldown": 1.0
     },
-    "current_map_id": "map_dungeon_1",
+    "current_map_id": "map_forest_1",
     "respawn_map_id": "map_castle_1",
     "position": {
-      "x": 90.65743281887966,
-      "y": 27.163246330314482
+      "x": 72.10804956952208,
+      "y": 28.292307246285574
     },
-    "state": "combat",
-    "target_monster_id": "giant_rat_101b7385",
+    "state": "idle",
+    "target_monster_id": "wolf_c383633d",
     "target_position": null,
     "active_mission_id": null,
     "mission_progress": 0,
@@ -577,7 +577,7 @@
         },
         "power_score": 10,
         "icon": "\ud83e\uddea",
-        "quantity": 1309,
+        "quantity": 1396,
         "stackable": true
       },
       {
@@ -3011,6 +3011,310 @@
         "icon": "\u2694\ufe0f",
         "quantity": 1,
         "stackable": false
+      },
+      {
+        "id": "item_sword_03_786a2b60",
+        "name": "High Sword",
+        "type": "weapon",
+        "slot": "hand_main",
+        "rarity": "rare",
+        "stats": {
+          "strength": 5,
+          "intelligence": 0,
+          "atk": 15,
+          "def_": 0,
+          "speed": 0.0,
+          "hp": 0
+        },
+        "power_score": 20,
+        "icon": "\u2694\ufe0f",
+        "quantity": 1,
+        "stackable": false
+      },
+      {
+        "id": "item_sword_03_4df2b38a",
+        "name": "High Sword",
+        "type": "weapon",
+        "slot": "hand_main",
+        "rarity": "rare",
+        "stats": {
+          "strength": 5,
+          "intelligence": 0,
+          "atk": 15,
+          "def_": 0,
+          "speed": 0.0,
+          "hp": 0
+        },
+        "power_score": 20,
+        "icon": "\u2694\ufe0f",
+        "quantity": 1,
+        "stackable": false
+      },
+      {
+        "id": "item_sword_03_eb39304f",
+        "name": "High Sword",
+        "type": "weapon",
+        "slot": "hand_main",
+        "rarity": "rare",
+        "stats": {
+          "strength": 5,
+          "intelligence": 0,
+          "atk": 15,
+          "def_": 0,
+          "speed": 0.0,
+          "hp": 0
+        },
+        "power_score": 20,
+        "icon": "\u2694\ufe0f",
+        "quantity": 1,
+        "stackable": false
+      },
+      {
+        "id": "item_sword_03_fffa15f2",
+        "name": "High Sword",
+        "type": "weapon",
+        "slot": "hand_main",
+        "rarity": "rare",
+        "stats": {
+          "strength": 5,
+          "intelligence": 0,
+          "atk": 15,
+          "def_": 0,
+          "speed": 0.0,
+          "hp": 0
+        },
+        "power_score": 20,
+        "icon": "\u2694\ufe0f",
+        "quantity": 1,
+        "stackable": false
+      },
+      {
+        "id": "item_sword_03_449b4a6d",
+        "name": "High Sword",
+        "type": "weapon",
+        "slot": "hand_main",
+        "rarity": "rare",
+        "stats": {
+          "strength": 5,
+          "intelligence": 0,
+          "atk": 15,
+          "def_": 0,
+          "speed": 0.0,
+          "hp": 0
+        },
+        "power_score": 20,
+        "icon": "\u2694\ufe0f",
+        "quantity": 1,
+        "stackable": false
+      },
+      {
+        "id": "item_sword_03_dafca413",
+        "name": "High Sword",
+        "type": "weapon",
+        "slot": "hand_main",
+        "rarity": "rare",
+        "stats": {
+          "strength": 5,
+          "intelligence": 0,
+          "atk": 15,
+          "def_": 0,
+          "speed": 0.0,
+          "hp": 0
+        },
+        "power_score": 20,
+        "icon": "\u2694\ufe0f",
+        "quantity": 1,
+        "stackable": false
+      },
+      {
+        "id": "item_sword_03_f65e3da7",
+        "name": "High Sword",
+        "type": "weapon",
+        "slot": "hand_main",
+        "rarity": "rare",
+        "stats": {
+          "strength": 5,
+          "intelligence": 0,
+          "atk": 15,
+          "def_": 0,
+          "speed": 0.0,
+          "hp": 0
+        },
+        "power_score": 20,
+        "icon": "\u2694\ufe0f",
+        "quantity": 1,
+        "stackable": false
+      },
+      {
+        "id": "item_sword_03_0fc8677d",
+        "name": "High Sword",
+        "type": "weapon",
+        "slot": "hand_main",
+        "rarity": "rare",
+        "stats": {
+          "strength": 5,
+          "intelligence": 0,
+          "atk": 15,
+          "def_": 0,
+          "speed": 0.0,
+          "hp": 0
+        },
+        "power_score": 20,
+        "icon": "\u2694\ufe0f",
+        "quantity": 1,
+        "stackable": false
+      },
+      {
+        "id": "item_sword_03_fd9ae02b",
+        "name": "High Sword",
+        "type": "weapon",
+        "slot": "hand_main",
+        "rarity": "rare",
+        "stats": {
+          "strength": 5,
+          "intelligence": 0,
+          "atk": 15,
+          "def_": 0,
+          "speed": 0.0,
+          "hp": 0
+        },
+        "power_score": 20,
+        "icon": "\u2694\ufe0f",
+        "quantity": 1,
+        "stackable": false
+      },
+      {
+        "id": "item_sword_03_f51a7d28",
+        "name": "High Sword",
+        "type": "weapon",
+        "slot": "hand_main",
+        "rarity": "rare",
+        "stats": {
+          "strength": 5,
+          "intelligence": 0,
+          "atk": 15,
+          "def_": 0,
+          "speed": 0.0,
+          "hp": 0
+        },
+        "power_score": 20,
+        "icon": "\u2694\ufe0f",
+        "quantity": 1,
+        "stackable": false
+      },
+      {
+        "id": "item_sword_01_04222384",
+        "name": "Iron Sword",
+        "type": "weapon",
+        "slot": "hand_main",
+        "rarity": "common",
+        "stats": {
+          "strength": 0,
+          "intelligence": 0,
+          "atk": 5,
+          "def_": 0,
+          "speed": 0.0,
+          "hp": 0
+        },
+        "power_score": 5,
+        "icon": "\u2694\ufe0f",
+        "quantity": 1,
+        "stackable": false
+      },
+      {
+        "id": "item_sword_01_611cfd09",
+        "name": "Iron Sword",
+        "type": "weapon",
+        "slot": "hand_main",
+        "rarity": "common",
+        "stats": {
+          "strength": 0,
+          "intelligence": 0,
+          "atk": 5,
+          "def_": 0,
+          "speed": 0.0,
+          "hp": 0
+        },
+        "power_score": 5,
+        "icon": "\u2694\ufe0f",
+        "quantity": 1,
+        "stackable": false
+      },
+      {
+        "id": "item_sword_01_bc18e59e",
+        "name": "Iron Sword",
+        "type": "weapon",
+        "slot": "hand_main",
+        "rarity": "common",
+        "stats": {
+          "strength": 0,
+          "intelligence": 0,
+          "atk": 5,
+          "def_": 0,
+          "speed": 0.0,
+          "hp": 0
+        },
+        "power_score": 5,
+        "icon": "\u2694\ufe0f",
+        "quantity": 1,
+        "stackable": false
+      },
+      {
+        "id": "item_sword_01_cc2aa888",
+        "name": "Iron Sword",
+        "type": "weapon",
+        "slot": "hand_main",
+        "rarity": "common",
+        "stats": {
+          "strength": 0,
+          "intelligence": 0,
+          "atk": 5,
+          "def_": 0,
+          "speed": 0.0,
+          "hp": 0
+        },
+        "power_score": 5,
+        "icon": "\u2694\ufe0f",
+        "quantity": 1,
+        "stackable": false
+      },
+      {
+        "id": "item_sword_01_8b253907",
+        "name": "Iron Sword",
+        "type": "weapon",
+        "slot": "hand_main",
+        "rarity": "common",
+        "stats": {
+          "strength": 0,
+          "intelligence": 0,
+          "atk": 5,
+          "def_": 0,
+          "speed": 0.0,
+          "hp": 0
+        },
+        "power_score": 5,
+        "icon": "\u2694\ufe0f",
+        "quantity": 1,
+        "stackable": false
+      },
+      {
+        "id": "item_sword_01_f6c5b094",
+        "name": "Iron Sword",
+        "type": "weapon",
+        "slot": "hand_main",
+        "rarity": "common",
+        "stats": {
+          "strength": 0,
+          "intelligence": 0,
+          "atk": 5,
+          "def_": 0,
+          "speed": 0.0,
+          "hp": 0
+        },
+        "power_score": 5,
+        "icon": "\u2694\ufe0f",
+        "quantity": 1,
+        "stackable": false
       }
     ],
     "equipment": {
@@ -3057,11 +3361,11 @@
       },
       "hand_off": null
     },
-    "gold": 49185,
+    "gold": 53066,
     "diamonds": 0,
     "is_admin": true,
-    "last_attack_time": 1764877207.360644,
-    "last_movement_broadcast": 1764877174.6100411
+    "last_attack_time": 1764878496.231305,
+    "last_movement_broadcast": 1764878500.247761
   },
   "3061a6fb-550b-4d1a-9200-12c104dd7efa": {
     "id": "3061a6fb-550b-4d1a-9200-12c104dd7efa",
