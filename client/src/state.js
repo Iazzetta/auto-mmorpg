@@ -21,9 +21,9 @@ export const nextLevelXp = computed(() => player.value?.next_level_xp || 100);
 
 // Helpers
 export const addLog = (message, color = 'text-gray-300') => {
-    if (logs.value.length > 0 && logs.value[0].message === message) return;
-    logs.value.unshift({ time: new Date().toLocaleTimeString(), message, color, id: Date.now() });
-    if (logs.value.length > 50) logs.value = logs.value.slice(0, 50);
+    if (logs.value.length > 0 && logs.value[logs.value.length - 1].message === message) return;
+    logs.value.push({ time: new Date().toLocaleTimeString(), message, color, id: Date.now() });
+    if (logs.value.length > 50) logs.value.shift();
 };
 
 let toastCounter = 0;

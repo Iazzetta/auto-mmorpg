@@ -15,6 +15,21 @@ export default {
             <!-- 3D Container -->
             <div ref="container" class="w-full h-full cursor-crosshair block"></div>
 
+            <!-- Entity Labels -->
+            <div v-for="label in entityLabels" :key="label.id" 
+                class="absolute pointer-events-none transform -translate-x-1/2 -translate-y-full flex flex-col items-center z-10"
+                :style="{ left: label.x + 'px', top: label.y + 'px' }">
+                <span class="text-[10px] font-bold shadow-black drop-shadow-md whitespace-nowrap"
+                    :class="label.isPlayer ? 'text-green-300' : 'text-red-300'">
+                    {{ label.name }}
+                </span>
+                <div v-if="label.max_hp > 0" class="w-8 h-1 bg-gray-700 mt-0.5 rounded-full overflow-hidden border border-black/50">
+                    <div class="h-full transition-all duration-300"
+                        :class="label.isPlayer ? 'bg-green-500' : 'bg-red-500'"
+                        :style="{ width: (label.hp / label.max_hp * 100) + '%' }"></div>
+                </div>
+            </div>
+
             <!-- Enemy Status Overlay -->
             <div v-if="currentMonster"
                 class="absolute top-16 right-4 bg-gray-800 p-2 rounded border border-red-900 shadow-xl z-20 w-48 pointer-events-none">
@@ -28,6 +43,15 @@ export default {
                 </div>
             </div>
 
+            <!-- Auto Attack Toggle Button -->
+            <div class="absolute bottom-24 left-4 z-50 pointer-events-auto">
+                <button @click="toggleAutoAttack" 
+                    class="flex items-center gap-2 px-4 py-2 rounded-full font-bold text-white shadow-lg border-2 transition-all text-xs"
+                    :class="isFreeFarming ? 'bg-red-600 border-red-400 hover:bg-red-500' : 'bg-green-600 border-green-400 hover:bg-green-500'">
+                    <span>{{ isFreeFarming ? 'Stop Auto (Space)' : 'Start Auto (Space)' }}</span>
+                </button>
+            </div>
+            
             <!-- Interaction Button -->
             <div v-if="canEnterPortal && !isFreeFarming" class="absolute bottom-24 left-1/2 transform -translate-x-1/2 z-50">
                 <button @click="confirmPortal" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-6 rounded-full shadow-lg border-2 border-blue-400 animate-bounce">
@@ -47,6 +71,7 @@ export default {
         const canEnterPortal = ref(false);
         const pendingPortal = ref(null);
         const currentMapData = ref(null);
+        const entityLabels = ref([]);
 
         // Three.js variables
         let scene, camera, renderer, raycaster, mouse;
@@ -283,7 +308,7 @@ export default {
             // 4. Portals
             if (currentMapData.value && currentMapData.value.portals) {
                 currentMapData.value.portals.forEach(portal => {
-                    const pid = `portal_${portal.id} `;
+                    const pid = `portal_${portal.id}`;
                     validIds.add(pid);
                     let mesh = meshes.get(pid);
                     if (!mesh) {
@@ -380,6 +405,21 @@ export default {
             }
         };
 
+        const toggleAutoAttack = () => {
+            if (isFreeFarming.value) {
+                stopAutoFarm();
+                addLog("Auto Attack Disabled", "text-red-400");
+            } else {
+                // Sync selected map to current map so we farm HERE
+                if (player.value) {
+                    selectedMapId.value = player.value.current_map_id;
+                }
+                isFreeFarming.value = true;
+                checkAndAct();
+                addLog("Auto Attack Enabled", "text-green-400");
+            }
+        };
+
         const handleKeyDown = (e) => {
             if (e.key === 'w' || e.key === 'W') keys.w = true;
             if (e.key === 'a' || e.key === 'A') keys.a = true;
@@ -389,14 +429,7 @@ export default {
                 if (canEnterPortal.value) confirmPortal();
             }
             if (e.key === ' ') {
-                if (isFreeFarming.value) {
-                    stopAutoFarm();
-                    addLog("Auto Attack Disabled", "text-red-400");
-                } else {
-                    isFreeFarming.value = true;
-                    checkAndAct();
-                    addLog("Auto Attack Enabled", "text-green-400");
-                }
+                toggleAutoAttack();
             }
         };
 
@@ -405,6 +438,28 @@ export default {
             if (e.key === 'a' || e.key === 'A') keys.a = false;
             if (e.key === 's' || e.key === 'S') keys.s = false;
             if (e.key === 'd' || e.key === 'D') keys.d = false;
+        };
+
+        const toScreenPosition = (obj) => {
+            if (!container.value) return { x: 0, y: 0 };
+
+            const vector = new THREE.Vector3();
+            obj.updateMatrixWorld();
+            vector.setFromMatrixPosition(obj.matrixWorld);
+
+            // Offset based on type
+            const offset = obj.userData.type === 'player' ? 2.5 : 2.0;
+            vector.y += offset;
+
+            vector.project(camera);
+
+            const widthHalf = 0.5 * container.value.clientWidth;
+            const heightHalf = 0.5 * container.value.clientHeight;
+
+            return {
+                x: (vector.x * widthHalf) + widthHalf,
+                y: -(vector.y * heightHalf) + heightHalf
+            };
         };
 
         let frameCount = 0;
@@ -416,6 +471,30 @@ export default {
             updateMovement();
             checkPortals();
             updateEntities();
+
+            // Update Labels
+            const labels = [];
+            for (const [id, mesh] of meshes) {
+                if (!mesh.visible) continue;
+                // Skip portals for labels
+                if (id.toString().startsWith('portal_')) continue;
+
+                const pos = toScreenPosition(mesh);
+                const entity = mesh.userData.entity;
+                if (entity) {
+                    labels.push({
+                        id: id,
+                        x: pos.x,
+                        y: pos.y,
+                        name: entity.name,
+                        hp: entity.stats ? entity.stats.hp : (entity.hp || 0),
+                        max_hp: entity.stats ? entity.stats.max_hp : (entity.max_hp || 0),
+                        type: mesh.userData.type,
+                        isPlayer: mesh.userData.type === 'player'
+                    });
+                }
+            }
+            entityLabels.value = labels;
 
             renderer.render(scene, camera);
 

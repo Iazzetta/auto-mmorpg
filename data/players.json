@@ -3682,35 +3682,35 @@
     "name": "shinaider",
     "p_class": "warrior",
     "level": 3,
-    "xp": 700,
+    "xp": 760,
     "next_level_xp": 900,
     "stats": {
-      "hp": 193,
+      "hp": 185,
       "max_hp": 200,
-      "atk": 53,
-      "def_": 24,
+      "atk": 58,
+      "def_": 30,
       "speed": 21.0,
       "attack_cooldown": 1.0
     },
-    "current_map_id": "map_forest_2",
+    "current_map_id": "map_dungeon_1",
     "respawn_map_id": "map_castle_1",
     "position": {
       "x": 50.0,
       "y": 50.0
     },
     "state": "idle",
-    "target_monster_id": "wolf_984061a9",
+    "target_monster_id": "rat_4ffbfa50",
     "target_position": null,
-    "active_mission_id": null,
+    "active_mission_id": "mission_01",
     "mission_progress": 0,
     "completed_missions": [],
     "attributes": {
       "str": 13,
-      "agi": 12,
+      "agi": 17,
       "vit": 10,
       "ini": 10
     },
-    "attribute_points": 5,
+    "attribute_points": 0,
     "inventory": [
       {
         "id": "potion_hp_9104fdf0",
@@ -3728,110 +3728,15 @@
         },
         "power_score": 10,
         "icon": "\ud83d\udce6",
-        "quantity": 20,
+        "quantity": 25,
         "stackable": true
-      },
-      {
-        "id": "6a32dbdf-c510-40c2-90da-9e7305edbf17",
-        "name": "Starter Sword",
-        "type": "weapon",
-        "slot": "hand_main",
-        "rarity": "common",
-        "stats": {
-          "strength": 0,
-          "intelligence": 0,
-          "atk": 3,
-          "def_": 0,
-          "speed": 0.0,
-          "hp": 0
-        },
-        "power_score": 3,
-        "icon": "\ud83d\udce6",
-        "quantity": 1,
-        "stackable": false
-      },
-      {
-        "id": "item_sword_02_e799a508",
-        "name": "Steel Sword",
-        "type": "weapon",
-        "slot": "hand_main",
-        "rarity": "uncommon",
-        "stats": {
-          "strength": 2,
-          "intelligence": 0,
-          "atk": 10,
-          "def_": 0,
-          "speed": 0.0,
-          "hp": 0
-        },
-        "power_score": 12,
-        "icon": "\u2694\ufe0f",
-        "quantity": 1,
-        "stackable": false
-      },
-      {
-        "id": "item_sword_02_15550f1e",
-        "name": "Steel Sword",
-        "type": "weapon",
-        "slot": "hand_main",
-        "rarity": "uncommon",
-        "stats": {
-          "strength": 2,
-          "intelligence": 0,
-          "atk": 10,
-          "def_": 0,
-          "speed": 0.0,
-          "hp": 0
-        },
-        "power_score": 12,
-        "icon": "\u2694\ufe0f",
-        "quantity": 1,
-        "stackable": false
-      },
-      {
-        "id": "item_sword_01_cb5169df",
-        "name": "Iron Sword",
-        "type": "weapon",
-        "slot": "hand_main",
-        "rarity": "common",
-        "stats": {
-          "strength": 0,
-          "intelligence": 0,
-          "atk": 5,
-          "def_": 0,
-          "speed": 0.0,
-          "hp": 0
-        },
-        "power_score": 5,
-        "icon": "\u2694\ufe0f",
-        "quantity": 1,
-        "stackable": false
-      },
-      {
-        "id": "item_sword_01_cfba7c27",
-        "name": "Iron Sword",
-        "type": "weapon",
-        "slot": "hand_main",
-        "rarity": "common",
-        "stats": {
-          "strength": 0,
-          "intelligence": 0,
-          "atk": 5,
-          "def_": 0,
-          "speed": 0.0,
-          "hp": 0
-        },
-        "power_score": 5,
-        "icon": "\u2694\ufe0f",
-        "quantity": 1,
-        "stackable": false
       }
     ],
     "equipment": {
       "head": null,
       "chest": {
-        "id": "db4a4fd9-317f-482a-823c-3a1fe29d65f1",
-        "name": "Starter Tunic",
+        "id": "item_armor_01_7d4a07db",
+        "name": "Leather Tunic",
         "type": "armor",
         "slot": "chest",
         "rarity": "common",
@@ -3839,12 +3744,12 @@
           "strength": 0,
           "intelligence": 0,
           "atk": 0,
-          "def_": 2,
+          "def_": 3,
           "speed": 0.0,
           "hp": 0
         },
-        "power_score": 2,
-        "icon": "\ud83d\udce6",
+        "power_score": 3,
+        "icon": "\ud83c\udfbd",
         "quantity": 1,
         "stackable": false
       },
@@ -3871,10 +3776,10 @@
       },
       "hand_off": null
     },
-    "gold": 1211,
+    "gold": 1734,
     "diamonds": 0,
     "is_admin": false,
-    "last_attack_time": 1764881343.102025,
-    "last_movement_broadcast": 1764881387.8892748
+    "last_attack_time": 1764882183.978621,
+    "last_movement_broadcast": 1764882236.150744
   }
 }
