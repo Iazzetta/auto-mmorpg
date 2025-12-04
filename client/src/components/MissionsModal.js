@@ -45,17 +45,14 @@ export default {
                                 class="bg-green-600 hover:bg-green-500 text-white font-bold py-1 px-4 rounded animate-pulse">
                                 Claim Reward
                             </button>
-                            <button v-if="player.active_mission_id !== id && !isMissionCompleted(id)" @click.stop="startMission(id)"
-                                class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-1 px-4 rounded">
-                                Start Mission
-                            </button>
+
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     `,
-    setup() {
+    setup(props, { emit }) {
         const fetchMissions = async () => {
             const res = await fetch(`http://localhost:8000/content/missions`);
             availableMissions.value = await res.json();
@@ -72,7 +69,9 @@ export default {
         };
 
         const selectMission = (id) => {
-            // Just highlight or expand details if needed
+            if (player.value.active_mission_id !== id && !isMissionCompleted(id)) {
+                startMission(id);
+            }
         };
 
         const isMissionCompleted = (id) => {
@@ -121,6 +120,7 @@ export default {
                 selectedTargetId.value = mission.target_monster_id;
 
                 startAutoFarm();
+                emit('close');
             } catch (e) {
                 console.error(e);
                 addLog("Error starting mission.", "text-red-500");

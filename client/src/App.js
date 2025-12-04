@@ -128,7 +128,7 @@ export default {
             if (e.key === 'm' || e.key === 'M') {
                 showMissions.value = !showMissions.value;
             }
-            if (e.key === 's' || e.key === 'S') {
+            if (e.key === 'p' || e.key === 'P') {
                 showAttributes.value = !showAttributes.value;
             }
             if (e.key === 'r' || e.key === 'R') {

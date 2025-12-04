@@ -104,19 +104,8 @@ class GameLoop:
                     player.state = PlayerState.IDLE
                     player.target_position = None
                     
-                    # Check for Portal / Map Transition
-                    # Castle (map_castle_1) -> Forest (Right Edge > 90)
-                    # Portal is at Y=50, radius ~15. Range 35-65.
-                    if player.current_map_id == "map_castle_1" and player.position.x >= 90 and 35 <= player.position.y <= 65:
-                        player.current_map_id = "map_forest_1"
-                        player.position.x = 5 # Enter from Left
-                        player.position.y = 50
-                    
-                    # Forest (map_forest_1) -> Castle (Left Edge < 10)
-                    elif player.current_map_id == "map_forest_1" and player.position.x <= 10 and 35 <= player.position.y <= 65:
-                        player.current_map_id = "map_castle_1"
-                        player.position.x = 95 # Enter from Right
-                        player.position.y = 50
+                    # Portal logic removed from here. Map switching is now explicit via move_player endpoint.
+
                         
                     # Broadcast final position (especially if map changed)
                     if hasattr(self, 'connection_manager'):

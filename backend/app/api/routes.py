@@ -151,19 +151,18 @@ async def move_player(player_id: str, target_map_id: str, x: float, y: float):
     if not player:
         raise HTTPException(status_code=404, detail="Player not found")
     
-    # Set target position for pathfinding/movement loop
+    # Explicit Map Switch (Portal)
+    if target_map_id != player.current_map_id:
+        player.current_map_id = target_map_id
+        player.position.x = x
+        player.position.y = y
+        player.state = PlayerState.IDLE
+        player.target_position = None
+        return {"message": "Map switched", "map_id": target_map_id, "position": player.position}
+
+    # Normal Movement
     player.target_position = Position(x=x, y=y)
     player.state = PlayerState.MOVING
-    
-    # If switching maps is intended, we might need to handle that after arrival.
-    # But the frontend sends target_map_id. 
-    # If target_map_id is different, we assume the movement is TOWARDS the portal to that map.
-    # We can store the "pending map transition" or just let the loop handle it based on coordinates.
-    # For now, let's store the intended map transition in a temporary field or just rely on the loop checking coordinates.
-    # Let's add a 'target_map_id' to player? Or just infer it.
-    # Simpler: The frontend tells us to move to (X,Y). If (X,Y) is a portal, the loop switches map.
-    # The 'target_map_id' param here might be redundant if we strictly follow "move to X,Y then warp".
-    # However, to be safe, let's store it if we need to know WHERE to warp.
     
     return {"message": "Moving", "target": player.target_position}
 

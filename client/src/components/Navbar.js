@@ -63,9 +63,9 @@ export default {
                     <span>🎒</span>
                     <span class="hidden md:inline">Bag</span>
                 </button>
-                <button @click="$emit('open-attributes')" class="bg-gray-800 hover:bg-gray-700 border border-gray-600 px-3 py-2 rounded text-sm flex items-center gap-2 relative transition-all active:scale-95" title="Attributes (S)">
+                <button @click="$emit('open-attributes')" class="bg-gray-800 hover:bg-gray-700 border border-gray-600 px-3 py-2 rounded text-sm flex items-center gap-2 relative transition-all active:scale-95" title="Character (P)">
                     <span>💪</span>
-                    <span class="hidden md:inline">Stats</span>
+                    <span class="hidden md:inline">Character</span>
                     <span v-if="player.attribute_points > 0" class="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-ping"></span>
                     <span v-if="player.attribute_points > 0" class="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span>
                 </button>
