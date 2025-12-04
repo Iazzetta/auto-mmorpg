@@ -82,9 +82,21 @@ class CombatService:
             player.state = PlayerState.IDLE
             player.target_monster_id = None
             player.stats.hp = player.stats.max_hp # Reset HP
-            player.current_map_id = "map_castle_1" # Warp to Castle
-            player.position.x = 0
-            player.position.y = 0
+            
+            # Respawn at designated map
+            from ..engine.state_manager import StateManager
+            sm = StateManager.get_instance()
+            respawn_map = sm.get_map(player.respawn_map_id)
+            
+            if respawn_map:
+                player.current_map_id = respawn_map.id
+                player.position.x = respawn_map.respawn_x
+                player.position.y = respawn_map.respawn_y
+            else:
+                # Fallback
+                player.current_map_id = "map_castle_1"
+                player.position.x = 50
+                player.position.y = 50
             
             return log
             

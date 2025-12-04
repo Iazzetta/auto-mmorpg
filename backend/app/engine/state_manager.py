@@ -16,10 +16,90 @@ class StateManager:
             cls._instance.map_monsters: Dict[str, List[str]] = {} 
         return cls._instance
 
+    def load_world_data(self):
+        import json
+        import os
+        from ..models.map import GameMap
+        
+        try:
+            # Adjust path relative to execution or use absolute
+            path = "backend/app/data/world.json"
+            if not os.path.exists(path):
+                print(f"World data not found at {path}")
+                return
+
+            with open(path, "r") as f:
+                data = json.load(f)
+                
+            self.world_data = data
+            self.monster_templates = data.get("monster_templates", {})
+            
+            # Load Maps
+            for map_id, map_data in data.get("maps", {}).items():
+                # Create GameMap object
+                gm = GameMap(
+                    id=map_id,
+                    name=map_data["name"],
+                    width=map_data["width"],
+                    height=map_data["height"],
+                    portals=map_data.get("portals", []),
+                    spawns=map_data.get("spawns", [])
+                )
+                self.maps[map_id] = gm
+                
+                # Initial Spawns
+                for spawn in map_data.get("spawns", []):
+                    self.spawn_monsters_from_template(spawn, map_id)
+                    
+        except Exception as e:
+            print(f"Failed to load world data: {e}")
+
+    def spawn_monsters_from_template(self, spawn_config, map_id):
+        import uuid
+        import random
+        from ..models.monster import Monster
+        
+        template_id = spawn_config["template_id"]
+        count = spawn_config["count"]
+        area = spawn_config["area"]
+        
+        template = self.monster_templates.get(template_id)
+        if not template:
+            return
+
+        for _ in range(count):
+            # Random position in area
+            # area: {x, y, radius}
+            # Simple random in circle
+            import math
+            angle = random.random() * 2 * math.pi
+            r = math.sqrt(random.random()) * area["radius"]
+            x = area["x"] + r * math.cos(angle)
+            y = area["y"] + r * math.sin(angle)
+            
+            # Clamp
+            x = max(0, min(100, x))
+            y = max(0, min(100, y))
+            
+            new_monster = Monster(
+                id=f"{template_id}_{uuid.uuid4().hex[:8]}",
+                template_id=template_id,
+                name=template["name"],
+                level=template["level"],
+                m_type=template["m_type"],
+                stats=template["stats"].copy(), # Important: Copy stats!
+                map_id=map_id,
+                position_x=x,
+                position_y=y,
+                xp_reward=template["xp_reward"]
+            )
+            self.add_monster(new_monster)
+
     @classmethod
     def get_instance(cls):
         if cls._instance is None:
             cls()
+            cls._instance.load_world_data() # Load data on init
         return cls._instance
 
     def add_player(self, player: Player):

@@ -2,4 +2,4 @@
 __pycache__
 venv
 server.log
-data
+data!backend/app/data/world.json

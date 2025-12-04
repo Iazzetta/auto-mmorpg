@@ -5,6 +5,7 @@ import random
 
 from ..models.player import Player, PlayerClass, PlayerStats, Position, PlayerState
 from ..models.item import Item, ItemType, ItemSlot, ItemRarity, ItemStats
+from ..models.map import GameMap
 from ..engine.state_manager import StateManager
 from ..services.inventory_service import InventoryService
 
@@ -33,7 +34,8 @@ async def create_player(name: str, p_class: PlayerClass):
         p_class=p_class,
         stats=stats,
         current_map_id="map_castle_1", # Default start
-        position=Position(x=0, y=0)
+        position=Position(x=0, y=0),
+        is_admin=(name.lower() == "admin")
     )
     
     state_manager.add_player(player)
@@ -151,8 +153,22 @@ async def move_player(player_id: str, target_map_id: str, x: float, y: float):
     if not player:
         raise HTTPException(status_code=404, detail="Player not found")
     
+    # Clamp coordinates
+    x = max(0, min(100, x))
+    y = max(0, min(100, y))
+
     # Explicit Map Switch (Portal)
     if target_map_id != player.current_map_id:
+        # Check requirements
+        target_map = state_manager.get_map(target_map_id)
+        if target_map:
+            if player.level < target_map.level_requirement:
+                return {"message": f"Level {target_map.level_requirement} required to enter {target_map.name}", "position": player.position}
+            
+            # Update Respawn if Castle
+            if target_map.type == "castle":
+                player.respawn_map_id = target_map_id
+        
         player.current_map_id = target_map_id
         player.position.x = x
         player.position.y = y
@@ -315,3 +331,10 @@ async def get_map_monsters(map_id: str):
 async def get_missions():
     from ..data.missions import MISSIONS
     return MISSIONS
+
+@router.get("/map/{map_id}", response_model=GameMap)
+async def get_map_details(map_id: str):
+    m = state_manager.get_map(map_id)
+    if not m:
+        raise HTTPException(404, "Map not found")
+    return m

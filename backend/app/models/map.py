@@ -2,15 +2,23 @@ from pydantic import BaseModel
 from typing import List, Dict
 
 class Portal(BaseModel):
-    to_map_id: str
+    id: str
     x: float
     y: float
+    target_map_id: str
+    target_x: float
+    target_y: float
+    color: str = "#ffffff"
+    label: str = "Portal"
 
 class GameMap(BaseModel):
     id: str
     name: str
-    min_level: int
-    portals: List[Portal] = []
-    # Simple bounds for the map
+    type: str = "field" # field, castle, dungeon
+    level_requirement: int = 0
     width: int = 100
     height: int = 100
+    respawn_x: float = 50.0
+    respawn_y: float = 50.0
+    portals: List[Portal] = []
+    spawns: List[Dict] = []

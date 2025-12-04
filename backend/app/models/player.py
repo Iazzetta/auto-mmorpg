@@ -35,6 +35,7 @@ class Player(BaseModel):
     next_level_xp: int = 100
     stats: PlayerStats
     current_map_id: str
+    respawn_map_id: str = "map_castle_1"
     position: Position
     state: PlayerState = PlayerState.IDLE
     target_monster_id: Optional[str] = None
@@ -66,6 +67,7 @@ class Player(BaseModel):
     }
     gold: int = 0
     diamonds: int = 0
+    is_admin: bool = False
     
     # Runtime State (Not persisted usually, but needed for game loop)
     last_attack_time: float = 0.0

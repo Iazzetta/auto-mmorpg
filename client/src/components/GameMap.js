@@ -48,6 +48,8 @@ export default {
         const keys = { w: false, a: false, s: false, d: false };
         let lastMoveTime = 0;
 
+        const currentMapData = ref(null);
+
         const canEnterPortal = ref(false);
         const pendingPortal = ref(null);
 
@@ -74,21 +76,29 @@ export default {
         };
 
         const checkPortals = () => {
-            if (!player.value) return;
+            if (!player.value || !currentMapData.value) return;
             const p = player.value.position;
-            let dist = 999;
-            let target = null;
 
-            if (player.value.current_map_id === 'map_castle_1') {
-                dist = Math.sqrt((p.x - 98) ** 2 + (p.y - 50) ** 2);
-                target = { name: 'Forest', targetMap: 'map_forest_1', x: 5, y: 50 };
-            } else if (player.value.current_map_id === 'map_forest_1') {
-                dist = Math.sqrt((p.x - 2) ** 2 + (p.y - 50) ** 2);
-                target = { name: 'Castle', targetMap: 'map_castle_1', x: 95, y: 50 };
+            let closestDist = 999;
+            let closestPortal = null;
+
+            if (currentMapData.value.portals) {
+                for (const portal of currentMapData.value.portals) {
+                    const dist = Math.sqrt((p.x - portal.x) ** 2 + (p.y - portal.y) ** 2);
+                    if (dist < closestDist) {
+                        closestDist = dist;
+                        closestPortal = portal;
+                    }
+                }
             }
 
-            if (dist < 1.5) {
-                pendingPortal.value = target;
+            if (closestPortal && closestDist < 1.5) {
+                pendingPortal.value = {
+                    name: closestPortal.label || 'Portal',
+                    targetMap: closestPortal.target_map_id,
+                    x: closestPortal.target_x,
+                    y: closestPortal.target_y
+                };
                 canEnterPortal.value = true;
 
                 // Auto-enter if free farming (mission/auto)
@@ -271,10 +281,14 @@ export default {
                 ctx.fillText(label, cx, cy + 2 * GAME_SCALE);
             };
 
-            if (player.value.current_map_id === 'map_castle_1') {
-                drawPortal(98, 50, '#2563eb', 'FOREST');
-            } else {
-                drawPortal(2, 50, '#9333ea', 'CASTLE');
+            if (currentMapData.value && currentMapData.value.portals) {
+                currentMapData.value.portals.forEach(portal => {
+                    let displayLabel = portal.label;
+                    if (!displayLabel || displayLabel === 'Portal') {
+                        displayLabel = formatMapName(portal.target_map_id) || 'PORTAL';
+                    }
+                    drawPortal(portal.x, portal.y, portal.color || '#fff', displayLabel);
+                });
             }
 
             // Monsters
@@ -365,14 +379,20 @@ export default {
             ctx.fillText(`FPS: ${fps.value}`, canvas.width - 55, 14);
         };
 
-        watch(() => player.value?.current_map_id, (newMapId) => {
+        watch(() => player.value?.current_map_id, async (newMapId) => {
             if (newMapId) {
                 api.fetchMapMonsters(newMapId);
                 api.fetchMapPlayers(newMapId);
-                // Trigger auto-farm check on map change
+
+                // Fetch Map Data
+                try {
+                    const res = await fetch(`http://localhost:8000/map/${newMapId}`);
+                    if (res.ok) currentMapData.value = await res.json();
+                } catch (e) { console.error(e); }
+
                 setTimeout(checkAndAct, 500); // Wait a bit for state to settle
             }
-        });
+        }, { immediate: true });
 
         onMounted(() => {
             window.addEventListener('keydown', handleKeyDown);

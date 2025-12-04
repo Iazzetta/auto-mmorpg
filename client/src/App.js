@@ -11,6 +11,7 @@ import MissionsModal from './components/MissionsModal.js';
 import AttributesModal from './components/AttributesModal.js';
 import RewardsModal from './components/RewardsModal.js';
 import InspectModal from './components/InspectModal.js';
+import MapEditor from './components/MapEditor.js';
 
 export default {
     components: {
@@ -21,7 +22,8 @@ export default {
         MissionsModal,
         AttributesModal,
         RewardsModal,
-        InspectModal
+        InspectModal,
+        MapEditor
     },
     template: `
         <div class="relative w-screen h-screen bg-gray-900 text-gray-100 font-sans overflow-hidden">
@@ -30,7 +32,7 @@ export default {
             <GameMap v-if="player" />
 
             <!-- UI Overlay (Pointer events none by default, auto for interactive elements) -->
-            <div class="absolute inset-0 pointer-events-none flex flex-col justify-between">
+            <div v-if="player" class="absolute inset-0 pointer-events-none flex flex-col justify-between">
                 
                 <!-- Navbar -->
                 <div class="pointer-events-auto">
@@ -45,7 +47,7 @@ export default {
                 <!-- Middle Section: Logs (Left Bottom) -->
                 <div class="flex-1 relative">
                     <!-- Log Terminal -->
-                    <div v-if="player" class="absolute bottom-24 left-4 w-96 h-48 bg-black/50 backdrop-blur-sm rounded p-2 overflow-y-auto pointer-events-auto font-mono text-xs space-y-1 border border-gray-700" ref="logContainer">
+                    <div class="absolute bottom-24 left-4 w-96 h-48 bg-black/50 backdrop-blur-sm rounded p-2 overflow-y-auto pointer-events-auto font-mono text-xs space-y-1 border border-gray-700" ref="logContainer">
                         <div v-for="(log, index) in logs" :key="index" class="break-words">
                             <span class="text-gray-500">[{{ log.time }}]</span>
                             <span :class="log.color">{{ log.message }}</span>
@@ -55,12 +57,15 @@ export default {
 
                 <!-- Footer / Hotbar -->
                 <div class="pointer-events-auto">
-                    <Hotbar v-if="player" />
+                    <Hotbar @open-editor="showEditor = true" />
                 </div>
             </div>
 
+            <!-- Editor -->
+            <MapEditor v-if="showEditor" @close="showEditor = false" />
+
             <!-- Login Screen -->
-            <div v-if="!player" class="absolute inset-0 bg-gray-900 flex items-center justify-center z-50">
+            <div v-if="!player && !showEditor" class="absolute inset-0 bg-gray-900 flex items-center justify-center z-50">
                 <div class="text-center bg-gray-800 p-8 rounded-lg border border-gray-700 shadow-2xl">
                     <h1 class="text-6xl font-bold text-yellow-500 mb-8">⚔️ Auto RPG</h1>
                     <div class="mb-4">
@@ -103,6 +108,7 @@ export default {
         const showMissions = ref(false);
         const showAttributes = ref(false);
         const showRewards = ref(false);
+        const showEditor = ref(false);
         const logContainer = ref(null);
         const playerName = ref('');
 
@@ -122,6 +128,8 @@ export default {
 
         // Key Bindings
         const handleKeydown = (e) => {
+            if (showEditor.value) return; // Disable game keys in editor
+
             if (e.key === 'e' || e.key === 'E') {
                 showInventory.value = !showInventory.value;
             }
@@ -140,11 +148,6 @@ export default {
                 showAttributes.value = false;
                 showRewards.value = false;
                 inspectedPlayer.value = null;
-            }
-            // Hotkeys 1-5
-            if (['1', '2', '3', '4', '5'].includes(e.key)) {
-                // Handled by Hotbar click usually, but we can map keys too
-                // For now, let's leave it to click or add logic later
             }
         };
 
@@ -169,6 +172,7 @@ export default {
             showMissions,
             showAttributes,
             showRewards,
+            showEditor,
             logContainer,
             playerName,
             inspectedPlayer
