@@ -1,4 +1,4 @@
-import { ref, computed } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.js';
+import { ref, computed, onMounted, onUnmounted } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.js';
 import { player } from '../state.js';
 import { api } from '../services/api.js';
 
@@ -46,6 +46,21 @@ export default {
                 await api.useItem(item.id);
             }
         };
+
+        const handleKeyDown = (e) => {
+            const key = parseInt(e.key);
+            if (!isNaN(key) && key >= 1 && key <= 5) {
+                useHotkey(key);
+            }
+        };
+
+        onMounted(() => {
+            window.addEventListener('keydown', handleKeyDown);
+        });
+
+        onUnmounted(() => {
+            window.removeEventListener('keydown', handleKeyDown);
+        });
 
         return {
             player,

@@ -4,7 +4,7 @@ MONSTERS = {
     "mob_wolf_01": {
         "name": "Dire Wolf",
         "level": 1,
-        "m_type": MonsterType.MELEE,
+        "m_type": MonsterType.AGGRESSIVE,
         "stats": MonsterStats(hp=50, max_hp=50, atk=8, def_=2, speed=1.5),
         "xp_reward": 20,
         "respawn_time": 1.0,
@@ -16,7 +16,7 @@ MONSTERS = {
     "mob_goblin_01": {
         "name": "Goblin Scout",
         "level": 2,
-        "m_type": MonsterType.MELEE,
+        "m_type": MonsterType.AGGRESSIVE,
         "stats": MonsterStats(hp=80, max_hp=80, atk=12, def_=3, speed=1.2),
         "xp_reward": 35,
         "respawn_time": 1.0,
@@ -29,7 +29,7 @@ MONSTERS = {
     "mob_bear_01": {
         "name": "Brown Bear",
         "level": 5,
-        "m_type": MonsterType.MELEE,
+        "m_type": MonsterType.AGGRESSIVE,
         "stats": MonsterStats(hp=200, max_hp=200, atk=25, def_=8, speed=0.8),
         "xp_reward": 100,
         "respawn_time": 1.0,

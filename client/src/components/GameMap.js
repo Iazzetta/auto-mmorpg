@@ -1,5 +1,5 @@
 import { ref, onMounted, onUnmounted, watch } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.js';
-import { player, mapMonsters, mapPlayers, destinationMarker, currentMonster, addLog, selectedTargetId, isFreeFarming, pendingAttackId, inspectedPlayer } from '../state.js';
+import { player, mapMonsters, mapPlayers, destinationMarker, currentMonster, addLog, selectedTargetId, isFreeFarming, pendingAttackId, inspectedPlayer, selectedMapId } from '../state.js';
 import { api } from '../services/api.js';
 import { stopAutoFarm, checkAndAct } from '../services/autoFarm.js';
 
@@ -162,6 +162,7 @@ export default {
                 addLog(`Moving to attack ${clickedMonster.name}...`);
                 stopAutoFarm();
                 selectedTargetId.value = clickedMonster.template_id;
+                selectedMapId.value = player.value.current_map_id; // Sync map for auto-farm
                 isFreeFarming.value = true;
 
                 // Move towards monster

@@ -65,7 +65,16 @@ const findAndAttackTarget = async () => {
     await api.fetchMapMonsters(player.value.current_map_id);
     const monsters = mapMonsters.value;
 
-    const target = monsters.find(m => shouldAttack(m));
+    const px = player.value.position.x;
+    const py = player.value.position.y;
+
+    const target = monsters
+        .filter(m => shouldAttack(m))
+        .sort((a, b) => {
+            const distA = (a.position_x - px) ** 2 + (a.position_y - py) ** 2;
+            const distB = (b.position_x - px) ** 2 + (b.position_y - py) ** 2;
+            return distA - distB;
+        })[0];
 
     if (target) {
         const mx = target.position_x;

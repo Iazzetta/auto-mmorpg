@@ -64,6 +64,7 @@ class GameLoop:
                                 await self.connection_manager.broadcast({
                                     "type": "combat_update",
                                     "player_id": player_id,
+                                    "monster_id": monster.id,
                                     "log": log,
                                     "player_hp": player.stats.hp,
                                     "monster_hp": monster.stats.hp,
@@ -122,11 +123,11 @@ class GameLoop:
         for data in to_respawn:
             # Create new monster instance
             import uuid
-            from ..data.monsters import MONSTERS
             from ..models.monster import Monster
             
-            template = MONSTERS.get(data['template_id'])
+            template = self.state_manager.monster_templates.get(data['template_id'])
             if template:
+                print(f"[DEBUG_RESPAWN] Creating monster instance for {data['template_id']}")
                 new_monster = Monster(
                     id=f"{data['template_id']}_{uuid.uuid4().hex[:8]}",
                     template_id=data['template_id'],

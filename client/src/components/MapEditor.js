@@ -172,6 +172,54 @@ export default {
 
                     <button @click="deleteMonster" class="w-full mt-8 bg-red-900/50 hover:bg-red-900 text-red-200 p-2 rounded text-sm mb-4 border border-red-800">Delete Monster</button>
                 </div>
+                </div>
+
+                <!-- Canvas Preview -->
+                <div class="flex-1 bg-black relative overflow-hidden flex items-center justify-center border-l border-gray-800"
+                     @mousemove="handleMouseMove" @mouseup="handleMouseUp" @mouseleave="handleMouseUp">
+                    
+                    <!-- Map Container (Responsive) -->
+                    <div v-if="selectedMapId && worldData.maps[selectedMapId]" 
+                         class="relative bg-gray-900 border border-gray-700 shadow-2xl" 
+                         style="width: 90%; aspect-ratio: 1/1; max-height: 90%;">
+                        
+                        <!-- Grid -->
+                        <div class="absolute inset-0 opacity-20 pointer-events-none" 
+                             style="background-image: linear-gradient(#444 1px, transparent 1px), linear-gradient(90deg, #444 1px, transparent 1px); background-size: 10% 10%;"></div>
+                        
+                        <!-- Portals -->
+                        <div v-for="(portal, idx) in worldData.maps[selectedMapId].portals" :key="'p'+idx"
+                             class="absolute w-4 h-4 rounded-full border-2 border-white transform -translate-x-1/2 -translate-y-1/2 cursor-move z-10 hover:scale-125 transition-transform"
+                             :style="{ left: portal.x + '%', top: portal.y + '%', backgroundColor: portal.color || '#fff' }"
+                             @mousedown.prevent="startDrag('portal', idx)"
+                             :title="portal.label || 'Portal'">
+                        </div>
+
+                        <!-- Spawns -->
+                        <div v-for="(spawn, idx) in worldData.maps[selectedMapId].spawns" :key="'s'+idx"
+                             class="absolute rounded-full border border-red-500 bg-red-500/20 transform -translate-x-1/2 -translate-y-1/2 cursor-move hover:bg-red-500/30 transition-colors"
+                             :style="{ 
+                                left: spawn.area.x + '%', 
+                                top: spawn.area.y + '%', 
+                                width: (spawn.area.radius * 2) + '%', 
+                                height: (spawn.area.radius * 2) + '%' 
+                             }"
+                             @mousedown.prevent="startDrag('spawn', idx)">
+                             <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-[10px] text-red-300 whitespace-nowrap font-bold drop-shadow-md pointer-events-none">
+                                {{ spawn.template_id }} ({{ spawn.count }})
+                             </div>
+                        </div>
+
+                        <!-- Respawn Point (Draggable) -->
+                        <div class="absolute w-4 h-4 bg-blue-500 border-2 border-white transform -translate-x-1/2 -translate-y-1/2 cursor-move z-20 hover:scale-125 transition-transform"
+                             :style="{ left: worldData.maps[selectedMapId].respawn_x + '%', top: worldData.maps[selectedMapId].respawn_y + '%' }"
+                             @mousedown.prevent="startDrag('respawn', 0)"
+                             title="Player Spawn">
+                             <div class="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs text-blue-300 font-bold whitespace-nowrap pointer-events-none">Player Spawn</div>
+                        </div>
+                    </div>
+                    <div v-else class="text-gray-500">Select a map to edit</div>
+                </div>
             </div>
         </div>
     `,
@@ -317,6 +365,40 @@ export default {
             worldData.value.monster_templates[selectedMonsterId.value].drops.splice(idx, 1);
         };
 
+        const dragging = ref(null);
+
+        const startDrag = (type, index) => {
+            dragging.value = { type, index };
+        };
+
+        const handleMouseMove = (e) => {
+            if (!dragging.value || !selectedMapId.value) return;
+
+            const container = e.currentTarget.querySelector('.relative'); // The map container
+            const rect = container.getBoundingClientRect();
+
+            // Calculate percentage (0-100)
+            const x = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
+            const y = Math.max(0, Math.min(100, ((e.clientY - rect.top) / rect.height) * 100));
+
+            const map = worldData.value.maps[selectedMapId.value];
+
+            if (dragging.value.type === 'portal') {
+                map.portals[dragging.value.index].x = Math.round(x);
+                map.portals[dragging.value.index].y = Math.round(y);
+            } else if (dragging.value.type === 'spawn') {
+                map.spawns[dragging.value.index].area.x = Math.round(x);
+                map.spawns[dragging.value.index].area.y = Math.round(y);
+            } else if (dragging.value.type === 'respawn') {
+                map.respawn_x = Math.round(x);
+                map.respawn_y = Math.round(y);
+            }
+        };
+
+        const handleMouseUp = () => {
+            dragging.value = null;
+        };
+
         onMounted(fetchWorld);
 
         return {
@@ -337,7 +419,10 @@ export default {
             addMonster,
             deleteMonster,
             addDrop,
-            removeDrop
+            removeDrop,
+            startDrag,
+            handleMouseMove,
+            handleMouseUp
         };
     }
 };

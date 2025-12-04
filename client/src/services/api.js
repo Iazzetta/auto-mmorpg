@@ -282,6 +282,18 @@ const handleCombatUpdate = (data) => {
     if (log.monster_dmg) addLog(`Monster hit you for ${log.monster_dmg} dmg.`, 'text-red-300');
     if (log.monster_died) {
         addLog(`Monster died! Gained ${log.xp_gained} XP.`, 'text-yellow-400');
+
+        // Remove from local state immediately using the ID from server
+        if (data.monster_id) {
+            mapMonsters.value = mapMonsters.value.filter(m => m.id !== data.monster_id);
+
+            // If this was our pending target, clear it
+            if (pendingAttackId.value === data.monster_id) {
+                pendingAttackId.value = null;
+            }
+        }
+
+        currentMonster.value = null;
         api.refreshPlayer();
         setTimeout(checkAndAct, 200);
     }
@@ -289,6 +301,7 @@ const handleCombatUpdate = (data) => {
         addLog(`You died! Respawning at Castle...`, 'text-red-600 font-bold');
         api.refreshPlayer();
         stopAutoFarm();
+        pendingAttackId.value = null;
     }
 
     if (data.drops && data.drops.length > 0) {

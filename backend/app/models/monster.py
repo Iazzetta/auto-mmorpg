@@ -4,9 +4,9 @@ from typing import List
 from .item import Item
 
 class MonsterType(str, Enum):
-    MELEE = "melee"
-    RANGED = "ranged"
-    MAGIC = "magic"
+    AGGRESSIVE = "aggressive"
+    PASSIVE = "passive"
+    BOSS = "boss"
 
 class MonsterStats(BaseModel):
     hp: int

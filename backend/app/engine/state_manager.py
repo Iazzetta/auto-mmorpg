@@ -134,6 +134,9 @@ class StateManager:
         respawn_at = time.time() + respawn_time
         if not hasattr(self, 'respawn_queue'):
             self.respawn_queue = []
+        
+        print(f"[DEBUG_RESPAWN] Queuing respawn for {monster_template_id} on {map_id} at ({x:.1f}, {y:.1f}) in {respawn_time}s")
+        
         self.respawn_queue.append({
             "template_id": monster_template_id,
             "map_id": map_id,
@@ -153,6 +156,7 @@ class StateManager:
         
         for item in self.respawn_queue:
             if now >= item['respawn_at']:
+                print(f"[DEBUG_RESPAWN] Respawning {item['template_id']} on {item['map_id']}")
                 to_respawn.append(item)
             else:
                 remaining.append(item)

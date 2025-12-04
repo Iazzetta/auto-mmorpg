@@ -55,12 +55,12 @@ class CombatService:
             CombatService.generate_loot(player, monster)
             
             # Queue Respawn
-            from ..data.monsters import MONSTERS
-            template = MONSTERS.get(monster.template_id)
+            from ..engine.state_manager import StateManager
+            sm = StateManager.get_instance()
+            template = sm.monster_templates.get(monster.template_id)
             respawn_time = template["respawn_time"] if template else 10.0
             
-            from ..engine.state_manager import StateManager
-            StateManager.get_instance().queue_respawn(
+            sm.queue_respawn(
                 monster.template_id, 
                 monster.map_id, 
                 monster.position_x, 
@@ -109,11 +109,11 @@ class CombatService:
         player.gold += gold_amount
         
         # 2. Items (Drop System)
-        from ..data.monsters import MONSTERS
+        from ..engine.state_manager import StateManager
         from ..data.items import ITEMS
         import uuid
         
-        template = MONSTERS.get(monster.template_id)
+        template = StateManager.get_instance().monster_templates.get(monster.template_id)
         if not template or "drops" not in template:
             return
             
