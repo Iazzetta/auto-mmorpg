@@ -245,14 +245,24 @@ async def allocate_attributes(player_id: str, attributes: dict):
     
     return {"message": "Attributes allocated", "player": player}
 
+import json
+import os
+
+def load_missions():
+    try:
+        with open("backend/app/data/missions.json", "r") as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return {}
+
 @router.post("/player/{player_id}/mission/start")
 async def start_mission(player_id: str, mission_id: str):
     player = state_manager.get_player(player_id)
     if not player:
         raise HTTPException(status_code=404, detail="Player not found")
         
-    from ..data.missions import MISSIONS
-    mission = MISSIONS.get(mission_id)
+    missions = load_missions()
+    mission = missions.get(mission_id)
     if not mission:
         raise HTTPException(status_code=404, detail="Mission not found")
         
@@ -270,8 +280,8 @@ async def claim_mission(player_id: str):
     if not player.active_mission_id:
         raise HTTPException(status_code=400, detail="No active mission")
         
-    from ..data.missions import MISSIONS
-    mission = MISSIONS.get(player.active_mission_id)
+    missions = load_missions()
+    mission = missions.get(player.active_mission_id)
     
     if player.mission_progress < mission["target_count"]:
         raise HTTPException(status_code=400, detail="Mission not completed")
@@ -329,8 +339,7 @@ async def get_map_monsters(map_id: str):
 
 @router.get("/content/missions")
 async def get_missions():
-    from ..data.missions import MISSIONS
-    return MISSIONS
+    return load_missions()
 
 @router.get("/map/{map_id}", response_model=GameMap)
 async def get_map_details(map_id: str):

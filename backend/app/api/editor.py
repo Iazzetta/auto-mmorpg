@@ -27,6 +27,24 @@ async def save_world_data(data: dict):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.get("/editor/missions")
+async def get_missions_editor():
+    try:
+        with open("backend/app/data/missions.json", "r") as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return {}
+
+@router.post("/editor/missions")
+async def save_missions_editor(data: dict):
+    try:
+        path = "backend/app/data/missions.json"
+        with open(path, "w") as f:
+            json.dump(data, f, indent=4)
+        return {"message": "Missions saved"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.get("/editor/items")
 async def get_items():
     return [{"id": k, "name": v["name"]} for k, v in ITEMS.items()]

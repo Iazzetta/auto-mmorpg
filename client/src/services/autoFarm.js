@@ -1,4 +1,4 @@
-import { player, isFreeFarming, selectedMapId, selectedTargetId, mapMonsters, addLog, pendingAttackId, destinationMarker } from '../state.js';
+import { player, isFreeFarming, selectedMapId, selectedTargetId, mapMonsters, addLog, pendingAttackId, destinationMarker, currentMapData } from '../state.js';
 import { api } from './api.js';
 
 let autoFarmInterval = null;
@@ -38,18 +38,26 @@ export const checkAndAct = async () => {
     if (player.value.current_map_id !== selectedMapId.value) {
         addLog(`Moving to ${formatMapName(selectedMapId.value)}...`);
 
-        let targetX = 0;
-        let targetY = 0;
-
-        if (player.value.current_map_id === 'map_castle_1' && selectedMapId.value === 'map_forest_1') {
-            targetX = 95; targetY = 50;
-        } else if (player.value.current_map_id === 'map_forest_1' && selectedMapId.value === 'map_castle_1') {
-            targetX = 5; targetY = 50;
-        } else {
-            targetX = 50; targetY = 50;
+        // Find portal to target map
+        let targetPortal = null;
+        if (currentMapData.value && currentMapData.value.portals) {
+            targetPortal = currentMapData.value.portals.find(p => p.target_map_id === selectedMapId.value);
         }
 
-        await api.movePlayer(player.value.current_map_id, targetX, targetY);
+        if (targetPortal) {
+            const dist = Math.sqrt((player.value.position.x - targetPortal.x) ** 2 + (player.value.position.y - targetPortal.y) ** 2);
+            if (dist < 3.0) {
+                // Enter portal
+                await api.movePlayer(targetPortal.target_map_id, targetPortal.target_x, targetPortal.target_y);
+            } else {
+                // Move to portal
+                await api.movePlayer(player.value.current_map_id, targetPortal.x, targetPortal.y);
+            }
+        } else {
+            // Fallback: Move to center if no direct portal (simple fallback)
+            await api.movePlayer(player.value.current_map_id, 50, 50);
+        }
+
         await api.refreshPlayer();
         return;
     }

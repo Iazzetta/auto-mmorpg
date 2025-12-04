@@ -287,7 +287,7 @@
                     "chance": 0.5
                 }
             ],
-            "respawn_time": 2
+            "respawn_time": 5
         },
         "bear": {
             "id": "bear",

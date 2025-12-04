@@ -15,6 +15,7 @@ export const autoSellInferior = ref(localStorage.getItem('rpg_auto_sell') !== 'f
 export const pendingAttackId = ref(null);
 export const destinationMarker = ref(null);
 export const toasts = ref([]);
+export const currentMapData = ref(null);
 
 // Computed
 export const nextLevelXp = computed(() => player.value?.next_level_xp || 100);

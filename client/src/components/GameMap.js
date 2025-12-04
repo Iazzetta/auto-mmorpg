@@ -1,6 +1,6 @@
 import { ref, onMounted, onUnmounted, watch } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.js';
 import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
-import { player, mapMonsters, mapPlayers, destinationMarker, currentMonster, addLog, selectedTargetId, isFreeFarming, pendingAttackId, inspectedPlayer, selectedMapId } from '../state.js';
+import { player, mapMonsters, mapPlayers, destinationMarker, currentMonster, addLog, selectedTargetId, isFreeFarming, pendingAttackId, inspectedPlayer, selectedMapId, currentMapData } from '../state.js';
 import { api } from '../services/api.js';
 import { stopAutoFarm, checkAndAct } from '../services/autoFarm.js';
 
@@ -70,7 +70,6 @@ export default {
         const fps = ref(0);
         const canEnterPortal = ref(false);
         const pendingPortal = ref(null);
-        const currentMapData = ref(null);
         const entityLabels = ref([]);
 
         // Three.js variables
