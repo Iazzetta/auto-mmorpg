@@ -83,7 +83,7 @@ const findAndAttackTarget = async () => {
         const py = player.value.position.y;
         const dist = Math.sqrt((px - mx) ** 2 + (py - my) ** 2);
 
-        if (dist > 5) {
+        if (dist > 1.0) {
             addLog(`Moving to ${target.name}...`, 'text-blue-300');
             const angle = Math.atan2(my - py, mx - px);
             const stopDist = 0;

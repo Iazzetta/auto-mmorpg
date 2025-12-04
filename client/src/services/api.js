@@ -219,7 +219,7 @@ export const connectWebSocket = (playerId) => {
                         const dy = player.value.position.y - my_game;
                         const dist = Math.sqrt(dx * dx + dy * dy);
 
-                        if (dist < 5) {
+                        if (dist < 1.0) {
                             api.attackMonster(pendingAttackId.value);
                             pendingAttackId.value = null;
                         }
