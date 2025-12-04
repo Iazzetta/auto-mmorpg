@@ -13,19 +13,28 @@ export default {
 
                 <div class="text-center mb-4">
                     <span class="text-gray-400">Points Available:</span>
-                    <span class="text-yellow-400 font-bold text-xl ml-2">{{ player.attribute_points }}</span>
+                    <span class="text-yellow-400 font-bold text-xl ml-2">{{ availablePoints }}</span>
                 </div>
 
-                <div class="space-y-3 mb-6">
+                <div class="space-y-4 mb-6">
                     <div v-for="(val, attr) in tempAttributes" :key="attr"
-                        class="flex items-center justify-between bg-gray-700 p-2 rounded">
-                        <span class="uppercase font-bold w-12">{{ attr }}</span>
-                        <div class="flex items-center gap-3">
+                        class="bg-gray-700 p-3 rounded">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="uppercase font-bold w-12">{{ attr }}</span>
+                            <span class="font-bold text-lg">{{ val }}</span>
+                        </div>
+                        <div class="flex items-center gap-2">
                             <button @click="adjustAttribute(attr, -1)"
-                                class="w-6 h-6 bg-gray-600 rounded hover:bg-gray-500">-</button>
-                            <span class="w-6 text-center font-bold">{{ val }}</span>
+                                class="w-8 h-8 bg-gray-600 rounded hover:bg-gray-500 font-bold text-xl leading-none pb-1">-</button>
+                            
+                            <input type="range" 
+                                :min="player.attributes[attr]" 
+                                :max="val + availablePoints" 
+                                v-model.number="tempAttributes[attr]"
+                                class="flex-1 h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-yellow-500">
+                                
                             <button @click="adjustAttribute(attr, 1)"
-                                class="w-6 h-6 bg-green-600 rounded hover:bg-green-500"
+                                class="w-8 h-8 bg-green-600 rounded hover:bg-green-500 font-bold text-xl leading-none pb-1"
                                 :disabled="availablePoints <= 0">+</button>
                         </div>
                     </div>
@@ -122,12 +131,13 @@ export default {
             const str = tempAttributes.value.str || 0;
             const agi = tempAttributes.value.agi || 0;
             const vit = tempAttributes.value.vit || 0;
+            const ini = tempAttributes.value.ini || 0;
 
             let hp = 100 + (vit * 10);
             let atk = 5 + (str * 2) + (agi * 1);
             let def = 0 + (vit * 1) + (agi * 1);
-            let speed = 20.0 + (agi * 0.1);
-            let cooldown = 1.5 - (agi * 0.05);
+            let speed = 20.0 + (ini * 0.1);
+            let cooldown = 1.5 - (ini * 0.05);
             if (cooldown < 0.3) cooldown = 0.3;
 
             if (player.value.equipment) {

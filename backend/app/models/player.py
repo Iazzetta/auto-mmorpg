@@ -50,7 +50,7 @@ class Player(BaseModel):
         "str": 10,
         "agi": 10,
         "vit": 10,
-        "int": 10
+        "ini": 10
     }
     attribute_points: int = 0
 
@@ -74,22 +74,22 @@ class Player(BaseModel):
     def calculate_stats(self):
         # Base stats from attributes
         # STR: +2 Atk
-        # AGI: +1 Atk, +1 Def, +0.02 Speed, -0.05 Cooldown
+        # AGI: +1 Atk, +1 Def
         # VIT: +10 HP, +1 Def
-        # INT: +0.5 Atk (Magic), +0.5 Def (Magic Res) - Simplified for now
+        # INI: +0.1 Speed, -0.05 Cooldown
         
         str_val = self.attributes.get("str", 10)
         agi_val = self.attributes.get("agi", 10)
         vit_val = self.attributes.get("vit", 10)
-        int_val = self.attributes.get("int", 10)
+        ini_val = self.attributes.get("ini", 10)
 
         base_hp = 100 + (vit_val * 10)
         base_atk = 5 + (str_val * 2) + (agi_val * 1)
         base_def = 0 + (vit_val * 1) + (agi_val * 1)
-        base_speed = 20.0 + (agi_val * 0.1)
+        base_speed = 20.0 + (ini_val * 0.1)
         
-        # Cooldown: Starts at 1.5s, reduced by AGI. Min 0.3s.
-        base_cooldown = 1.5 - (agi_val * 0.05)
+        # Cooldown: Starts at 1.5s, reduced by INI. Min 0.3s.
+        base_cooldown = 1.5 - (ini_val * 0.05)
         if base_cooldown < 0.3: base_cooldown = 0.3
 
         # Add Equipment Bonuses
@@ -110,7 +110,8 @@ class Player(BaseModel):
         if self.stats.hp > self.stats.max_hp:
             self.stats.hp = self.stats.max_hp
         
-        self.next_level_xp = self.level * 100
+        # Quadratic XP Curve
+        self.next_level_xp = int(100 * (self.level ** 2))
             
     def get_combat_power(self) -> int:
         return self.stats.atk + self.stats.def_ + (self.stats.max_hp // 10)
