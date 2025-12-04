@@ -49,24 +49,33 @@ class CombatService:
             log['next_level_xp'] = player.next_level_xp # Send next level XP for UI update
             
             # Update Mission Progress
-            CombatService.check_mission_progress(player, monster)
+            try:
+                CombatService.check_mission_progress(player, monster)
+            except Exception as e:
+                print(f"[ERROR] Mission progress check failed: {e}")
             
             # Generate Loot
-            CombatService.generate_loot(player, monster)
+            try:
+                CombatService.generate_loot(player, monster)
+            except Exception as e:
+                print(f"[ERROR] Loot generation failed: {e}")
             
             # Queue Respawn
-            from ..engine.state_manager import StateManager
-            sm = StateManager.get_instance()
-            template = sm.monster_templates.get(monster.template_id)
-            respawn_time = template["respawn_time"] if template else 10.0
-            
-            sm.queue_respawn(
-                monster.template_id, 
-                monster.map_id, 
-                monster.position_x, 
-                monster.position_y, 
-                respawn_time
-            )
+            try:
+                from ..engine.state_manager import StateManager
+                sm = StateManager.get_instance()
+                template = sm.monster_templates.get(monster.template_id)
+                respawn_time = template["respawn_time"] if template else 10.0
+                
+                sm.queue_respawn(
+                    monster.template_id, 
+                    monster.map_id, 
+                    monster.position_x, 
+                    monster.position_y, 
+                    respawn_time
+                )
+            except Exception as e:
+                print(f"[ERROR] Respawn queueing failed: {e}")
             
             return log
 

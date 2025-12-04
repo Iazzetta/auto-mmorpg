@@ -531,10 +531,10 @@
     "name": "zero",
     "p_class": "warrior",
     "level": 35,
-    "xp": 30465,
+    "xp": 37865,
     "next_level_xp": 122500,
     "stats": {
-      "hp": 197,
+      "hp": 194,
       "max_hp": 200,
       "atk": 290,
       "def_": 123,
@@ -544,11 +544,11 @@
     "current_map_id": "map_dungeon_1",
     "respawn_map_id": "map_castle_1",
     "position": {
-      "x": 46.78272325018413,
-      "y": 52.49046052965082
+      "x": 90.65743281887966,
+      "y": 27.163246330314482
     },
-    "state": "idle",
-    "target_monster_id": "rat_fa04df5c",
+    "state": "combat",
+    "target_monster_id": "giant_rat_101b7385",
     "target_position": null,
     "active_mission_id": null,
     "mission_progress": 0,
@@ -577,7 +577,7 @@
         },
         "power_score": 10,
         "icon": "\ud83e\uddea",
-        "quantity": 1301,
+        "quantity": 1309,
         "stackable": true
       },
       {
@@ -2954,6 +2954,63 @@
         "icon": "\u2694\ufe0f",
         "quantity": 1,
         "stackable": false
+      },
+      {
+        "id": "item_sword_03_396278d7",
+        "name": "High Sword",
+        "type": "weapon",
+        "slot": "hand_main",
+        "rarity": "rare",
+        "stats": {
+          "strength": 5,
+          "intelligence": 0,
+          "atk": 15,
+          "def_": 0,
+          "speed": 0.0,
+          "hp": 0
+        },
+        "power_score": 20,
+        "icon": "\u2694\ufe0f",
+        "quantity": 1,
+        "stackable": false
+      },
+      {
+        "id": "item_sword_03_7874a6ba",
+        "name": "High Sword",
+        "type": "weapon",
+        "slot": "hand_main",
+        "rarity": "rare",
+        "stats": {
+          "strength": 5,
+          "intelligence": 0,
+          "atk": 15,
+          "def_": 0,
+          "speed": 0.0,
+          "hp": 0
+        },
+        "power_score": 20,
+        "icon": "\u2694\ufe0f",
+        "quantity": 1,
+        "stackable": false
+      },
+      {
+        "id": "item_sword_03_f1b84b9b",
+        "name": "High Sword",
+        "type": "weapon",
+        "slot": "hand_main",
+        "rarity": "rare",
+        "stats": {
+          "strength": 5,
+          "intelligence": 0,
+          "atk": 15,
+          "def_": 0,
+          "speed": 0.0,
+          "hp": 0
+        },
+        "power_score": 20,
+        "icon": "\u2694\ufe0f",
+        "quantity": 1,
+        "stackable": false
       }
     ],
     "equipment": {
@@ -3000,11 +3057,11 @@
       },
       "hand_off": null
     },
-    "gold": 48243,
+    "gold": 49185,
     "diamonds": 0,
     "is_admin": true,
-    "last_attack_time": 1764876232.327883,
-    "last_movement_broadcast": 1764876307.235411
+    "last_attack_time": 1764877207.360644,
+    "last_movement_broadcast": 1764877174.6100411
   },
   "3061a6fb-550b-4d1a-9200-12c104dd7efa": {
     "id": "3061a6fb-550b-4d1a-9200-12c104dd7efa",

@@ -144,9 +144,9 @@ class GameLoop:
                 
                 # Broadcast Respawn (Optional but good for client)
                 if hasattr(self, 'connection_manager'):
-                    await self.connection_manager.broadcast({
+                    asyncio.create_task(self.connection_manager.broadcast({
                         "type": "monster_respawn",
                         "monster": new_monster.dict()
-                    })
+                    }))
             
 
