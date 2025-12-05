@@ -118,5 +118,25 @@
         "power_score": 500,
         "icon": "\u2764\ufe0f",
         "stackable": false
+    },
+    "item_wolf_tooth": {
+        "name": "Wolf Tooth",
+        "type": "material",
+        "slot": "none",
+        "rarity": "common",
+        "stats": {
+            "strength": 0,
+            "intelligence": 0,
+            "atk": 0,
+            "def_": 0,
+            "speed": 0,
+            "hp": 0,
+            "xp": 0,
+            "gold": 5,
+            "diamonds": 0
+        },
+        "power_score": 1,
+        "icon": "\ud83e\uddb7",
+        "stackable": true
     }
 }

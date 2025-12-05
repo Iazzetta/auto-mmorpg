@@ -1,4 +1,4 @@
-import { player, logs, socket, currentMonster, addLog, showToast, mapMonsters, mapPlayers, isFreeFarming, selectedTargetId, pendingAttackId, destinationMarker, inspectedPlayer, autoSellInferior, currentMapData, showGameAlert, isUpdating, worldData } from '../state.js';
+import { player, logs, socket, currentMonster, addLog, showToast, mapMonsters, mapPlayers, mapNpcs, isFreeFarming, selectedTargetId, pendingAttackId, destinationMarker, inspectedPlayer, autoSellInferior, currentMapData, showGameAlert, isUpdating, worldData } from '../state.js';
 import { checkAndAct, stopAutoFarm } from './autoFarm.js';
 
 const API_URL = 'http://localhost:8000';
@@ -341,6 +341,11 @@ export const connectWebSocket = (playerId) => {
                 if (player.value) {
                     api.fetchMapDetails(player.value.current_map_id);
                     api.fetchMapMonsters(player.value.current_map_id);
+
+                    try {
+                        const npcsRes = await fetch(`http://localhost:8000/map/${player.value.current_map_id}/npcs`);
+                        if (npcsRes.ok) mapNpcs.value = await npcsRes.json();
+                    } catch (e) { console.error(e); }
                 }
             } catch (e) { console.error(e); }
 

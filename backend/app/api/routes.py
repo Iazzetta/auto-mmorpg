@@ -128,6 +128,110 @@ async def save_editor_rewards(data: dict):
         json.dump(data, f, indent=4)
     return {"message": "Rewards saved"}
 
+@router.get("/map/{map_id}/npcs")
+async def get_map_npcs(map_id: str):
+    return [npc for npc in state_manager.npcs.values() if npc.map_id == map_id]
+
+@router.post("/player/{player_id}/interact/{npc_id}")
+async def interact_npc(player_id: str, npc_id: str):
+    player = state_manager.get_player(player_id)
+    npc = state_manager.npcs.get(npc_id)
+    
+    if not player or not npc:
+        raise HTTPException(status_code=404, detail="Player or NPC not found")
+        
+    # Validate distance (e.g., 5 units)
+    import math
+    dist = math.sqrt((player.position.x - npc.x)**2 + (player.position.y - npc.y)**2)
+    if dist > 10: # Generous range
+        raise HTTPException(status_code=400, detail="Too far away")
+        
+    return npc
+
+@router.post("/player/{player_id}/npc/{npc_id}/action")
+async def npc_action(player_id: str, npc_id: str, action: str, data: dict = {}):
+    player = state_manager.get_player(player_id)
+    npc = state_manager.npcs.get(npc_id)
+    
+    if not player or not npc:
+        raise HTTPException(status_code=404, detail="Not found")
+        
+    if action == "accept_quest":
+        quest_id = npc.quest_id
+        if not quest_id:
+            raise HTTPException(status_code=400, detail="NPC has no quest")
+            
+        # Check if already active or completed
+        if player.active_mission_id == quest_id:
+             return {"message": "Quest already active"}
+        if quest_id in player.completed_missions:
+             return {"message": "Quest already completed"}
+             
+        # Assign Quest
+        player.active_mission_id = quest_id
+        player.mission_progress = 0
+        return {"message": "Quest accepted", "quest_id": quest_id}
+        
+    return {"message": "Unknown action"}
+
+@router.post("/player/{player_id}/shop/buy")
+async def buy_item(player_id: str, npc_id: str, item_id: str):
+    player = state_manager.get_player(player_id)
+    npc = state_manager.npcs.get(npc_id)
+    
+    if not player or not npc:
+        raise HTTPException(status_code=404, detail="Not found")
+        
+    if npc.type != "merchant":
+        raise HTTPException(status_code=400, detail="Not a merchant")
+        
+    if item_id not in npc.shop_items:
+        raise HTTPException(status_code=400, detail="Item not sold here")
+        
+    # Get Item Template
+    from ..data.items import ITEMS
+    template = ITEMS.get(item_id)
+    if not template:
+        raise HTTPException(status_code=404, detail="Item template not found")
+        
+    # Check Price (Assume price is 10x power score or defined somewhere? For now, let's say 100 gold flat or based on rarity)
+    # Ideally price should be in ITEMS or NPC data. Let's use a simple formula for now or check if item has price.
+    # Let's assume price = power_score * 10 or 50 if 0.
+    price = max(10, template.get("power_score", 0) * 10)
+    
+    stats = template.get("stats")
+    if stats and stats.hp > 0: # Potion
+        price = 50
+        
+    if player.gold < price:
+        raise HTTPException(status_code=400, detail="Not enough gold")
+        
+    # Deduct Gold
+    player.gold -= price
+    
+    # Add Item
+    stats_data = template["stats"]
+    if hasattr(stats_data, "model_copy"):
+        stats_val = stats_data.model_copy()
+    else:
+        stats_val = ItemStats(**stats_data)
+
+    new_item = Item(
+        id=f"{item_id}_{uuid.uuid4().hex[:8]}",
+        name=template["name"],
+        type=template["type"],
+        slot=template["slot"],
+        rarity=template["rarity"],
+        stats=stats_val,
+        power_score=template.get("power_score", 0),
+        icon=template.get("icon", "📦"),
+        stackable=template.get("stackable", False),
+        quantity=1
+    )
+    InventoryService.add_item(player, new_item)
+    
+    return {"message": "Item purchased", "gold": player.gold, "inventory": player.inventory}
+
 @router.post("/player/{player_id}/use_item")
 async def use_item(player_id: str, item_id: str):
     player = state_manager.get_player(player_id)
@@ -490,3 +594,31 @@ async def save_world(data: dict):
         await state_manager.connection_manager.broadcast({"type": "server_update"})
     
     return {"message": "World saved"}
+
+@router.get("/editor/npcs")
+async def get_editor_npcs():
+    import json
+    import os
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    path = os.path.join(base_dir, "data/npcs.json")
+    try:
+        with open(path, "r") as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return {}
+
+@router.post("/editor/npcs")
+async def save_editor_npcs(npcs: dict):
+    import json
+    import os
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    path = os.path.join(base_dir, "data/npcs.json")
+    with open(path, "w") as f:
+        json.dump(npcs, f, indent=4)
+    
+    state_manager.load_npcs()
+    
+    if hasattr(state_manager, 'connection_manager'):
+        await state_manager.connection_manager.broadcast({"type": "server_update"})
+    
+    return {"message": "NPCs saved"}

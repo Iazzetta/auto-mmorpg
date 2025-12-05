@@ -16,6 +16,7 @@ export default {
                     <button @click="activeTab = 'maps'" :class="{'bg-blue-600 text-white': activeTab === 'maps', 'text-gray-400 hover:text-white hover:bg-gray-700': activeTab !== 'maps'}" class="px-4 py-1.5 rounded text-sm font-bold transition-colors">Maps</button>
                     <button @click="activeTab = 'monsters'" :class="{'bg-purple-600 text-white': activeTab === 'monsters', 'text-gray-400 hover:text-white hover:bg-gray-700': activeTab !== 'monsters'}" class="px-4 py-1.5 rounded text-sm font-bold transition-colors">Monsters</button>
                     <button @click="activeTab = 'items'" :class="{'bg-yellow-600 text-white': activeTab === 'items', 'text-gray-400 hover:text-white hover:bg-gray-700': activeTab !== 'items'}" class="px-4 py-1.5 rounded text-sm font-bold transition-colors">Items</button>
+                    <button @click="activeTab = 'npcs'" :class="{'bg-orange-600 text-white': activeTab === 'npcs', 'text-gray-400 hover:text-white hover:bg-gray-700': activeTab !== 'npcs'}" class="px-4 py-1.5 rounded text-sm font-bold transition-colors">NPCs</button>
                     <button @click="activeTab = 'missions'" :class="{'bg-green-600 text-white': activeTab === 'missions', 'text-gray-400 hover:text-white hover:bg-gray-700': activeTab !== 'missions'}" class="px-4 py-1.5 rounded text-sm font-bold transition-colors">Missions</button>
                     <button @click="activeTab = 'rewards'" :class="{'bg-pink-600 text-white': activeTab === 'rewards', 'text-gray-400 hover:text-white hover:bg-gray-700': activeTab !== 'rewards'}" class="px-4 py-1.5 rounded text-sm font-bold transition-colors">Rewards</button>
                 </div>
@@ -266,6 +267,93 @@ export default {
                         </div>
                     </div>
 
+                    <!-- NPCS SIDEBAR -->
+                    <div v-if="activeTab === 'npcs'" class="flex-1 flex flex-col p-4 overflow-y-auto gap-4">
+                        <div class="flex gap-2">
+                            <button @click="addNpc" class="flex-1 bg-orange-700 hover:bg-orange-600 p-2 rounded text-sm font-bold">+ New NPC</button>
+                            <button @click="fetchWorld" class="bg-gray-700 hover:bg-gray-600 p-2 rounded text-sm font-bold" title="Refresh">🔄</button>
+                        </div>
+                        
+                        <div class="text-xs text-gray-500 mb-1">Total NPCs: {{ Object.keys(npcs).length }}</div>
+
+                        <div class="flex flex-col gap-1 max-h-60 overflow-y-auto border border-gray-700 rounded p-1 bg-black/50">
+                            <div v-for="(npc, id) in npcs" :key="id" 
+                                @click="selectNpc(id)"
+                                class="cursor-pointer p-2 rounded hover:bg-gray-800 text-xs flex justify-between items-center"
+                                :class="{'bg-gray-800 border-l-2 border-orange-500': selectedNpcId === id}">
+                                <span>{{ npc.name }}</span>
+                                <span class="text-gray-500 text-[10px]">{{ npc.map_id }}</span>
+                            </div>
+                        </div>
+
+                        <div v-if="selectedNpcId && npcs[selectedNpcId]" class="flex flex-col gap-2 border-t border-gray-700 pt-4">
+                            <h3 class="font-bold text-gray-400 text-xs uppercase">NPC Details</h3>
+                            <div>
+                                <label class="text-[10px] text-gray-500 uppercase">ID</label>
+                                <input v-model="selectedNpcId" disabled class="w-full bg-black border border-gray-700 rounded px-2 py-1 text-gray-500 text-xs">
+                            </div>
+                            <div>
+                                <label class="text-[10px] text-gray-500 uppercase">Name</label>
+                                <input v-model="npcs[selectedNpcId].name" class="w-full bg-black border border-gray-700 rounded px-2 py-1 text-xs">
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="text-[10px] text-gray-500 uppercase">Type</label>
+                                    <select v-model="npcs[selectedNpcId].type" class="w-full bg-black border border-gray-700 rounded px-2 py-1 text-xs">
+                                        <option value="quest_giver">Quest Giver</option>
+                                        <option value="merchant">Merchant</option>
+                                        <option value="dialogue">Dialogue Only</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="text-[10px] text-gray-500 uppercase">Icon</label>
+                                    <input v-model="npcs[selectedNpcId].icon" class="w-full bg-black border border-gray-700 rounded px-2 py-1 text-xs text-center">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="text-[10px] text-gray-500 uppercase">Map</label>
+                                <select v-model="npcs[selectedNpcId].map_id" class="w-full bg-black border border-gray-700 rounded px-2 py-1 text-xs">
+                                    <option v-for="(m, mid) in worldData.maps" :key="mid" :value="mid">{{ m.name }}</option>
+                                </select>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="text-[10px] text-gray-500 uppercase">X</label>
+                                    <input v-model.number="npcs[selectedNpcId].x" type="number" class="w-full bg-black border border-gray-700 rounded px-2 py-1 text-xs">
+                                </div>
+                                <div>
+                                    <label class="text-[10px] text-gray-500 uppercase">Y</label>
+                                    <input v-model.number="npcs[selectedNpcId].y" type="number" class="w-full bg-black border border-gray-700 rounded px-2 py-1 text-xs">
+                                </div>
+                            </div>
+
+                            <!-- Quest Giver Specific -->
+                            <div v-if="npcs[selectedNpcId].type === 'quest_giver'">
+                                <label class="text-[10px] text-gray-500 uppercase">Quest ID</label>
+                                <select v-model="npcs[selectedNpcId].quest_id" class="w-full bg-black border border-gray-700 rounded px-2 py-1 text-xs">
+                                    <option value="">None</option>
+                                    <option v-for="(m, mid) in missions" :key="mid" :value="mid">{{ m.title }}</option>
+                                </select>
+                            </div>
+
+                            <!-- Merchant Specific -->
+                            <div v-if="npcs[selectedNpcId].type === 'merchant'">
+                                <label class="text-[10px] text-gray-500 uppercase">Shop Items</label>
+                                <div class="flex flex-col gap-1">
+                                    <div v-for="(item, idx) in npcs[selectedNpcId].shop_items" :key="idx" class="flex gap-1">
+                                        <select v-model="npcs[selectedNpcId].shop_items[idx]" class="w-full bg-black border border-gray-700 rounded px-2 py-1 text-xs">
+                                             <option v-for="(i, iid) in availableItems" :key="iid" :value="iid">{{ i.name }}</option>
+                                        </select>
+                                        <button @click="npcs[selectedNpcId].shop_items.splice(idx, 1)" class="text-red-500">x</button>
+                                    </div>
+                                    <button @click="npcs[selectedNpcId].shop_items.push(Object.keys(availableItems)[0])" class="text-xs text-blue-400">+ Add Item</button>
+                                </div>
+                            </div>
+
+                            <button @click="deleteNpc" class="mt-4 bg-red-900/50 hover:bg-red-900 text-red-200 py-2 rounded text-xs border border-red-800">Delete NPC</button>
+                        </div>
+                    </div>
+
                     <!-- MISSIONS SIDEBAR -->
                     <div v-if="activeTab === 'missions'" class="flex-1 flex flex-col p-4 overflow-y-auto gap-4">
                         <button @click="createNewMission" class="w-full bg-green-700 hover:bg-green-600 p-2 rounded text-sm font-bold">+ New Mission</button>
@@ -306,10 +394,30 @@ export default {
                                     </select>
                                 </div>
                             </div>
+                            
+                            <!-- MISSION TYPE SELECTOR -->
                             <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="text-[10px] text-gray-500 uppercase">Type</label>
+                                    <select v-model="selectedMission.type" class="w-full bg-black border border-gray-700 rounded px-2 py-1 text-xs">
+                                        <option value="kill">Kill Monsters</option>
+                                        <option value="collect">Collect Items</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="text-[10px] text-gray-500 uppercase">Source</label>
+                                    <select v-model="selectedMission.source" class="w-full bg-black border border-gray-700 rounded px-2 py-1 text-xs">
+                                        <option value="board">Mission Board</option>
+                                        <option value="npc">NPC</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- DYNAMIC TARGET FIELDS -->
+                            <div v-if="selectedMission.type === 'kill'" class="grid grid-cols-2 gap-2">
                                  <div>
                                     <label class="text-[10px] text-gray-500 uppercase">Target Monster</label>
-                                    <select v-model="selectedMission.target_template_id" class="w-full bg-black border border-gray-700 rounded px-2 py-1 text-xs">
+                                    <select v-model="selectedMission.target_monster_id" class="w-full bg-black border border-gray-700 rounded px-2 py-1 text-xs">
                                         <option v-for="(m, mid) in worldData.monster_templates" :key="mid" :value="mid">{{ m.name }}</option>
                                     </select>
                                 </div>
@@ -318,6 +426,19 @@ export default {
                                     <input v-model.number="selectedMission.target_count" type="number" class="w-full bg-black border border-gray-700 rounded px-2 py-1 text-xs">
                                 </div>
                             </div>
+                            <div v-else-if="selectedMission.type === 'collect'" class="grid grid-cols-2 gap-2">
+                                 <div>
+                                    <label class="text-[10px] text-gray-500 uppercase">Target Item</label>
+                                    <select v-model="selectedMission.target_item_id" class="w-full bg-black border border-gray-700 rounded px-2 py-1 text-xs">
+                                        <option v-for="(i, iid) in availableItems" :key="iid" :value="iid">{{ i.name }}</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="text-[10px] text-gray-500 uppercase">Count</label>
+                                    <input v-model.number="selectedMission.target_count" type="number" class="w-full bg-black border border-gray-700 rounded px-2 py-1 text-xs">
+                                </div>
+                            </div>
+
                              <div class="grid grid-cols-2 gap-2">
                                  <div>
                                     <label class="text-[10px] text-gray-500 uppercase">XP</label>
@@ -352,7 +473,7 @@ export default {
                 <div class="flex-1 bg-black relative overflow-hidden flex items-center justify-center">
                     
                     <!-- MAP VISUAL EDITOR -->
-                    <div v-if="activeTab === 'maps'" 
+                    <div v-if="activeTab === 'maps' || activeTab === 'npcs'" 
                          class="relative w-full h-full flex items-center justify-center bg-gray-900"
                          @mousemove="handleMouseMove" @mouseup="handleMouseUp" @mouseleave="handleMouseUp">
                         
@@ -400,6 +521,16 @@ export default {
                             <div class="absolute bottom-2 right-2 text-xs text-gray-500 font-mono pointer-events-none">
                                 {{ Math.round(cursorX) }}, {{ Math.round(cursorY) }}
                             </div>
+
+                            <!-- NPCs -->
+                            <div v-for="(npc, id) in npcs" :key="'n'+id"
+                                 v-show="npc.map_id === selectedMapId"
+                                 class="absolute w-6 h-6 rounded-full border-2 border-orange-500 bg-orange-500/50 transform -translate-x-1/2 -translate-y-1/2 cursor-move z-20 hover:scale-110 transition-transform shadow-[0_0_10px_rgba(255,165,0,0.5)] flex items-center justify-center text-xs"
+                                 :style="{ left: npc.x + '%', top: npc.y + '%' }"
+                                 @mousedown.prevent="startDrag('npc', id)"
+                                 :title="npc.name">
+                                 {{ npc.icon }}
+                            </div>
                         </div>
                         <div v-else class="text-gray-500 flex flex-col items-center">
                             <span class="text-4xl mb-2">🗺️</span>
@@ -429,6 +560,8 @@ export default {
                             <span class="text-6xl block mb-4">⚔️</span>
                             <p>Select an item to edit</p>
                         </div>
+
+
                     </div>
 
                     <!-- MISSION PREVIEW (Placeholder) -->
@@ -465,6 +598,8 @@ export default {
         const cursorX = ref(0);
         const cursorY = ref(0);
         const rewardsData = ref({ starter_chest: [] });
+        const npcs = ref({});
+        const selectedNpcId = ref(null);
 
         const fetchWorld = async () => {
             try {
@@ -482,6 +617,11 @@ export default {
                 const rewardsRes = await fetch('http://localhost:8000/editor/rewards');
                 if (rewardsRes.ok) {
                     rewardsData.value = await rewardsRes.json();
+                }
+                // Fetch NPCs
+                const npcsRes = await fetch('http://localhost:8000/editor/npcs');
+                if (npcsRes.ok) {
+                    npcs.value = await npcsRes.json();
                 }
             } catch (e) { console.error(e); }
         };
@@ -519,7 +659,14 @@ export default {
                     body: JSON.stringify(rewardsData.value)
                 });
 
-                if (worldRes.ok && missionsRes.ok && itemsRes.ok && rewardsRes.ok) alert('All changes saved successfully!');
+                // Save NPCs
+                const npcsRes = await fetch('http://localhost:8000/editor/npcs', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(npcs.value)
+                });
+
+                if (worldRes.ok && missionsRes.ok && itemsRes.ok && rewardsRes.ok && npcsRes.ok) alert('All changes saved successfully!');
                 else alert('Error saving some data.');
             } catch (e) {
                 console.error(e);
@@ -618,7 +765,8 @@ export default {
             const id = `mission_${Date.now()}`;
             const newMission = {
                 id: id, title: "New Mission", description: "Description", level_requirement: 1,
-                map_id: "map_forest_1", target_template_id: "wolf", target_count: 5, reward_xp: 100, reward_gold: 50
+                map_id: "map_forest_1", target_template_id: "wolf", target_count: 5, reward_xp: 100, reward_gold: 50,
+                type: "kill", source: "board" // Default values
             };
             missions.value[id] = newMission;
             selectMission(id, newMission);
@@ -631,6 +779,26 @@ export default {
         };
         const removeRewardItem = (idx) => {
             rewardsData.value.starter_chest.splice(idx, 1);
+        };
+
+        // --- NPC LOGIC ---
+        const selectNpc = (id) => selectedNpcId.value = id;
+        const addNpc = () => {
+            const id = prompt("Enter NPC ID (e.g., npc_guide_02):");
+            if (id && !npcs.value[id]) {
+                npcs.value[id] = {
+                    id: id, name: "New NPC", map_id: "map_castle_1", x: 50, y: 50,
+                    type: "quest_giver", icon: "👤", dialogue: ["Hello"], quest_id: "", shop_items: []
+                };
+                selectedNpcId.value = id;
+            }
+        };
+        const deleteNpc = () => {
+            if (!selectedNpcId.value) return;
+            if (confirm(`Delete ${selectedNpcId.value}?`)) {
+                delete npcs.value[selectedNpcId.value];
+                selectedNpcId.value = null;
+            }
         };
 
         // --- DRAG & DROP LOGIC ---
@@ -658,6 +826,12 @@ export default {
             } else if (dragging.value.type === 'respawn') {
                 map.respawn_x = Math.round(x);
                 map.respawn_y = Math.round(y);
+            } else if (dragging.value.type === 'npc') {
+                const npc = npcs.value[dragging.value.index];
+                if (npc) {
+                    npc.x = Math.round(x);
+                    npc.y = Math.round(y);
+                }
             }
         };
         const handleMouseUp = () => dragging.value = null;
@@ -665,13 +839,14 @@ export default {
         onMounted(fetchWorld);
 
         return {
-            worldData, missions, availableItems, rewardsData,
-            activeTab, selectedMapId, selectedMonsterId, selectedMissionId, selectedMission, selectedItemId,
+            worldData, missions, availableItems, rewardsData, npcs,
+            activeTab, selectedMapId, selectedMonsterId, selectedMissionId, selectedMission, selectedItemId, selectedNpcId,
             selectMap, addMap, deleteMap, addPortal, removePortal, addSpawn, removeSpawn,
             selectMonster, addMonster, deleteMonster, addDrop, removeDrop,
             selectMission, createNewMission,
             selectItem, addItem, deleteItem,
             addRewardItem, removeRewardItem,
+            selectNpc, addNpc, deleteNpc,
             saveAll,
             startDrag, handleMouseMove, handleMouseUp, cursorX, cursorY
         };

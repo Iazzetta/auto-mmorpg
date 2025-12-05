@@ -1,10 +1,11 @@
 import { ref, onMounted, onUnmounted, watch } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.js';
 import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
-import { player, mapMonsters, mapPlayers, destinationMarker, currentMonster, addLog, selectedTargetId, isFreeFarming, pendingAttackId, inspectedPlayer, selectedMapId, currentMapData } from '../state.js';
+import { player, mapMonsters, mapPlayers, destinationMarker, currentMonster, addLog, selectedTargetId, isFreeFarming, pendingAttackId, inspectedPlayer, selectedMapId, currentMapData, mapNpcs } from '../state.js';
 import { api } from '../services/api.js';
 import { stopAutoFarm, checkAndAct } from '../services/autoFarm.js';
 
 export default {
+    emits: ['interact-npc'],
     template: `
         <div class="absolute top-14 bottom-0 w-full bg-gray-950 overflow-hidden">
             <!-- Map Info -->
@@ -20,7 +21,7 @@ export default {
                 class="absolute pointer-events-none transform -translate-x-1/2 -translate-y-full flex flex-col items-center z-30"
                 :style="{ left: label.x + 'px', top: label.y + 'px' }">
                 <span class="text-[10px] font-bold shadow-black drop-shadow-md whitespace-nowrap"
-                    :class="label.type === 'portal' ? 'text-cyan-300 text-xs tracking-wider bg-black/50 px-1 rounded' : (label.isPlayer ? 'text-green-300' : 'text-red-300')">
+                    :class="label.type === 'portal' ? 'text-cyan-300 text-xs tracking-wider bg-black/50 px-1 rounded' : (label.type === 'npc' ? 'text-yellow-300 text-xs bg-black/50 px-1 rounded' : (label.isPlayer ? 'text-green-300' : 'text-red-300'))">
                     {{ label.name }}
                 </span>
                 <div v-if="label.max_hp > 0" class="w-8 h-1 bg-gray-700 mt-0.5 rounded-full overflow-hidden border border-black/50">
@@ -53,9 +54,12 @@ export default {
             </div>
             
             <!-- Interaction Button -->
-            <div v-if="canEnterPortal && !isFreeFarming" class="absolute bottom-24 left-1/2 transform -translate-x-1/2 z-50">
-                <button @click="confirmPortal" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-6 rounded-full shadow-lg border-2 border-blue-400 animate-bounce">
+            <div v-if="(canEnterPortal || canInteractNpc) && !isFreeFarming" class="absolute bottom-24 left-1/2 transform -translate-x-1/2 z-50 flex flex-col gap-2 items-center">
+                <button v-if="canEnterPortal" @click="confirmPortal" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-6 rounded-full shadow-lg border-2 border-blue-400 animate-bounce">
                     Enter Portal (F)
+                </button>
+                <button v-if="canInteractNpc" @click="interactNpc" class="bg-yellow-600 hover:bg-yellow-500 text-white font-bold py-2 px-6 rounded-full shadow-lg border-2 border-yellow-400 animate-bounce">
+                    Talk to {{ closestNpc?.name }} (F)
                 </button>
             </div>
             
@@ -65,11 +69,13 @@ export default {
             </div>
         </div>
     `,
-    setup() {
+    setup(props, { emit }) {
         const container = ref(null);
         const fps = ref(0);
         const canEnterPortal = ref(false);
         const pendingPortal = ref(null);
+        const canInteractNpc = ref(false);
+        const closestNpc = ref(null);
         const entityLabels = ref([]);
 
         // Three.js variables
@@ -79,9 +85,6 @@ export default {
 
         // Entity Meshes Map: ID -> Mesh
         const meshes = new Map();
-        // Label Sprites Map: ID -> Sprite/HTML
-        // For simplicity, we'll draw labels using 2D canvas overlay or just rely on the UI for selected target.
-        // Let's stick to 3D only for now, maybe add floating text later.
 
         const keys = { w: false, a: false, s: false, d: false };
         let lastMoveTime = 0;
@@ -95,12 +98,14 @@ export default {
         const geometries = {
             player: null,
             monster: null,
-            portal: null
+            portal: null,
+            npc: null
         };
         const materials = {
             player: null,
             otherPlayer: null,
-            monster: null
+            monster: null,
+            npc: null
         };
 
         const initThree = () => {
@@ -111,10 +116,12 @@ export default {
             geometries.player = new THREE.BoxGeometry(1, 2, 1);
             geometries.monster = new THREE.CylinderGeometry(0.5, 0.5, 1.5, 16);
             geometries.portal = new THREE.TorusGeometry(1, 0.2, 8, 16);
+            geometries.npc = new THREE.CylinderGeometry(0.5, 0.5, 2, 8);
 
             materials.player = new THREE.MeshStandardMaterial({ color: 0x22c55e });
             materials.otherPlayer = new THREE.MeshStandardMaterial({ color: 0x3b82f6 });
             materials.monster = new THREE.MeshStandardMaterial({ color: 0xef4444 });
+            materials.npc = new THREE.MeshStandardMaterial({ color: 0xfacc15 });
 
             // 1. Scene
             scene = new THREE.Scene();
@@ -372,7 +379,24 @@ export default {
                 });
             }
 
-            // 5. Cleanup
+            // 5. NPCs
+            if (mapNpcs.value) {
+                mapNpcs.value.forEach(npc => {
+                    validIds.add(npc.id);
+                    let mesh = meshes.get(npc.id);
+                    if (!mesh) {
+                        mesh = new THREE.Mesh(geometries.npc, materials.npc);
+                        mesh.castShadow = true;
+                        mesh.userData = { type: 'npc', entity: npc };
+                        mesh.position.set(npc.x, 1, npc.y);
+                        scene.add(mesh);
+                        meshes.set(npc.id, mesh);
+                    }
+                    mesh.position.set(npc.x, 1, npc.y);
+                });
+            }
+
+            // 6. Cleanup
             for (const [id, mesh] of meshes) {
                 if (!validIds.has(id)) {
                     scene.remove(mesh);
@@ -416,9 +440,11 @@ export default {
             }
         };
 
-        const checkPortals = () => {
+        const checkInteractions = () => {
             if (!player.value || !currentMapData.value) return;
             const p = player.value.position;
+
+            // Portals
             let closestDist = 999;
             let closestPortal = null;
 
@@ -445,12 +471,40 @@ export default {
                 canEnterPortal.value = false;
                 pendingPortal.value = null;
             }
+
+            // NPCs
+            let closestNpcDist = 999;
+            let targetNpc = null;
+
+            if (mapNpcs.value) {
+                for (const npc of mapNpcs.value) {
+                    const dist = Math.sqrt((p.x - npc.x) ** 2 + (p.y - npc.y) ** 2);
+                    if (dist < closestNpcDist) {
+                        closestNpcDist = dist;
+                        targetNpc = npc;
+                    }
+                }
+            }
+
+            if (targetNpc && closestNpcDist < 3.0) {
+                closestNpc.value = targetNpc;
+                canInteractNpc.value = true;
+            } else {
+                closestNpc.value = null;
+                canInteractNpc.value = false;
+            }
         };
 
         const confirmPortal = async () => {
             if (pendingPortal.value) {
                 await api.movePlayer(pendingPortal.value.targetMap, pendingPortal.value.x, pendingPortal.value.y);
                 canEnterPortal.value = false;
+            }
+        };
+
+        const interactNpc = () => {
+            if (closestNpc.value) {
+                emit('interact-npc', closestNpc.value);
             }
         };
 
@@ -479,6 +533,7 @@ export default {
             if (e.key === 'd' || e.key === 'D') keys.d = true;
             if (e.key === 'f' || e.key === 'F') {
                 if (canEnterPortal.value) confirmPortal();
+                else if (canInteractNpc.value) interactNpc();
             }
             if (e.key === ' ') {
                 toggleAutoAttack();
@@ -501,7 +556,7 @@ export default {
             tempVec.setFromMatrixPosition(obj.matrixWorld);
 
             // Offset based on type
-            const offset = obj.userData.type === 'player' ? 2.5 : (obj.userData.type === 'portal' ? 3.0 : 2.0);
+            const offset = obj.userData.type === 'player' ? 2.5 : (obj.userData.type === 'portal' ? 3.0 : (obj.userData.type === 'npc' ? 2.5 : 2.0));
             tempVec.y += offset;
 
             tempVec.project(camera);
@@ -523,7 +578,7 @@ export default {
             animationId = requestAnimationFrame(animate);
 
             updateMovement();
-            checkPortals();
+            checkInteractions();
             updateEntities();
 
             renderer.render(scene, camera);
@@ -569,6 +624,13 @@ export default {
                 stopAutoFarm();
                 await api.fetchMapMonsters(newMapId);
                 api.fetchMapPlayers(newMapId);
+
+                // Fetch NPCs
+                try {
+                    const res = await fetch(`http://localhost:8000/map/${newMapId}/npcs`);
+                    if (res.ok) mapNpcs.value = await res.json();
+                } catch (e) { console.error(e); }
+
                 try {
                     const res = await fetch(`http://localhost:8000/map/${newMapId}`);
                     if (res.ok) currentMapData.value = await res.json();
@@ -612,7 +674,10 @@ export default {
             isFreeFarming,
             fps,
             entityLabels,
-            toggleAutoAttack
+            toggleAutoAttack,
+            canInteractNpc,
+            closestNpc,
+            interactNpc
         };
     }
 };

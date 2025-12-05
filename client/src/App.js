@@ -13,6 +13,7 @@ import InspectModal from './components/InspectModal.js';
 import WorldEditor from './components/WorldEditor.js';
 import MissionTracker from './components/MissionTracker.js';
 import GameAlerts from './components/GameAlerts.js';
+import NpcInteraction from './components/NpcInteraction.js';
 
 export default {
     components: {
@@ -25,13 +26,14 @@ export default {
         InspectModal,
         WorldEditor,
         MissionTracker,
-        GameAlerts
+        GameAlerts,
+        NpcInteraction
     },
     template: `
     <div class="relative w-screen h-screen bg-gray-900 text-gray-100 font-sans overflow-hidden">
             
             <!-- Fullscreen Map -->
-            <GameMap v-if="player" />
+            <GameMap v-if="player" @interact-npc="handleNpcInteraction" />
 
             <!-- UI Overlay -->
             <div v-if="player" class="absolute inset-0 pointer-events-none flex flex-col justify-between">
@@ -64,6 +66,9 @@ export default {
 
             <!-- Editor -->
             <WorldEditor v-if="showEditor" @close="showEditor = false" />
+            
+            <!-- NPC Interaction -->
+            <NpcInteraction v-if="showNpcInteraction && activeNpc" :npc="activeNpc" @close="closeNpcInteraction" />
 
             <!-- Login Screen -->
             <div v-if="!player && !showEditor" class="absolute inset-0 bg-gray-900 flex items-center justify-center z-50">
@@ -84,7 +89,7 @@ export default {
             </div>
 
             <!-- Modals -->
-<inventory-modal v-if="showInventory" :is-open="true" @close="showInventory = false"></inventory-modal>
+            <inventory-modal v-if="showInventory" :is-open="true" @close="showInventory = false"></inventory-modal>
             <attributes-modal v-if="showAttributes" :is-open="true" @close="showAttributes = false"></attributes-modal>
             <rewards-modal v-if="showRewards" :is-open="true" @close="showRewards = false"></rewards-modal>
             <inspect-modal v-if="showInspect" :target="inspectedPlayer" :is-open="true" @close="inspectedPlayer = null"></inspect-modal>
@@ -124,6 +129,8 @@ export default {
         const showAttributes = ref(false);
         const showRewards = ref(false);
         const showEditor = ref(false);
+        const showNpcInteraction = ref(false);
+        const activeNpc = ref(null);
         const logContainer = ref(null);
         const playerName = ref('');
 
@@ -134,6 +141,16 @@ export default {
 
         const checkCreatePlayer = (e) => {
             if (e.key === 'Enter') createPlayer();
+        };
+
+        const handleNpcInteraction = (npc) => {
+            activeNpc.value = npc;
+            showNpcInteraction.value = true;
+        };
+
+        const closeNpcInteraction = () => {
+            showNpcInteraction.value = false;
+            activeNpc.value = null;
         };
 
         // Auto-scroll logs
@@ -147,7 +164,7 @@ export default {
 
         // Key Bindings
         const handleKeydown = (e) => {
-            if (showEditor.value) return; // Disable game keys in editor
+            if (showEditor.value || showNpcInteraction.value) return; // Disable game keys in editor/dialog
 
             if (e.key === 'e' || e.key === 'E') {
                 showInventory.value = !showInventory.value;
@@ -251,6 +268,10 @@ export default {
             showAttributes,
             showRewards,
             showEditor,
+            showNpcInteraction,
+            activeNpc,
+            handleNpcInteraction,
+            closeNpcInteraction,
             showInspect: computed(() => !!inspectedPlayer.value),
             inspectedPlayer,
             toasts,

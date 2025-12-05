@@ -14,7 +14,9 @@ class StateManager:
             cls._instance.monsters: Dict[str, Monster] = {}
             cls._instance.missions: Dict[str, dict] = {}
             # Map ID -> List of Monster IDs
-            cls._instance.map_monsters: Dict[str, List[str]] = {} 
+            cls._instance.map_monsters: Dict[str, List[str]] = {}
+            cls._instance.npcs: Dict[str, NPC] = {} # Added NPC dictionary
+            cls._instance.respawn_queue: List[dict] = [] # Initialize respawn_queue here
         return cls._instance
 
     def load_missions(self):
@@ -79,9 +81,31 @@ class StateManager:
                 # Initial Spawns
                 for spawn in map_data.get("spawns", []):
                     self.spawn_monsters_from_template(spawn, map_id)
+            
+            self.load_npcs()
                     
         except Exception as e:
             print(f"Failed to load world data: {e}")
+
+    def load_npcs(self):
+        import json
+        import os
+        from ..models.npc import NPC
+        
+        try:
+            path = "backend/app/data/npcs.json"
+            if not os.path.exists(path):
+                print(f"NPC data not found at {path}")
+                self.npcs = {}
+                return
+            
+            with open(path, "r") as f:
+                data = json.load(f)
+                self.npcs = {k: NPC(**v) for k, v in data.items()}
+            print(f"Loaded {len(self.npcs)} NPCs.")
+        except Exception as e:
+            print(f"Failed to load NPCs: {e}")
+            self.npcs = {}
 
     def spawn_monsters_from_template(self, spawn_config, map_id):
         import uuid

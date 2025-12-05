@@ -6,6 +6,7 @@ export const socket = ref(null);
 export const currentMonster = ref(null);
 export const mapMonsters = ref([]);
 export const mapPlayers = ref([]);
+export const mapNpcs = ref([]);
 export const inspectedPlayer = ref(null);
 export const availableMissions = ref({});
 export const isFreeFarming = ref(false);

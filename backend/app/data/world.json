@@ -285,6 +285,10 @@
                 {
                     "item_id": "item_potion_hp_01",
                     "chance": 0.5
+                },
+                {
+                    "item_id": "item_wolf_tooth",
+                    "chance": 0.8
                 }
             ],
             "respawn_time": 5

@@ -32,6 +32,37 @@ class InventoryService:
                 player.inventory.append(item)
         else:
             player.inventory.append(item)
+            
+        # Check for Collect Missions
+        InventoryService.check_mission_progress(player, item)
+
+    @staticmethod
+    def check_mission_progress(player: Player, item: Item):
+        from ..engine.state_manager import StateManager
+        state_manager = StateManager.get_instance()
+        
+        if not player.active_mission_id:
+            return
+            
+        mission = state_manager.missions.get(player.active_mission_id)
+        if not mission:
+            return
+            
+        m_type = mission.get("type", "kill")
+        target_item = mission.get("target_template_id")
+        
+        # Extract template ID (assuming format template_id_uuid)
+        # This is a bit hacky, but without changing Item model schema (which might break DB/frontend), 
+        # we can try to match the start of the ID.
+        # Ideally we should add template_id to Item.
+        
+        if m_type == "collect" and target_item and item.id.startswith(target_item):
+             player.mission_progress += item.quantity
+             # Check completion
+             if player.mission_progress >= mission.get("target_count", 1):
+                 # Auto-complete or just notify?
+                 # Usually manual claim.
+                 pass
 
     @staticmethod
     def equip_item(player: Player, item: Item):

@@ -1,0 +1,39 @@
+{
+    "npc_guide_01": {
+        "id": "npc_guide_01",
+        "name": "Old Guide",
+        "map_id": "map_forest_1",
+        "x": 5,
+        "y": 38,
+        "type": "quest_giver",
+        "icon": "\ud83e\uddd9\u200d\u2642\ufe0f",
+        "quest_id": "mission_01",
+        "dialog_start": [
+            "Hello traveler!",
+            "The forest is dangerous lately.",
+            "Can you help us clear some wolves?"
+        ],
+        "dialog_accept": [
+            "Thank you!",
+            "Be careful out there."
+        ],
+        "dialog_reject": [
+            "I understand.",
+            "Come back if you change your mind."
+        ]
+    },
+    "npc_merchant_01": {
+        "id": "npc_merchant_01",
+        "name": "Merchant",
+        "map_id": "map_castle_1",
+        "x": 40,
+        "y": 42,
+        "type": "merchant",
+        "icon": "\ud83d\udcb0",
+        "shop_items": [
+            "item_potion_hp_01",
+            "item_sword_01",
+            "item_armor_01"
+        ]
+    }
+}

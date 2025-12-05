@@ -55,6 +55,7 @@ export default {
             const completed = player.value?.completed_missions || [];
             return Object.values(missions.value)
                 .filter(m => !completed.includes(m.id))
+                .filter(m => m.source !== 'npc' || isActive(m))
                 .sort((a, b) => a.level_requirement - b.level_requirement);
         });
 

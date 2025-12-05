@@ -20,5 +20,31 @@
         "target_count": 20,
         "reward_xp": 5000,
         "reward_gold": 5000
+    },
+    "mission_01": {
+        "id": "mission_01",
+        "title": "Wolf Menace",
+        "description": "The Old Guide asked you to clear some wolves from the forest.",
+        "level_requirement": 1,
+        "map_id": "map_forest_1",
+        "target_template_id": "wolf",
+        "target_count": 5,
+        "reward_xp": 200,
+        "reward_gold": 100,
+        "type": "kill",
+        "source": "npc"
+    },
+    "mission_collect_wolf_tooth": {
+        "id": "mission_collect_wolf_tooth",
+        "title": "Tooth Collector",
+        "description": "Collect 3 Wolf Teeth.",
+        "level_requirement": 1,
+        "map_id": "map_forest_1",
+        "target_template_id": "item_wolf_tooth",
+        "target_count": 3,
+        "reward_xp": 150,
+        "reward_gold": 50,
+        "type": "collect",
+        "source": "board"
     }
 }
