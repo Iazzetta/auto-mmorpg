@@ -176,7 +176,7 @@ class GameLoop:
                     closest_p = None
                     
                     for p in self.state_manager.players.values():
-                        if p.current_map_id == monster.map_id and p.stats.hp > 0:
+                        if str(p.current_map_id) == str(monster.map_id) and p.stats.hp > 0:
                             dist = math.sqrt((p.position.x - monster.position_x)**2 + (p.position.y - monster.position_y)**2)
                             if dist < closest_dist:
                                 closest_dist = dist

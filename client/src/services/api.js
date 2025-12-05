@@ -184,6 +184,32 @@ export const api = {
         if (soldCount > 0) {
             showToast('💰', 'Auto-Clean', `Sold ${soldCount} items`, 'text-yellow-500');
         }
+    },
+
+    async revivePlayer() {
+        if (!player.value) return;
+        const res = await fetch(`${API_URL}/player/${player.value.id}/revive`, { method: 'POST' });
+        if (res.ok) {
+            await this.refreshPlayer();
+            return true;
+        } else {
+            const data = await res.json();
+            alert(data.detail || "Failed to revive");
+            return false;
+        }
+    },
+
+    async respawnPlayer() {
+        if (!player.value) return;
+        const res = await fetch(`${API_URL}/player/${player.value.id}/respawn`, { method: 'POST' });
+        if (res.ok) {
+            await this.refreshPlayer();
+            // Force map details refresh if map changed
+            const data = await res.json();
+            if (data.map_id) {
+                this.fetchMapDetails(data.map_id);
+            }
+        }
     }
 };
 

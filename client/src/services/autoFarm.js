@@ -6,7 +6,7 @@ let autoFarmInterval = null;
 export const startAutoFarm = () => {
     if (autoFarmInterval) clearInterval(autoFarmInterval);
     checkAndAct();
-    autoFarmInterval = setInterval(checkAndAct, 4000);
+    autoFarmInterval = setInterval(checkAndAct, 1000);
 };
 
 export const stopAutoFarm = () => {

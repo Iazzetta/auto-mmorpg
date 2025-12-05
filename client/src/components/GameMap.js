@@ -466,6 +466,9 @@ export default {
                 if (player.value) {
                     selectedMapId.value = player.value.current_map_id;
                 }
+                // Clear specific target so we attack anything nearby
+                selectedTargetId.value = null;
+
                 isFreeFarming.value = true;
                 checkAndAct();
                 addLog("Auto Attack Enabled", "text-green-400");

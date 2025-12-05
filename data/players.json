@@ -4,25 +4,25 @@
     "token": "73c0638f-18f1-4c8d-b67b-a0c254ea7c2a",
     "name": "gui",
     "p_class": "warrior",
-    "level": 8,
-    "xp": 775,
-    "next_level_xp": 800,
+    "level": 9,
+    "xp": 575,
+    "next_level_xp": 8100,
     "stats": {
-      "hp": 12,
+      "hp": 200,
       "max_hp": 200,
       "atk": 40,
       "def_": 23,
       "speed": 21.0,
       "attack_cooldown": 1.0
     },
-    "current_map_id": "map_forest_1",
+    "current_map_id": "map_castle_1",
     "respawn_map_id": "map_castle_1",
     "position": {
-      "x": 79.06260999838138,
-      "y": 23.88861157546822
+      "x": 50.0,
+      "y": 50.0
     },
-    "state": "combat",
-    "target_monster_id": "wolf_f5fb4e04",
+    "state": "idle",
+    "target_monster_id": null,
     "target_position": null,
     "active_mission_id": "mission_02",
     "mission_progress": 3,
@@ -35,7 +35,7 @@
       "vit": 10,
       "int": 10
     },
-    "attribute_points": 35,
+    "attribute_points": 40,
     "inventory": [
       {
         "id": "item_potion_hp_01_39ffa7d0",
@@ -53,7 +53,7 @@
         },
         "power_score": 10,
         "icon": "\ud83e\uddea",
-        "quantity": 95,
+        "quantity": 103,
         "stackable": true
       },
       {
@@ -519,10 +519,10 @@
       },
       "hand_off": null
     },
-    "gold": 3160,
+    "gold": 3498,
     "diamonds": 0,
     "is_admin": true,
-    "last_attack_time": 1764898144.248848,
+    "last_attack_time": 1764935131.7643871,
     "last_movement_broadcast": 1764803410.544847
   },
   "e0f144a6-691f-43f4-9633-12d7f6b4877b": {
@@ -3951,24 +3951,24 @@
     "name": "zassss",
     "p_class": "warrior",
     "level": 5,
-    "xp": 850,
+    "xp": 2400,
     "next_level_xp": 2500,
     "stats": {
-      "hp": 132,
+      "hp": 200,
       "max_hp": 200,
       "atk": 74,
       "def_": 33,
       "speed": 21.0,
       "attack_cooldown": 1.0
     },
-    "current_map_id": "map_forest_1",
+    "current_map_id": "map_castle_1",
     "respawn_map_id": "map_castle_1",
     "position": {
-      "x": 68.9302639371741,
-      "y": 15.020044460221285
+      "x": 50.0,
+      "y": 50.0
     },
-    "state": "combat",
-    "target_monster_id": "wolf_58825110",
+    "state": "idle",
+    "target_monster_id": null,
     "target_position": {
       "x": 68.8340699010936,
       "y": 14.037862701818563
@@ -4000,7 +4000,7 @@
         },
         "power_score": 10,
         "icon": "\ud83d\udce6",
-        "quantity": 39,
+        "quantity": 60,
         "stackable": true
       },
       {
@@ -4116,6 +4116,63 @@
         "icon": "\u2694\ufe0f",
         "quantity": 1,
         "stackable": false
+      },
+      {
+        "id": "item_sword_01_0edce4b5",
+        "name": "Iron Sword",
+        "type": "weapon",
+        "slot": "hand_main",
+        "rarity": "common",
+        "stats": {
+          "strength": 0,
+          "intelligence": 0,
+          "atk": 5,
+          "def_": 0,
+          "speed": 0.0,
+          "hp": 0
+        },
+        "power_score": 5,
+        "icon": "\u2694\ufe0f",
+        "quantity": 1,
+        "stackable": false
+      },
+      {
+        "id": "item_sword_01_e5c12ca0",
+        "name": "Iron Sword",
+        "type": "weapon",
+        "slot": "hand_main",
+        "rarity": "common",
+        "stats": {
+          "strength": 0,
+          "intelligence": 0,
+          "atk": 5,
+          "def_": 0,
+          "speed": 0.0,
+          "hp": 0
+        },
+        "power_score": 5,
+        "icon": "\u2694\ufe0f",
+        "quantity": 1,
+        "stackable": false
+      },
+      {
+        "id": "item_sword_01_eacfd0cb",
+        "name": "Iron Sword",
+        "type": "weapon",
+        "slot": "hand_main",
+        "rarity": "common",
+        "stats": {
+          "strength": 0,
+          "intelligence": 0,
+          "atk": 5,
+          "def_": 0,
+          "speed": 0.0,
+          "hp": 0
+        },
+        "power_score": 5,
+        "icon": "\u2694\ufe0f",
+        "quantity": 1,
+        "stackable": false
       }
     ],
     "equipment": {
@@ -4162,10 +4219,192 @@
       },
       "hand_off": null
     },
-    "gold": 2764,
+    "gold": 3753,
     "diamonds": 0,
     "is_admin": false,
-    "last_attack_time": 1764898144.813461,
+    "last_attack_time": 1764935132.831764,
     "last_movement_broadcast": 1764898082.048764
+  },
+  "cd29dc97-adc4-4430-aba6-9bb5ba48f7fa": {
+    "id": "cd29dc97-adc4-4430-aba6-9bb5ba48f7fa",
+    "token": "b830b614-f27b-43ec-959b-22ad310b2ced",
+    "name": "admin",
+    "p_class": "warrior",
+    "level": 1,
+    "xp": 75,
+    "next_level_xp": 100,
+    "stats": {
+      "hp": 100,
+      "max_hp": 100,
+      "atk": 13,
+      "def_": 7,
+      "speed": 20.0,
+      "attack_cooldown": 1.0
+    },
+    "current_map_id": "map_castle_1",
+    "respawn_map_id": "map_castle_1",
+    "position": {
+      "x": 71.2070142211195,
+      "y": 52.73932603613353
+    },
+    "state": "idle",
+    "target_monster_id": null,
+    "target_position": null,
+    "active_mission_id": null,
+    "mission_progress": 0,
+    "completed_missions": [],
+    "attributes": {
+      "str": 10,
+      "agi": 10,
+      "vit": 10,
+      "ini": 10
+    },
+    "attribute_points": 0,
+    "inventory": [
+      {
+        "id": "962be555-09b1-486e-b32a-66bd1a4c522f",
+        "name": "Starter Sword",
+        "type": "weapon",
+        "slot": "hand_main",
+        "rarity": "common",
+        "stats": {
+          "strength": 0,
+          "intelligence": 0,
+          "atk": 3,
+          "def_": 0,
+          "speed": 0.0,
+          "hp": 0
+        },
+        "power_score": 3,
+        "icon": "\ud83d\udce6",
+        "quantity": 1,
+        "stackable": false
+      },
+      {
+        "id": "3d81af26-e27e-462a-9583-ce2509eccc67",
+        "name": "Starter Tunic",
+        "type": "armor",
+        "slot": "chest",
+        "rarity": "common",
+        "stats": {
+          "strength": 0,
+          "intelligence": 0,
+          "atk": 0,
+          "def_": 2,
+          "speed": 0.0,
+          "hp": 0
+        },
+        "power_score": 2,
+        "icon": "\ud83d\udce6",
+        "quantity": 1,
+        "stackable": false
+      },
+      {
+        "id": "1e95581b-a7f0-47ce-adf3-469b20ae1593",
+        "name": "Starter Sword",
+        "type": "weapon",
+        "slot": "hand_main",
+        "rarity": "common",
+        "stats": {
+          "strength": 0,
+          "intelligence": 0,
+          "atk": 3,
+          "def_": 0,
+          "speed": 0.0,
+          "hp": 0
+        },
+        "power_score": 3,
+        "icon": "\ud83d\udce6",
+        "quantity": 1,
+        "stackable": false
+      },
+      {
+        "id": "e58be1b2-6b1c-485e-8e2b-90a5062ecab2",
+        "name": "Starter Tunic",
+        "type": "armor",
+        "slot": "chest",
+        "rarity": "common",
+        "stats": {
+          "strength": 0,
+          "intelligence": 0,
+          "atk": 0,
+          "def_": 2,
+          "speed": 0.0,
+          "hp": 0
+        },
+        "power_score": 2,
+        "icon": "\ud83d\udce6",
+        "quantity": 1,
+        "stackable": false
+      },
+      {
+        "id": "item_potion_hp_01_05c36a70",
+        "name": "Health Potion",
+        "type": "consumable",
+        "slot": "none",
+        "rarity": "common",
+        "stats": {
+          "strength": 0,
+          "intelligence": 0,
+          "atk": 0,
+          "def_": 0,
+          "speed": 0.0,
+          "hp": 50
+        },
+        "power_score": 10,
+        "icon": "\ud83e\uddea",
+        "quantity": 1,
+        "stackable": true
+      }
+    ],
+    "equipment": {
+      "head": null,
+      "chest": {
+        "id": "3e3fce33-aa16-4a94-aa6a-127956db0852",
+        "name": "Starter Tunic",
+        "type": "armor",
+        "slot": "chest",
+        "rarity": "common",
+        "stats": {
+          "strength": 0,
+          "intelligence": 0,
+          "atk": 0,
+          "def_": 2,
+          "speed": 0.0,
+          "hp": 0
+        },
+        "power_score": 2,
+        "icon": "\ud83d\udce6",
+        "quantity": 1,
+        "stackable": false
+      },
+      "legs": null,
+      "boots": null,
+      "hand_main": {
+        "id": "9e3c0baf-0eef-4216-a12f-a60160f70c7a",
+        "name": "Starter Sword",
+        "type": "weapon",
+        "slot": "hand_main",
+        "rarity": "common",
+        "stats": {
+          "strength": 0,
+          "intelligence": 0,
+          "atk": 3,
+          "def_": 0,
+          "speed": 0.0,
+          "hp": 0
+        },
+        "power_score": 3,
+        "icon": "\ud83d\udce6",
+        "quantity": 1,
+        "stackable": false
+      },
+      "hand_off": null
+    },
+    "gold": 43,
+    "diamonds": 0,
+    "is_admin": true,
+    "last_attack_time": 1764938904.919924,
+    "last_movement_broadcast": 1764938918.2849731
   }
 }

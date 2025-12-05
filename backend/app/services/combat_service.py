@@ -28,6 +28,11 @@ class CombatService:
         monster.stats.hp -= dmg_to_monster
         log['player_dmg'] = dmg_to_monster
         
+        # Aggro Logic: If monster was passive/idle, it now fights back
+        if monster.stats.hp > 0 and not monster.target_id:
+            monster.target_id = player.id
+            monster.state = "CHASING"
+            
         if monster.stats.hp <= 0:
             monster.stats.hp = 0
             log['monster_died'] = True
@@ -70,8 +75,8 @@ class CombatService:
                 sm.queue_respawn(
                     monster.template_id, 
                     monster.map_id, 
-                    monster.position_x, 
-                    monster.position_y, 
+                    monster.spawn_x, 
+                    monster.spawn_y, 
                     respawn_time
                 )
             except Exception as e:
@@ -87,25 +92,10 @@ class CombatService:
         if player.stats.hp <= 0:
             player.stats.hp = 0
             log['player_died'] = True
-            # Handle Death
+            # Handle Death State
             player.state = PlayerState.IDLE
             player.target_monster_id = None
-            player.stats.hp = player.stats.max_hp # Reset HP
-            
-            # Respawn at designated map
-            from ..engine.state_manager import StateManager
-            sm = StateManager.get_instance()
-            respawn_map = sm.get_map(player.respawn_map_id)
-            
-            if respawn_map:
-                player.current_map_id = respawn_map.id
-                player.position.x = respawn_map.respawn_x
-                player.position.y = respawn_map.respawn_y
-            else:
-                # Fallback
-                player.current_map_id = "map_castle_1"
-                player.position.x = 50
-                player.position.y = 50
+            # Do NOT respawn immediately. Client will handle UI and request respawn.
             
             return log
             

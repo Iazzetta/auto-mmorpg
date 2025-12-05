@@ -347,3 +347,48 @@ async def get_map_details(map_id: str):
     if not m:
         raise HTTPException(404, "Map not found")
     return m
+
+@router.post("/player/{player_id}/revive")
+async def revive_player(player_id: str):
+    player = state_manager.get_player(player_id)
+    if not player:
+        raise HTTPException(status_code=404, detail="Player not found")
+        
+    if player.stats.hp > 0:
+        return {"message": "Player is already alive"}
+        
+    # Cost: 100 Gold (Placeholder for Diamonds)
+    cost = 100
+    if player.gold < cost:
+        raise HTTPException(status_code=400, detail="Not enough gold to revive")
+        
+    player.gold -= cost
+    player.stats.hp = player.stats.max_hp
+    player.state = PlayerState.IDLE
+    
+    return {"message": "Revived!", "hp": player.stats.hp, "gold": player.gold}
+
+@router.post("/player/{player_id}/respawn")
+async def respawn_player(player_id: str):
+    player = state_manager.get_player(player_id)
+    if not player:
+        raise HTTPException(status_code=404, detail="Player not found")
+        
+    if player.stats.hp > 0:
+        return {"message": "Player is already alive"}
+        
+    # Respawn at save point
+    player.stats.hp = player.stats.max_hp
+    player.state = PlayerState.IDLE
+    
+    respawn_map = state_manager.get_map(player.respawn_map_id)
+    if respawn_map:
+        player.current_map_id = respawn_map.id
+        player.position.x = respawn_map.respawn_x
+        player.position.y = respawn_map.respawn_y
+    else:
+        player.current_map_id = "map_castle_1"
+        player.position.x = 50
+        player.position.y = 50
+        
+    return {"message": "Respawned", "map_id": player.current_map_id, "position": player.position}

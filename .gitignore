@@ -3,3 +3,4 @@ __pycache__
 venv
 server.log
 data!backend/app/data/world.json
+data/players.json

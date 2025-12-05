@@ -1,4 +1,4 @@
-import { ref, onMounted, onUnmounted, nextTick, watch } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.js';
+import { ref, onMounted, onUnmounted, nextTick, watch, computed } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.js';
 import { player, logs, toasts, inspectedPlayer } from './state.js';
 import { api } from './services/api.js';
 import { toggleFreeFarm } from './services/autoFarm.js';
@@ -71,7 +71,7 @@ export default {
                     <div class="mb-4">
                         <input v-model="playerName" type="text" placeholder="Enter Hero Name" 
                             class="bg-gray-700 text-white px-4 py-2 rounded text-xl w-full border border-gray-600 focus:border-blue-500 outline-none"
-                            @keyup.enter="createPlayer">
+                            @keyup="checkCreatePlayer">
                     </div>
                     <button @click="createPlayer" 
                         class="bg-blue-600 hover:bg-blue-500 px-8 py-4 rounded text-2xl font-bold text-white shadow-lg w-full transition-transform active:scale-95"
@@ -88,6 +88,22 @@ export default {
             <AttributesModal :isOpen="showAttributes" @close="showAttributes = false" />
             <RewardsModal :isOpen="showRewards" @close="showRewards = false" />
             <InspectModal :isOpen="!!inspectedPlayer" :player="inspectedPlayer" @close="inspectedPlayer = null" />
+
+            <!-- Death Modal -->
+            <div v-if="isDead" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
+                <div class="bg-gray-900 border-2 border-red-600 p-8 rounded-lg text-center max-w-md w-full shadow-[0_0_50px_rgba(220,38,38,0.5)]">
+                    <h2 class="text-4xl font-bold text-red-500 mb-4 tracking-wider">YOU DIED</h2>
+                    <p class="text-gray-400 mb-6">Respawning at nearest Castle in...</p>
+                    
+                    <div class="text-6xl font-mono text-white mb-8">{{ respawnTimer }}</div>
+                    
+                    <button @click="instantRevive" class="w-full bg-yellow-600 hover:bg-yellow-500 text-white font-bold py-3 px-4 rounded mb-3 flex items-center justify-center gap-2 transition-colors">
+                        <span>💎</span> Revive Here (100 Gold)
+                    </button>
+                    
+                    <p class="text-xs text-gray-500 mt-4">Wait for timer to respawn at Save Point.</p>
+                </div>
+            </div>
 
             <!-- Toasts -->
             <div class="fixed bottom-24 right-4 flex flex-col gap-2 pointer-events-none z-50">
@@ -115,6 +131,10 @@ export default {
         const createPlayer = async () => {
             if (!playerName.value) return;
             await api.createPlayer(playerName.value);
+        };
+
+        const checkCreatePlayer = (e) => {
+            if (e.key === 'Enter') createPlayer();
         };
 
         // Auto-scroll logs
@@ -163,19 +183,48 @@ export default {
             window.removeEventListener('keydown', handleKeydown);
         });
 
+        const isDead = computed(() => player.value && player.value.stats.hp <= 0);
+        const respawnTimer = ref(10);
+        let respawnInterval = null;
+
+        watch(isDead, (dead) => {
+            if (dead) {
+                respawnTimer.value = 10;
+                respawnInterval = setInterval(() => {
+                    respawnTimer.value--;
+                    if (respawnTimer.value <= 0) {
+                        clearInterval(respawnInterval);
+                        api.respawnPlayer();
+                    }
+                }, 1000);
+            } else {
+                if (respawnInterval) clearInterval(respawnInterval);
+            }
+        });
+
+        const instantRevive = async () => {
+            await api.revivePlayer();
+        };
+
         return {
             player,
             logs,
-            toasts,
-            createPlayer,
-            showInventory,
-            showMissions,
-            showAttributes,
-            showRewards,
-            showEditor,
             logContainer,
-            playerName,
-            inspectedPlayer
+            showInventory,
+            showAttributes,
+            showMissions,
+            showEditor,
+            showRewards,
+            inspectedPlayer,
+            toasts,
+            toggleInventory: () => showInventory.value = !showInventory.value,
+            toggleAttributes: () => showAttributes.value = !showAttributes.value,
+            toggleMissions: () => showMissions.value = !showMissions.value,
+            toggleEditor: () => showEditor.value = !showEditor.value,
+            isDead,
+            respawnTimer,
+            instantRevive,
+            checkCreatePlayer
         };
     }
 };
