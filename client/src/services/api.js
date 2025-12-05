@@ -82,6 +82,15 @@ export const api = {
         if (!res.ok) {
             const data = await res.json();
             showGameAlert(data.detail || "Cannot move there!", "error");
+        } else {
+            const data = await res.json();
+            if (data.map_id && data.map_id !== player.value.current_map_id) {
+                player.value.current_map_id = data.map_id;
+                player.value.position = data.position;
+                player.value.state = 'idle';
+                api.fetchMapDetails(data.map_id);
+                api.fetchMapMonsters(data.map_id);
+            }
         }
     },
 
@@ -432,8 +441,9 @@ const handleCombatUpdate = (data) => {
             }
 
             if (!sold) {
-                showToast(drop.icon || '📦', drop.name, `x${drop.quantity || 1}`, getRarityColor(drop.rarity));
-                showGameAlert(`Dropped: ${drop.name} x${drop.quantity || 1}`, 'drop', drop.icon || '📦');
+                const icon = getItemIcon(drop);
+                showToast(icon, drop.name, `x${drop.quantity || 1}`, getRarityColor(drop.rarity));
+                showGameAlert(`Dropped: ${drop.name} x${drop.quantity || 1}`, 'drop', icon);
             }
         });
     }
@@ -459,4 +469,13 @@ export const getRarityColor = (rarity) => {
         legendary: 'text-yellow-400'
     };
     return colors[rarity] || 'text-gray-300';
+};
+
+export const getItemIcon = (item) => {
+    if (item.icon && item.icon !== '📦') return item.icon;
+    if (item.type === 'weapon') return '⚔️';
+    if (item.type === 'armor') return '🛡️';
+    if (item.type === 'consumable') return '🧪';
+    if (item.type === 'material') return '🪵';
+    return '📦';
 };

@@ -274,6 +274,7 @@ export default {
                     scene.add(mesh);
                     meshes.set(pid, mesh);
                 }
+                mesh.userData.entity = player.value;
 
                 // Interpolate Position
                 const targetX = player.value.position.x;
