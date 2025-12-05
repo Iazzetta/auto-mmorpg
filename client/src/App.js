@@ -82,10 +82,10 @@ export default {
             </div>
 
             <!-- Modals -->
-            <inventory-modal v-if="showInventory" @close="showInventory = false"></inventory-modal>
-            <attributes-modal v-if="showAttributes" @close="showAttributes = false"></attributes-modal>
-            <rewards-modal v-if="showRewards" @close="showRewards = false"></rewards-modal>
-            <inspect-modal v-if="showInspect" :target="inspectedPlayer" @close="inspectedPlayer = null"></inspect-modal>
+<inventory-modal v-if="showInventory" :is-open="true" @close="showInventory = false"></inventory-modal>
+            <attributes-modal v-if="showAttributes" :is-open="true" @close="showAttributes = false"></attributes-modal>
+            <rewards-modal v-if="showRewards" :is-open="true" @close="showRewards = false"></rewards-modal>
+            <inspect-modal v-if="showInspect" :target="inspectedPlayer" :is-open="true" @close="inspectedPlayer = null"></inspect-modal>
             
             <mission-tracker></mission-tracker>
 
@@ -173,7 +173,7 @@ export default {
             }
             // Load missions
             try {
-                fetch('http://localhost:8000/missions').then(res => {
+                fetch('http://localhost:8000/content/missions').then(res => {
                     if (res.ok) return res.json();
                 }).then(data => {
                     if (data) missions.value = data;

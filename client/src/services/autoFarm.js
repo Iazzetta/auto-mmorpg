@@ -20,18 +20,16 @@ export const stopAutoFarm = () => {
     destinationMarker.value = null;
 };
 
-export const startMission = (mission) => {
+export const startMission = async (mission) => {
     stopAutoFarm(); // Stop current
     addLog(`Starting Mission: ${mission.title}`, "text-yellow-400");
+
+    // Notify Backend
+    await api.startMission(mission.id);
 
     activeMission.value = mission;
     selectedMapId.value = mission.map_id;
     selectedTargetId.value = mission.target_template_id;
-
-    // If mission is not active on server, set it (optional, if server tracks it)
-    // For now, we assume server tracks via 'active_mission_id' which is set when we accept?
-    // Or we just farm the requirements.
-    // Let's assume we just farm.
 
     startAutoFarm();
 };

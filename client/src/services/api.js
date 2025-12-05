@@ -213,6 +213,24 @@ export const api = {
                 this.fetchMapDetails(data.map_id);
             }
         }
+    },
+
+    async startMission(missionId) {
+        if (!player.value) return;
+        const res = await fetch(`${API_URL}/player/${player.value.id}/mission/start?mission_id=${missionId}`, { method: 'POST' });
+        if (res.ok) {
+            await this.refreshPlayer();
+        }
+    },
+
+    async claimMission() {
+        if (!player.value) return;
+        const res = await fetch(`${API_URL}/player/${player.value.id}/mission/claim`, { method: 'POST' });
+        if (res.ok) {
+            const data = await res.json();
+            showToast('🎁', 'Mission Complete!', `XP: ${data.rewards.xp}, Gold: ${data.rewards.gold}`, 'text-yellow-400');
+            await this.refreshPlayer();
+        }
     }
 };
 

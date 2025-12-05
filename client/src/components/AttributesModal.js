@@ -90,10 +90,16 @@ export default {
     setup(props, { emit }) {
         const tempAttributes = ref({});
 
-        watch(() => props.isOpen, (newVal) => {
-            if (newVal && player.value) {
+        const init = () => {
+            if (player.value) {
                 tempAttributes.value = { ...player.value.attributes };
             }
+        };
+
+        init();
+
+        watch(() => props.isOpen, (newVal) => {
+            if (newVal) init();
         });
 
         const availablePoints = computed(() => {
