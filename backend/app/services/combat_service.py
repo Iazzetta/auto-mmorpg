@@ -158,13 +158,18 @@ class CombatService:
 
     @staticmethod
     def check_mission_progress(player: Player, monster: Monster):
-        from ..data.missions import MISSIONS
+        from ..engine.state_manager import StateManager
         
         if player.active_mission_id:
-            mission = MISSIONS.get(player.active_mission_id)
+            sm = StateManager.get_instance()
+            mission = sm.missions.get(player.active_mission_id)
+            
             if mission:
                 # Check if the killed monster matches the mission target
-                if monster.template_id == mission["target_monster_id"]:
+                # Support both old 'target_monster_id' and new 'target_template_id'
+                target_id = mission.get("target_template_id") or mission.get("target_monster_id")
+                
+                if monster.template_id == target_id:
                     player.mission_progress += 1
                     
                     # Check completion (Optional: Auto-complete or just cap progress)

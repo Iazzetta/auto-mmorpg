@@ -199,14 +199,18 @@ export default {
                                 <input v-model.number="selectedMission.level_requirement" type="number" class="w-full bg-black border border-gray-700 rounded px-2 py-1 text-xs">
                             </div>
                             <div>
-                                <label class="text-[10px] text-gray-500 uppercase">Map ID</label>
-                                <input v-model="selectedMission.map_id" class="w-full bg-black border border-gray-700 rounded px-2 py-1 text-xs">
+                                <label class="text-[10px] text-gray-500 uppercase">Map</label>
+                                <select v-model="selectedMission.map_id" class="w-full bg-black border border-gray-700 rounded px-2 py-1 text-xs">
+                                    <option v-for="(m, mid) in worldData.maps" :key="mid" :value="mid">{{ m.name }}</option>
+                                </select>
                             </div>
                         </div>
                         <div class="grid grid-cols-2 gap-2">
                              <div>
-                                <label class="text-[10px] text-gray-500 uppercase">Target ID</label>
-                                <input v-model="selectedMission.target_template_id" class="w-full bg-black border border-gray-700 rounded px-2 py-1 text-xs">
+                                <label class="text-[10px] text-gray-500 uppercase">Target Monster</label>
+                                <select v-model="selectedMission.target_template_id" class="w-full bg-black border border-gray-700 rounded px-2 py-1 text-xs">
+                                    <option v-for="(m, mid) in worldData.monster_templates" :key="mid" :value="mid">{{ m.name }}</option>
+                                </select>
                             </div>
                             <div>
                                 <label class="text-[10px] text-gray-500 uppercase">Count</label>

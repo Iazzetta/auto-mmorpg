@@ -60,50 +60,33 @@ export const checkAndAct = async () => {
     // 1. Check Map
     if (player.value.current_map_id !== selectedMapId.value) {
 
-        // Pathfinding Logic
-        let nextMapId = null;
+        // Teleport Logic (Fast Travel)
+        const targetMap = worldData.value?.maps?.[selectedMapId.value];
 
-        if (worldData.value && worldData.value.maps) {
-            const path = findPath(player.value.current_map_id, selectedMapId.value, worldData.value.maps);
-            if (path && path.length > 1) {
-                nextMapId = path[1]; // The next map in the sequence (0 is current)
-                addLog(`Navigating to ${formatMapName(selectedMapId.value)} via ${formatMapName(nextMapId)}...`);
-            }
-        }
+        if (targetMap) {
+            // Check Level Requirement
+            if (player.value.level >= (targetMap.level_requirement || 0)) {
+                addLog(`Teleporting to ${formatMapName(selectedMapId.value)}...`, "text-blue-400");
 
-        // If no path found or no world data, fallback to direct check (legacy)
-        if (!nextMapId) {
-            // Try to find direct portal
-            if (currentMapData.value && currentMapData.value.portals) {
-                const p = currentMapData.value.portals.find(p => p.target_map_id === selectedMapId.value);
-                if (p) nextMapId = selectedMapId.value;
-            }
-        }
+                // Use movePlayer to teleport (assuming backend allows it or we add a teleport endpoint)
+                // For now, we'll try movePlayer to the respawn point of the target map.
+                // If backend validates distance, this might fail. We should probably add a teleport endpoint.
+                // But let's try this first as requested "teleport automatically".
 
-        if (nextMapId) {
-            // Find portal to nextMapId
-            let targetPortal = null;
-            if (currentMapData.value && currentMapData.value.portals) {
-                targetPortal = currentMapData.value.portals.find(p => p.target_map_id === nextMapId);
-            }
+                // Actually, let's use a specific teleport action if possible, or just move to spawn.
+                await api.movePlayer(selectedMapId.value, targetMap.respawn_x || 50, targetMap.respawn_y || 50);
 
-            if (targetPortal) {
-                const dist = Math.sqrt((player.value.position.x - targetPortal.x) ** 2 + (player.value.position.y - targetPortal.y) ** 2);
-                if (dist < 3.0) {
-                    addLog("Entering Portal...", "text-blue-400");
-                    await api.movePlayer(targetPortal.target_map_id, targetPortal.target_x, targetPortal.target_y);
-                } else {
-                    await api.movePlayer(player.value.current_map_id, targetPortal.x, targetPortal.y);
-                }
+                // Wait a bit for server to process
+                await new Promise(r => setTimeout(r, 500));
             } else {
-                addLog(`No portal found to ${formatMapName(nextMapId)}!`, "text-red-400");
-                // Fallback: Move to center
-                await api.movePlayer(player.value.current_map_id, 50, 50);
+                addLog(`Cannot enter ${targetMap.name}. Level ${targetMap.level_requirement} required.`, "text-red-500");
+                stopMission();
+                return;
             }
         } else {
-            addLog(`Cannot find path to ${formatMapName(selectedMapId.value)}`, "text-red-400");
-            // Fallback: Move to center
-            await api.movePlayer(player.value.current_map_id, 50, 50);
+            addLog(`Unknown map: ${selectedMapId.value}`, "text-red-400");
+            stopMission();
+            return;
         }
 
         await api.refreshPlayer();

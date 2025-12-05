@@ -1,6 +1,6 @@
 {
-    "mission_1764948824324": {
-        "id": "mission_1764948824324",
+    "mission_1764949959183": {
+        "id": "mission_1764949959183",
         "title": "New Mission",
         "description": "Description",
         "level_requirement": 1,
@@ -10,15 +10,15 @@
         "reward_xp": 100,
         "reward_gold": 50
     },
-    "mission_1764948831285": {
-        "id": "mission_1764948831285",
-        "title": "dsadsa",
+    "mission_1764949964937": {
+        "id": "mission_1764949964937",
+        "title": "New Mission",
         "description": "Description",
         "level_requirement": 5,
-        "map_id": "map_forest_1",
-        "target_template_id": "wolf",
+        "map_id": "map_dungeon_1",
+        "target_template_id": "king_rat",
         "target_count": 5,
-        "reward_xp": 1000,
+        "reward_xp": 100,
         "reward_gold": 50
     }
 }
