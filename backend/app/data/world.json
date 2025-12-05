@@ -233,10 +233,6 @@
                 {
                     "item_id": "item_potion_hp_01",
                     "chance": 0.4
-                },
-                {
-                    "item_id": "Beta",
-                    "chance": 0.9
                 }
             ],
             "respawn_time": 3

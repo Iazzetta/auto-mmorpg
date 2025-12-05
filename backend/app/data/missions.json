@@ -1,24 +1,24 @@
 {
     "mission_1764949959183": {
         "id": "mission_1764949959183",
-        "title": "New Mission",
-        "description": "Description",
+        "title": "Welcome",
+        "description": "Welcome! Lets kill some wolfs",
         "level_requirement": 1,
         "map_id": "map_forest_1",
         "target_template_id": "wolf",
-        "target_count": 5,
-        "reward_xp": 100,
-        "reward_gold": 50
+        "target_count": 10,
+        "reward_xp": 1000,
+        "reward_gold": 500
     },
     "mission_1764949964937": {
         "id": "mission_1764949964937",
-        "title": "New Mission",
-        "description": "Description",
-        "level_requirement": 50,
-        "map_id": "map_dungeon_1",
-        "target_template_id": "king_rat",
-        "target_count": 5,
-        "reward_xp": 100,
-        "reward_gold": 50
+        "title": "Globin Assalt",
+        "description": "Globins estao causando",
+        "level_requirement": 5,
+        "map_id": "map_forest_2",
+        "target_template_id": "goblin",
+        "target_count": 20,
+        "reward_xp": 5000,
+        "reward_gold": 5000
     }
 }
