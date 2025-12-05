@@ -1,29 +1,46 @@
 {
     "mission_01": {
+        "id": "mission_01",
+        "title": "Rat Extermination",
+        "description": "Clear the rats in the Deep Forest.",
+        "target_template_id": "rat",
+        "target_count": 5,
+        "reward_xp": 100,
+        "reward_gold": 50,
+        "map_id": "map_forest_2",
+        "level_requirement": 1
+    },
+    "mission_02": {
+        "id": "mission_02",
         "title": "Wolf Hunt",
-        "description": "Hunt 5 Dire Wolves.",
-        "target_monster_id": "mob_wolf_01",
+        "description": "Hunt 5 Wolves in the Forest.",
+        "target_template_id": "wolf",
         "target_count": 5,
         "reward_xp": 150,
         "reward_gold": 75,
-        "map_id": "map_forest_1"
-    },
-    "mission_02": {
-        "title": "Goblin Trouble",
-        "description": "Clear 3 Goblins.",
-        "target_monster_id": "mob_goblin_01",
-        "target_count": 3,
-        "reward_xp": 100,
-        "reward_gold": 50,
-        "map_id": "map_forest_1"
+        "map_id": "map_forest_1",
+        "level_requirement": 3
     },
     "mission_03": {
-        "title": "Bear Necessity",
-        "description": "Defeat the Brown Bear.",
-        "target_monster_id": "mob_bear_01",
-        "target_count": 1,
-        "reward_xp": 300,
-        "reward_gold": 150,
-        "map_id": "map_forest_1"
+        "id": "mission_03",
+        "title": "Goblin Trouble",
+        "description": "Clear 3 Goblins.",
+        "target_template_id": "goblin",
+        "target_count": 3,
+        "reward_xp": 200,
+        "reward_gold": 100,
+        "map_id": "map_forest_1",
+        "level_requirement": 5
+    },
+    "mission_04": {
+        "id": "mission_04",
+        "title": "Skeleton Army",
+        "description": "Defeat 10 Skeletons in the Dungeon.",
+        "target_template_id": "skeleton",
+        "target_count": 10,
+        "reward_xp": 500,
+        "reward_gold": 250,
+        "map_id": "map_dungeon_1",
+        "level_requirement": 10
     }
 }

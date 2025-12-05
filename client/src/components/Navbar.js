@@ -53,12 +53,6 @@ export default {
 
             <!-- Right: Menus -->
             <div v-if="player" class="flex gap-2 mr-2">
-                <button @click="$emit('open-missions')" class="bg-gray-800 hover:bg-gray-700 border border-gray-600 px-3 py-2 rounded text-sm flex items-center gap-2 relative transition-all active:scale-95" title="Missions (M)">
-                    <span>📜</span>
-                    <span class="hidden md:inline">Missions</span>
-                    <span v-if="hasCompletedMission" class="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-ping"></span>
-                    <span v-if="hasCompletedMission" class="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span>
-                </button>
                 <button @click="$emit('open-inventory')" class="bg-gray-800 hover:bg-gray-700 border border-gray-600 px-3 py-2 rounded text-sm flex items-center gap-2 transition-all active:scale-95" title="Inventory (E)">
                     <span>🎒</span>
                     <span class="hidden md:inline">Bag</span>

@@ -114,6 +114,9 @@ export const api = {
         const res = await fetch(`${API_URL}/player/${player.value.id}`);
         if (res.ok) {
             player.value = await res.json();
+            if (player.value.state !== 'combat') {
+                currentMonster.value = null;
+            }
         }
     },
 

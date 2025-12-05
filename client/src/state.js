@@ -16,6 +16,8 @@ export const pendingAttackId = ref(null);
 export const destinationMarker = ref(null);
 export const toasts = ref([]);
 export const currentMapData = ref(null);
+export const activeMission = ref(null);
+export const missions = ref({});
 
 // Computed
 export const nextLevelXp = computed(() => player.value?.next_level_xp || 100);
