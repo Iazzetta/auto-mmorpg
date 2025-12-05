@@ -33,6 +33,22 @@ class CombatService:
             monster.target_id = player.id
             monster.state = "CHASING"
             
+            # Group Aggro: Alert nearby monsters of same type
+            from ..engine.state_manager import StateManager
+            sm = StateManager.get_instance()
+            nearby_radius = 8.0
+            
+            map_monsters = sm.map_monsters.get(monster.map_id, [])
+            for mid in map_monsters:
+                if mid == monster.id: continue
+                
+                other = sm.monsters.get(mid)
+                if other and other.template_id == monster.template_id and other.state in ["IDLE", "WANDERING"]:
+                    dist = ((other.position_x - monster.position_x)**2 + (other.position_y - monster.position_y)**2)**0.5
+                    if dist <= nearby_radius:
+                        other.target_id = player.id
+                        other.state = "CHASING"
+            
         if monster.stats.hp <= 0:
             monster.stats.hp = 0
             log['monster_died'] = True

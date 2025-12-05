@@ -36,5 +36,9 @@ class Monster(BaseModel):
     leash_range: float = 15.0
     last_broadcast: float = 0.0
     
+    # Wandering
+    wander_target_x: Optional[float] = None
+    wander_target_y: Optional[float] = None
+    
     possible_loot: List[str] = [] 
     xp_reward: int

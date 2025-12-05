@@ -3788,10 +3788,10 @@
     "name": "zas",
     "p_class": "warrior",
     "level": 3,
-    "xp": 675,
+    "xp": 725,
     "next_level_xp": 900,
     "stats": {
-      "hp": 112,
+      "hp": 106,
       "max_hp": 200,
       "atk": 58,
       "def_": 29,
@@ -3939,10 +3939,10 @@
       },
       "hand_off": null
     },
-    "gold": 855,
+    "gold": 889,
     "diamonds": 0,
     "is_admin": false,
-    "last_attack_time": 1764883129.478247,
+    "last_attack_time": 1764939918.8271391,
     "last_movement_broadcast": 1764883130.544616
   },
   "5efbb994-c578-43f9-8aa0-6e212dfb9cc5": {
@@ -4230,32 +4230,32 @@
     "token": "b830b614-f27b-43ec-959b-22ad310b2ced",
     "name": "admin",
     "p_class": "warrior",
-    "level": 1,
-    "xp": 75,
-    "next_level_xp": 100,
+    "level": 3,
+    "xp": 450,
+    "next_level_xp": 900,
     "stats": {
-      "hp": 100,
-      "max_hp": 100,
-      "atk": 13,
-      "def_": 7,
-      "speed": 20.0,
+      "hp": 167,
+      "max_hp": 200,
+      "atk": 60,
+      "def_": 27,
+      "speed": 21.0,
       "attack_cooldown": 1.0
     },
-    "current_map_id": "map_castle_1",
+    "current_map_id": "map_forest_1",
     "respawn_map_id": "map_castle_1",
     "position": {
-      "x": 71.2070142211195,
-      "y": 52.73932603613353
+      "x": 63.2659692651625,
+      "y": 46.268915146635095
     },
     "state": "idle",
-    "target_monster_id": null,
+    "target_monster_id": "wolf_2c5b9da3",
     "target_position": null,
     "active_mission_id": null,
     "mission_progress": 0,
     "completed_missions": [],
     "attributes": {
-      "str": 10,
-      "agi": 10,
+      "str": 15,
+      "agi": 15,
       "vit": 10,
       "ini": 10
     },
@@ -4353,8 +4353,179 @@
         },
         "power_score": 10,
         "icon": "\ud83e\uddea",
-        "quantity": 1,
+        "quantity": 17,
         "stackable": true
+      },
+      {
+        "id": "9e3c0baf-0eef-4216-a12f-a60160f70c7a",
+        "name": "Starter Sword",
+        "type": "weapon",
+        "slot": "hand_main",
+        "rarity": "common",
+        "stats": {
+          "strength": 0,
+          "intelligence": 0,
+          "atk": 3,
+          "def_": 0,
+          "speed": 0.0,
+          "hp": 0
+        },
+        "power_score": 3,
+        "icon": "\ud83d\udce6",
+        "quantity": 1,
+        "stackable": false
+      },
+      {
+        "id": "item_sword_02_1940ad86",
+        "name": "Steel Sword",
+        "type": "weapon",
+        "slot": "hand_main",
+        "rarity": "uncommon",
+        "stats": {
+          "strength": 2,
+          "intelligence": 0,
+          "atk": 10,
+          "def_": 0,
+          "speed": 0.0,
+          "hp": 0
+        },
+        "power_score": 12,
+        "icon": "\u2694\ufe0f",
+        "quantity": 1,
+        "stackable": false
+      },
+      {
+        "id": "item_sword_02_c23521d5",
+        "name": "Steel Sword",
+        "type": "weapon",
+        "slot": "hand_main",
+        "rarity": "uncommon",
+        "stats": {
+          "strength": 2,
+          "intelligence": 0,
+          "atk": 10,
+          "def_": 0,
+          "speed": 0.0,
+          "hp": 0
+        },
+        "power_score": 12,
+        "icon": "\u2694\ufe0f",
+        "quantity": 1,
+        "stackable": false
+      },
+      {
+        "id": "item_sword_02_766e3836",
+        "name": "Steel Sword",
+        "type": "weapon",
+        "slot": "hand_main",
+        "rarity": "uncommon",
+        "stats": {
+          "strength": 2,
+          "intelligence": 0,
+          "atk": 10,
+          "def_": 0,
+          "speed": 0.0,
+          "hp": 0
+        },
+        "power_score": 12,
+        "icon": "\u2694\ufe0f",
+        "quantity": 1,
+        "stackable": false
+      },
+      {
+        "id": "item_sword_02_1619778d",
+        "name": "Steel Sword",
+        "type": "weapon",
+        "slot": "hand_main",
+        "rarity": "uncommon",
+        "stats": {
+          "strength": 2,
+          "intelligence": 0,
+          "atk": 10,
+          "def_": 0,
+          "speed": 0.0,
+          "hp": 0
+        },
+        "power_score": 12,
+        "icon": "\u2694\ufe0f",
+        "quantity": 1,
+        "stackable": false
+      },
+      {
+        "id": "item_sword_02_a82cb6bb",
+        "name": "Steel Sword",
+        "type": "weapon",
+        "slot": "hand_main",
+        "rarity": "uncommon",
+        "stats": {
+          "strength": 2,
+          "intelligence": 0,
+          "atk": 10,
+          "def_": 0,
+          "speed": 0.0,
+          "hp": 0
+        },
+        "power_score": 12,
+        "icon": "\u2694\ufe0f",
+        "quantity": 1,
+        "stackable": false
+      },
+      {
+        "id": "item_sword_02_f14b37ba",
+        "name": "Steel Sword",
+        "type": "weapon",
+        "slot": "hand_main",
+        "rarity": "uncommon",
+        "stats": {
+          "strength": 2,
+          "intelligence": 0,
+          "atk": 10,
+          "def_": 0,
+          "speed": 0.0,
+          "hp": 0
+        },
+        "power_score": 12,
+        "icon": "\u2694\ufe0f",
+        "quantity": 1,
+        "stackable": false
+      },
+      {
+        "id": "item_sword_02_8d9cf0dd",
+        "name": "Steel Sword",
+        "type": "weapon",
+        "slot": "hand_main",
+        "rarity": "uncommon",
+        "stats": {
+          "strength": 2,
+          "intelligence": 0,
+          "atk": 10,
+          "def_": 0,
+          "speed": 0.0,
+          "hp": 0
+        },
+        "power_score": 12,
+        "icon": "\u2694\ufe0f",
+        "quantity": 1,
+        "stackable": false
+      },
+      {
+        "id": "item_sword_02_137a52ba",
+        "name": "Steel Sword",
+        "type": "weapon",
+        "slot": "hand_main",
+        "rarity": "uncommon",
+        "stats": {
+          "strength": 2,
+          "intelligence": 0,
+          "atk": 10,
+          "def_": 0,
+          "speed": 0.0,
+          "hp": 0
+        },
+        "power_score": 12,
+        "icon": "\u2694\ufe0f",
+        "quantity": 1,
+        "stackable": false
       }
     ],
     "equipment": {
@@ -4381,30 +4552,30 @@
       "legs": null,
       "boots": null,
       "hand_main": {
-        "id": "9e3c0baf-0eef-4216-a12f-a60160f70c7a",
-        "name": "Starter Sword",
+        "id": "item_sword_02_9d1953de",
+        "name": "Steel Sword",
         "type": "weapon",
         "slot": "hand_main",
-        "rarity": "common",
+        "rarity": "uncommon",
         "stats": {
-          "strength": 0,
+          "strength": 2,
           "intelligence": 0,
-          "atk": 3,
+          "atk": 10,
           "def_": 0,
           "speed": 0.0,
           "hp": 0
         },
-        "power_score": 3,
-        "icon": "\ud83d\udce6",
+        "power_score": 12,
+        "icon": "\u2694\ufe0f",
         "quantity": 1,
         "stackable": false
       },
       "hand_off": null
     },
-    "gold": 43,
+    "gold": 1189,
     "diamonds": 0,
     "is_admin": true,
-    "last_attack_time": 1764938904.919924,
-    "last_movement_broadcast": 1764938918.2849731
+    "last_attack_time": 1764940060.479913,
+    "last_movement_broadcast": 1764940064.980789
   }
 }

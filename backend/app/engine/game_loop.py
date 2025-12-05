@@ -153,6 +153,7 @@ class GameLoop:
 
     async def process_monsters(self, dt: float):
         import math
+        import random
         current_time = self.last_tick_time
         
         for monster_id, monster in self.state_manager.monsters.items():
@@ -168,24 +169,68 @@ class GameLoop:
                     monster.state = "RETURNING"
                     target = None
             
+            # Common Aggro Check (for IDLE and WANDERING)
+            if monster.m_type == "aggressive" and not target and monster.state in ["IDLE", "WANDERING"]:
+                closest_dist = monster.aggro_range
+                closest_p = None
+                
+                for p in self.state_manager.players.values():
+                    if str(p.current_map_id) == str(monster.map_id) and p.stats.hp > 0:
+                        dist = math.sqrt((p.position.x - monster.position_x)**2 + (p.position.y - monster.position_y)**2)
+                        if dist < closest_dist:
+                            closest_dist = dist
+                            closest_p = p
+                
+                if closest_p:
+                    monster.target_id = closest_p.id
+                    monster.state = "CHASING"
+                    target = closest_p
+
             # State Machine
             if monster.state == "IDLE":
-                # Look for targets
-                if monster.m_type == "aggressive": # Only aggressive monsters aggro
-                    closest_dist = monster.aggro_range
-                    closest_p = None
+                # Wandering Logic
+                if random.random() < 0.02: # 2% chance per tick to start wandering
+                    angle = random.random() * 2 * math.pi
+                    r = random.random() * 4.0 # 4 unit radius
+                    wx = monster.spawn_x + r * math.cos(angle)
+                    wy = monster.spawn_y + r * math.sin(angle)
                     
-                    for p in self.state_manager.players.values():
-                        if str(p.current_map_id) == str(monster.map_id) and p.stats.hp > 0:
-                            dist = math.sqrt((p.position.x - monster.position_x)**2 + (p.position.y - monster.position_y)**2)
-                            if dist < closest_dist:
-                                closest_dist = dist
-                                closest_p = p
+                    # Clamp
+                    wx = max(1, min(99, wx))
+                    wy = max(1, min(99, wy))
                     
-                    if closest_p:
-                        monster.target_id = closest_p.id
-                        monster.state = "CHASING"
+                    monster.wander_target_x = wx
+                    monster.wander_target_y = wy
+                    monster.state = "WANDERING"
             
+            elif monster.state == "WANDERING":
+                if monster.wander_target_x is not None:
+                    dx = monster.wander_target_x - monster.position_x
+                    dy = monster.wander_target_y - monster.position_y
+                    dist = math.sqrt(dx*dx + dy*dy)
+                    
+                    if dist < 0.5:
+                        monster.state = "IDLE"
+                        monster.wander_target_x = None
+                        monster.wander_target_y = None
+                    else:
+                        speed = getattr(monster.stats, 'speed', 10.0) * dt * 0.3 # Walk slow (30% speed)
+                        monster.position_x += (dx/dist) * speed
+                        monster.position_y += (dy/dist) * speed
+                        
+                        # Broadcast Move
+                        if not hasattr(monster, 'last_broadcast'): monster.last_broadcast = 0
+                        if current_time - monster.last_broadcast > 0.2: # Slower updates for wandering
+                            monster.last_broadcast = current_time
+                            if hasattr(self, 'connection_manager'):
+                                await self.connection_manager.broadcast({
+                                    "type": "monster_moved",
+                                    "monster_id": monster.id,
+                                    "x": monster.position_x,
+                                    "y": monster.position_y,
+                                    "map_id": monster.map_id
+                                })
+
             elif monster.state == "CHASING":
                 if target:
                     # Check Leash
