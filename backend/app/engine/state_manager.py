@@ -12,9 +12,28 @@ class StateManager:
             cls._instance.players: Dict[str, Player] = {}
             cls._instance.maps: Dict[str, GameMap] = {}
             cls._instance.monsters: Dict[str, Monster] = {}
+            cls._instance.missions: Dict[str, dict] = {}
             # Map ID -> List of Monster IDs
             cls._instance.map_monsters: Dict[str, List[str]] = {} 
         return cls._instance
+
+    def load_missions(self):
+        import json
+        import os
+        
+        try:
+            path = "backend/app/data/missions.json"
+            if not os.path.exists(path):
+                print(f"Missions data not found at {path}")
+                self.missions = {}
+                return
+
+            with open(path, "r") as f:
+                self.missions = json.load(f)
+            print(f"Loaded {len(self.missions)} missions.")
+        except Exception as e:
+            print(f"Failed to load missions: {e}")
+            self.missions = {}
 
     def load_world_data(self):
         import json
@@ -102,6 +121,7 @@ class StateManager:
         if cls._instance is None:
             cls()
             cls._instance.load_world_data() # Load data on init
+            cls._instance.load_missions()   # Load missions on init
         return cls._instance
 
     def add_player(self, player: Player):

@@ -4,44 +4,51 @@ import { startMission, stopMission } from '../services/autoFarm.js';
 
 export default {
     template: `
-    <div class="absolute top-32 right-4 w-64 flex flex-col gap-2 pointer-events-auto">
+    <div class="absolute top-1/2 right-0 transform -translate-y-1/2 flex flex-col gap-2 pointer-events-auto pr-2">
         <!-- Active Mission Card -->
         <div v-if="activeMissionData" 
-             class="bg-gray-900/90 border-l-4 border-yellow-500 p-3 rounded shadow-lg cursor-pointer hover:bg-gray-800 transition-colors"
+             class="relative bg-black/40 backdrop-blur-sm border-l-2 border-yellow-500 pl-3 pr-4 py-2 cursor-pointer hover:bg-black/60 transition-all w-64 group"
              @click="toggleMission(activeMissionData)">
-            <div class="flex justify-between items-start mb-1">
-                <h3 class="font-bold text-yellow-500 text-sm">{{ activeMissionData.title }}</h3>
-                <span class="text-[10px] bg-gray-700 px-1 rounded text-gray-300">Lv. {{ activeMissionData.level_requirement }}</span>
+            
+            <!-- Header -->
+            <div class="flex items-center gap-2 mb-1">
+                <span class="text-[10px] font-bold text-yellow-500 bg-yellow-900/50 px-1 rounded border border-yellow-700/50">Main</span>
+                <span class="text-xs font-bold text-white shadow-black drop-shadow-md truncate">{{ activeMissionData.title }}</span>
             </div>
-            <p class="text-xs text-gray-400 mb-2">{{ activeMissionData.description }}</p>
+            
+            <!-- Description / Objective -->
+            <div class="text-[11px] text-gray-200 leading-tight mb-1 drop-shadow-md">
+                {{ activeMissionData.description }}
+            </div>
             
             <!-- Progress -->
-            <div class="flex justify-between text-xs text-gray-300 mb-1">
-                <span>Progress</span>
-                <span>{{ currentProgress }} / {{ activeMissionData.target_count }}</span>
+            <div class="flex justify-end text-[11px] font-mono text-yellow-400 font-bold">
+                ({{ currentProgress }}/{{ activeMissionData.target_count }})
             </div>
-            <div class="w-full bg-gray-700 h-1.5 rounded-full overflow-hidden">
-                <div class="bg-yellow-500 h-full transition-all duration-500" 
-                     :style="{ width: (currentProgress / activeMissionData.target_count * 100) + '%' }"></div>
-            </div>
+
+            <!-- Status Indicator -->
+             <div class="absolute right-2 top-2 w-2 h-2 rounded-full" 
+                  :class="isActive ? 'bg-green-500 animate-pulse' : 'bg-gray-500'"></div>
             
-            <div class="mt-2 text-[10px] text-green-400 font-mono" v-if="isActive">
-                <span class="animate-pulse">▶ Auto-Executing...</span>
-            </div>
-            <div class="mt-2 text-[10px] text-gray-500 font-mono" v-else>
-                <span>Click to Resume</span>
-            </div>
+             <!-- Tooltip/Hint on Hover -->
+             <div class="hidden group-hover:block absolute right-full mr-2 top-0 bg-black/80 text-xs text-white p-2 rounded w-48 z-50">
+                Click to {{ isActive ? 'Pause' : 'Start' }} Auto-Quest
+             </div>
         </div>
 
-        <!-- Available Missions List -->
-        <div class="flex flex-col gap-1 mt-2">
+        <!-- Available Missions List (Collapsed) -->
+        <div v-else class="flex flex-col gap-1 items-end">
             <div v-for="mission in availableMissions" :key="mission.id"
-                 class="bg-gray-900/80 border-l-4 border-gray-600 p-2 rounded shadow cursor-pointer hover:bg-gray-800 hover:border-blue-500 transition-all"
+                 class="bg-black/40 backdrop-blur-sm border-l-2 border-gray-500 pl-2 pr-3 py-1 cursor-pointer hover:bg-black/60 transition-all w-56 flex justify-between items-center"
                  @click="toggleMission(mission)">
-                <div class="flex justify-between items-center">
-                    <span class="text-xs font-bold text-gray-300">{{ mission.title }}</span>
-                    <span class="text-[10px] text-gray-500">Lv. {{ mission.level_requirement }}</span>
+                <div class="flex flex-col">
+                    <span class="text-[10px] font-bold text-gray-300">{{ mission.title }}</span>
+                    <span class="text-[9px] text-gray-400">Lv. {{ mission.level_requirement }}</span>
                 </div>
+                <span class="text-[10px] text-gray-500">Click to Start</span>
+            </div>
+             <div v-if="availableMissions.length === 0" class="text-xs text-gray-500 bg-black/20 p-2 rounded">
+                No active missions
             </div>
         </div>
     </div>

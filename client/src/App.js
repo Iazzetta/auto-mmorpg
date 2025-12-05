@@ -10,7 +10,7 @@ import InventoryModal from './components/InventoryModal.js';
 import AttributesModal from './components/AttributesModal.js';
 import RewardsModal from './components/RewardsModal.js';
 import InspectModal from './components/InspectModal.js';
-import MapEditor from './components/MapEditor.js';
+import WorldEditor from './components/WorldEditor.js';
 import MissionTracker from './components/MissionTracker.js';
 
 export default {
@@ -22,7 +22,7 @@ export default {
         AttributesModal,
         RewardsModal,
         InspectModal,
-        MapEditor,
+        WorldEditor,
         MissionTracker
     },
     template: `
@@ -61,7 +61,7 @@ export default {
             </div>
 
             <!-- Editor -->
-            <MapEditor v-if="showEditor" @close="showEditor = false" />
+            <WorldEditor v-if="showEditor" @close="showEditor = false" />
 
             <!-- Login Screen -->
             <div v-if="!player && !showEditor" class="absolute inset-0 bg-gray-900 flex items-center justify-center z-50">

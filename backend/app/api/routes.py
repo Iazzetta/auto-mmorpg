@@ -250,6 +250,18 @@ async def allocate_attributes(player_id: str, attributes: dict):
     
     return {"message": "Attributes allocated", "player": player}
 
+@router.post("/admin/missions")
+async def save_missions(missions: dict):
+    # Save to file
+    import json
+    with open("backend/app/data/missions.json", "w") as f:
+        json.dump(missions, f, indent=4)
+    
+    # Reload in state manager
+    state_manager.load_missions()
+    
+    return {"message": "Missions saved"}
+
 import json
 import os
 

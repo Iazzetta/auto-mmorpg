@@ -1,46 +1,24 @@
 {
-    "mission_01": {
-        "id": "mission_01",
-        "title": "Rat Extermination",
-        "description": "Clear the rats in the Deep Forest.",
-        "target_template_id": "rat",
-        "target_count": 5,
-        "reward_xp": 100,
-        "reward_gold": 50,
-        "map_id": "map_forest_2",
-        "level_requirement": 1
-    },
-    "mission_02": {
-        "id": "mission_02",
-        "title": "Wolf Hunt",
-        "description": "Hunt 5 Wolves in the Forest.",
+    "mission_1764947735404": {
+        "id": "mission_1764947735404",
+        "title": "New Mission",
+        "description": "Description",
+        "level_requirement": 1,
+        "map_id": "map_forest_1",
         "target_template_id": "wolf",
         "target_count": 5,
-        "reward_xp": 150,
-        "reward_gold": 75,
-        "map_id": "map_forest_1",
-        "level_requirement": 3
+        "reward_xp": 100,
+        "reward_gold": 50
     },
-    "mission_03": {
-        "id": "mission_03",
-        "title": "Goblin Trouble",
-        "description": "Clear 3 Goblins.",
-        "target_template_id": "goblin",
-        "target_count": 3,
-        "reward_xp": 200,
-        "reward_gold": 100,
+    "mission_1764947769647": {
+        "id": "mission_1764947769647",
+        "title": "misao 2",
+        "description": "Description",
+        "level_requirement": 5,
         "map_id": "map_forest_1",
-        "level_requirement": 5
-    },
-    "mission_04": {
-        "id": "mission_04",
-        "title": "Skeleton Army",
-        "description": "Defeat 10 Skeletons in the Dungeon.",
-        "target_template_id": "skeleton",
-        "target_count": 10,
-        "reward_xp": 500,
-        "reward_gold": 250,
-        "map_id": "map_dungeon_1",
-        "level_requirement": 10
+        "target_template_id": "globin",
+        "target_count": 5,
+        "reward_xp": 100,
+        "reward_gold": 50
     }
 }

@@ -4421,24 +4421,24 @@
     "name": "admin",
     "p_class": "warrior",
     "level": 3,
-    "xp": 685,
+    "xp": 735,
     "next_level_xp": 900,
     "stats": {
-      "hp": 200,
+      "hp": 188,
       "max_hp": 200,
       "atk": 65,
       "def_": 28,
       "speed": 21.0,
       "attack_cooldown": 1.0
     },
-    "current_map_id": "map_forest_1",
+    "current_map_id": "map_forest_2",
     "respawn_map_id": "map_castle_1",
     "position": {
-      "x": 48.38300094538739,
-      "y": 28.20793518836814
+      "x": 23.384248716163004,
+      "y": 65.77814744347953
     },
     "state": "idle",
-    "target_monster_id": "goblin_d610e906",
+    "target_monster_id": null,
     "target_position": null,
     "active_mission_id": "mission_01",
     "mission_progress": 0,
@@ -4467,7 +4467,7 @@
         },
         "power_score": 10,
         "icon": "\ud83e\uddea",
-        "quantity": 9,
+        "quantity": 8,
         "stackable": true
       }
     ],
@@ -4515,10 +4515,10 @@
       },
       "hand_off": null
     },
-    "gold": 2307,
+    "gold": 2320,
     "diamonds": 0,
     "is_admin": true,
-    "last_attack_time": 1764945874.4721549,
-    "last_movement_broadcast": 1764945876.430141
+    "last_attack_time": 1764947747.945815,
+    "last_movement_broadcast": 1764947775.194644
   }
 }
