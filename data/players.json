@@ -3788,10 +3788,10 @@
     "name": "zas",
     "p_class": "warrior",
     "level": 3,
-    "xp": 725,
+    "xp": 875,
     "next_level_xp": 900,
     "stats": {
-      "hp": 106,
+      "hp": 88,
       "max_hp": 200,
       "atk": 58,
       "def_": 29,
@@ -3834,7 +3834,7 @@
         },
         "power_score": 10,
         "icon": "\ud83d\udce6",
-        "quantity": 18,
+        "quantity": 20,
         "stackable": true
       },
       {
@@ -3877,6 +3877,25 @@
       },
       {
         "id": "item_sword_01_cea0a04d",
+        "name": "Iron Sword",
+        "type": "weapon",
+        "slot": "hand_main",
+        "rarity": "common",
+        "stats": {
+          "strength": 0,
+          "intelligence": 0,
+          "atk": 5,
+          "def_": 0,
+          "speed": 0.0,
+          "hp": 0
+        },
+        "power_score": 5,
+        "icon": "\u2694\ufe0f",
+        "quantity": 1,
+        "stackable": false
+      },
+      {
+        "id": "item_sword_01_e71aa549",
         "name": "Iron Sword",
         "type": "weapon",
         "slot": "hand_main",
@@ -3939,10 +3958,10 @@
       },
       "hand_off": null
     },
-    "gold": 889,
+    "gold": 953,
     "diamonds": 0,
     "is_admin": false,
-    "last_attack_time": 1764939918.8271391,
+    "last_attack_time": 1764941179.0355608,
     "last_movement_broadcast": 1764883130.544616
   },
   "5efbb994-c578-43f9-8aa0-6e212dfb9cc5": {
@@ -4234,21 +4253,21 @@
     "xp": 450,
     "next_level_xp": 900,
     "stats": {
-      "hp": 167,
+      "hp": 0,
       "max_hp": 200,
       "atk": 60,
       "def_": 27,
       "speed": 21.0,
       "attack_cooldown": 1.0
     },
-    "current_map_id": "map_forest_1",
+    "current_map_id": "map_dungeon_1",
     "respawn_map_id": "map_castle_1",
     "position": {
-      "x": 63.2659692651625,
-      "y": 46.268915146635095
+      "x": 50.0,
+      "y": 50.0
     },
     "state": "idle",
-    "target_monster_id": "wolf_2c5b9da3",
+    "target_monster_id": null,
     "target_position": null,
     "active_mission_id": null,
     "mission_progress": 0,
@@ -4575,7 +4594,7 @@
     "gold": 1189,
     "diamonds": 0,
     "is_admin": true,
-    "last_attack_time": 1764940060.479913,
-    "last_movement_broadcast": 1764940064.980789
+    "last_attack_time": 1764941337.2718542,
+    "last_movement_broadcast": 1764941335.711734
   }
 }

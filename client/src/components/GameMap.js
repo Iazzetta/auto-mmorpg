@@ -435,7 +435,7 @@ export default {
                 }
             }
 
-            if (closestPortal && closestDist < 2.0) {
+            if (closestPortal && closestDist < 4.0) {
                 pendingPortal.value = {
                     name: closestPortal.label || 'Portal',
                     targetMap: closestPortal.target_map_id,
