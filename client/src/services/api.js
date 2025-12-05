@@ -343,7 +343,7 @@ export const connectWebSocket = (playerId) => {
     };
 };
 
-const handleCombatUpdate = (data) => {
+const handleCombatUpdate = async (data) => {
     // Only process updates for the local player
     if (data.player_id !== player.value.id) return;
 
@@ -410,7 +410,8 @@ const handleCombatUpdate = (data) => {
     if (data.drops && data.drops.length > 0) {
         const rarityValue = { common: 1, uncommon: 2, rare: 3, epic: 4, legendary: 5 };
 
-        data.drops.forEach(async drop => {
+        // Use for...of to handle async operations sequentially
+        for (const drop of data.drops) {
             let sold = false;
 
             // Only consider auto-selling if enabled and item is equipment
@@ -425,14 +426,14 @@ const handleCombatUpdate = (data) => {
 
                         // Rule: Sell Common/Uncommon if equipped is strictly better rarity
                         if (dropRarityVal < equippedRarityVal) {
-                            api.sellItem(drop.id);
+                            await api.sellItem(drop.id);
                             showToast('💰', 'Auto-sold (Low Rarity)', `${drop.name}`, 'text-yellow-500');
                             showGameAlert(`Auto-Sold: ${drop.name}`, 'warning');
                             sold = true;
                         }
                         // Rule: If same rarity (Common/Uncommon only), sell if inferior Power Score
                         else if (dropRarityVal === equippedRarityVal && drop.power_score <= equipped.power_score) {
-                            api.sellItem(drop.id);
+                            await api.sellItem(drop.id);
                             showToast('💰', 'Auto-sold (Inferior)', `${drop.name}`, 'text-yellow-500');
                             showGameAlert(`Auto-Sold: ${drop.name}`, 'warning');
                             sold = true;
@@ -446,7 +447,7 @@ const handleCombatUpdate = (data) => {
                 showToast(icon, drop.name, `x${drop.quantity || 1}`, getRarityColor(drop.rarity));
                 showGameAlert(`Dropped: ${drop.name} x${drop.quantity || 1}`, 'drop', icon);
             }
-        });
+        }
     }
 
     if (log.level_up) {

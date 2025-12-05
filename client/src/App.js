@@ -101,7 +101,7 @@ export default {
                     <div class="text-6xl font-mono text-white mb-8">{{ respawnTimer }}</div>
 
                     <button @click="instantRevive" class="w-full bg-yellow-600 hover:bg-yellow-500 text-white font-bold py-3 px-4 rounded mb-3 flex items-center justify-center gap-2 transition-colors">
-                        <span>💎</span> Revive Here (100 Gold)
+                        <span>💎</span> Revive Here (1 Diamond)
                     </button>
 
                     <p class="text-xs text-gray-500 mt-4">Wait for timer to respawn at Save Point.</p>

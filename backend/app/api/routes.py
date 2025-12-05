@@ -378,16 +378,16 @@ async def revive_player(player_id: str):
     if player.stats.hp > 0:
         return {"message": "Player is already alive"}
         
-    # Cost: 100 Gold (Placeholder for Diamonds)
-    cost = 100
-    if player.gold < cost:
-        raise HTTPException(status_code=400, detail="Not enough gold to revive")
+    # Cost: 1 Diamond
+    cost = 1
+    if player.diamonds < cost:
+        raise HTTPException(status_code=400, detail="Not enough diamonds to revive")
         
-    player.gold -= cost
+    player.diamonds -= cost
     player.stats.hp = player.stats.max_hp
     player.state = PlayerState.IDLE
     
-    return {"message": "Revived!", "hp": player.stats.hp, "gold": player.gold}
+    return {"message": "Revived!", "hp": player.stats.hp, "diamonds": player.diamonds}
 
 @router.post("/player/{player_id}/respawn")
 async def respawn_player(player_id: str):

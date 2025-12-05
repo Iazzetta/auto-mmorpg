@@ -1,5 +1,6 @@
 import { player, availableMissions } from '../state.js';
-import { computed, onMounted } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.js';
+
+import { computed, onMounted, ref } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.js';
 import { api } from '../services/api.js';
 
 export default {
@@ -8,7 +9,7 @@ export default {
         <header class="fixed top-0 left-0 w-full bg-gray-900/90 backdrop-blur-sm p-2 border-b border-gray-700 flex justify-between items-center z-40 h-16">
             
             <!-- Left: Player Info -->
-            <div v-if="player" class="flex items-center gap-4 ml-2">
+            <div v-if="player" class="flex items-center gap-4 ml-2 cursor-pointer hover:bg-gray-800/50 p-1 rounded transition-colors" @click="showLogout = true">
                 <!-- Avatar/Class Icon -->
                 <div class="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center text-xl border border-gray-600 shadow-inner">
                     {{ player.p_class === 'warrior' ? '⚔️' : player.p_class === 'mage' ? '🧙' : '🏹' }}
@@ -68,15 +69,43 @@ export default {
                     <span class="hidden md:inline">Rewards</span>
                 </button>
             </div>
+
+            <!-- Logout Modal -->
+            <div v-if="showLogout" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50" @click.self="showLogout = false">
+                <div class="bg-gray-800 border border-gray-600 p-6 rounded-lg shadow-xl w-80 text-center">
+                    <div class="text-4xl mb-4">👤</div>
+                    <h2 class="text-xl font-bold text-white mb-2">{{ player.name }}</h2>
+                    <p class="text-gray-400 text-sm mb-6">Level {{ player.level }} {{ player.p_class }}</p>
+                    
+                    <div class="space-y-3">
+                        <button @click="logout" class="w-full bg-red-600 hover:bg-red-500 text-white font-bold py-2 px-4 rounded transition-colors">
+                            Logout
+                        </button>
+                        <button @click="showLogout = false" class="w-full bg-gray-700 hover:bg-gray-600 text-gray-300 font-bold py-2 px-4 rounded transition-colors">
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            </div>
         </header>
     `,
     setup() {
+        const showLogout = ref(false);
+
         const hasCompletedMission = computed(() => {
             if (!player.value || !player.value.active_mission_id) return false;
             const mission = availableMissions.value[player.value.active_mission_id];
             if (!mission) return false;
             return player.value.mission_progress >= mission.target_count;
         });
+
+        const logout = () => {
+            localStorage.removeItem('rpg_player_id');
+            localStorage.removeItem('rpg_player_token');
+            player.value = null;
+            showLogout.value = false;
+            window.location.reload();
+        };
 
         onMounted(async () => {
             // Ensure missions are loaded
@@ -88,6 +117,6 @@ export default {
             }
         });
 
-        return { player, hasCompletedMission };
+        return { player, hasCompletedMission, showLogout, logout };
     }
 };
