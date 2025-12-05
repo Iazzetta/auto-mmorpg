@@ -18,7 +18,8 @@ Auto RPG is a browser-based, semi-idle Role Playing Game (RPG) where players cre
 ## Key Features
 *   **Real-time Combat**: Combat rounds are processed on the server tick.
 *   **WebSocket Updates**: The client receives real-time state updates (HP, position, logs).
-*   **Interactive Map**: HTML5 Canvas-based map visualization with visual interpolation for movement.
+*   **Interactive Map**: 3D Isometric view using Three.js with raycasting for interaction and smooth camera following.
 *   **Inventory System**: Equipment slots, bag space, stackable consumables, and item rarity system.
 *   **Attribute System**: Custom stat allocation affecting derived combat stats.
-*   **Persistence**: Player data is stored in memory (currently) but structured for easy database integration.
+*   **World Editor**: In-game editor to modify maps, monsters, and missions dynamically.
+*   **Persistence**: Player data is stored in memory (currently) but structured for easy database integration. World data is stored in JSON.

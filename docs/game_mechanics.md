@@ -20,6 +20,7 @@ Players have 4 primary attributes that influence derived stats:
 ## Combat System
 *   **Tick-Based**: Combat occurs in rounds processed by the server loop.
 *   **Damage Formula**: `Damage = Attacker.Atk - (Defender.Def / 2)`. Minimum damage is 1.
+*   **Auto-Farm**: Toggleable via Spacebar or UI button. Automatically targets nearest monster and navigates maps to find targets.
 *   **Level Up**: XP required = `Current Level * 100`. Awards **5 Attribute Points** and full HP restore.
 
 ## Items & Inventory
@@ -29,13 +30,16 @@ Players have 4 primary attributes that influence derived stats:
 *   **Power Score (PS)**: Sum of item's stat bonuses.
 
 ## Maps & Movement
-*   **Coordinate System**: Abstract 0-100 grid for simplicity.
-*   **Portals**: Located at map edges (e.g., x=0 or x=100) to transition between zones (Castle <-> Forest).
+*   **3D World**: Isometric view rendered with Three.js.
+*   **Coordinate System**: 0-100 grid mapped to 3D space.
+*   **Portals**: Interactive 3D objects that transport players between maps.
 *   **Movement**:
+    *   **WASD**: Manual movement (interrupts auto-farm).
+    *   **Click-to-Move**: Raycasting detects ground clicks.
     *   **Server**: Validates move requests and updates coordinates.
-    *   **Client**: Interpolates position (`lerp`) for smooth visual movement on Canvas.
 
 ## Missions
-*   **Structure**: `Target Monster ID` + `Count`.
+*   **Structure**: Defined in `missions.json`. Includes Title, Description, Target, and Rewards.
 *   **Progress**: Increments on monster death if `active_mission_id` matches.
 *   **Rewards**: XP and Gold upon manual claim.
+*   **Editor**: Missions can be created and edited in-game.

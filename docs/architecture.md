@@ -8,14 +8,16 @@
 *   **Frontend**: HTML5 / JavaScript
     *   **Framework**: Vue.js 3 (via CDN, Composition API)
     *   **Styling**: TailwindCSS (via CDN)
-    *   **Visualization**: HTML5 Canvas (for Map)
+    *   **Visualization**: Three.js (WebGL) for 3D Isometric Rendering
 *   **Communication**:
-    *   **REST API**: For transactional actions (Move, Equip, Sell, Attribute Allocation).
+    *   **REST API**: For transactional actions (Move, Equip, Sell, Attribute Allocation) and Editor actions.
     *   **WebSockets**: For high-frequency state updates (Combat logs, HP changes, Position updates).
 
 ## Backend Structure (`backend/app/`)
 *   **`main.py`**: Entry point. Sets up FastAPI app, CORS, and starts the `GameLoop`.
-*   **`api/routes.py`**: Defines HTTP endpoints and WebSocket connection handler.
+*   **`api/`**:
+    *   **`routes.py`**: Defines HTTP endpoints and WebSocket connection handler.
+    *   **`editor.py`**: Endpoints for Map and Mission editors.
 *   **`engine/`**:
     *   **`game_loop.py`**: The heartbeat of the server. Runs an async loop (`tick`) that processes combat, respawns, and state updates.
     *   **`state_manager.py`**: Singleton that holds the global state (Players, Monsters, Maps).
@@ -23,13 +25,15 @@
     *   **`combat_service.py`**: Pure logic for damage calculation, loot generation, and death handling.
     *   **`inventory_service.py`**: Logic for adding/removing items and managing stacks.
 *   **`models/`**: Pydantic models defining data structures (`Player`, `Monster`, `Item`, `Map`).
-*   **`data/`**: Static data definitions (`items.py`, `monsters.py`, `missions.py`).
+*   **`data/`**:
+    *   **`items.py`, `monsters.py`**: Static data definitions (being migrated to JSON).
+    *   **`missions.json`, `world.json`**: Dynamic data storage for Missions and Maps.
 
 ## Frontend Structure (`client/`)
 *   **`index.html`**: Single Page Application (SPA) containing:
     *   HTML Layout (Header, Stats, Map, Log, Inventory).
     *   Vue.js Application Logic (`createApp`).
-    *   Canvas Rendering Logic (`drawMap`).
+    *   **`components/GameMap.js`**: Three.js scene management, rendering loop, and input handling.
     *   WebSocket handling and event dispatching.
 
 ## Data Flow

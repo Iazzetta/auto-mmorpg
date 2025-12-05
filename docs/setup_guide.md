@@ -37,6 +37,8 @@ python3 -m http.server 8001
 *   `artifacts/`: Generated assets (images, plans).
 
 ## Adding Content
-*   **New Items**: Edit `backend/app/data/items.py`.
-*   **New Monsters**: Edit `backend/app/data/monsters.py`.
-*   **New Missions**: Edit `backend/app/data/missions.py`.
+*   **In-Game Editor**: Use the in-game Map Editor (Hotbar -> Editor) to create Maps, Monsters, and Missions.
+*   **Manual Editing**:
+    *   **Maps & Monsters**: Edit `backend/app/data/world.json`.
+    *   **Missions**: Edit `backend/app/data/missions.json`.
+    *   **Items**: Edit `backend/app/data/items.py` (Python file).

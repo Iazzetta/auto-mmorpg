@@ -22,6 +22,13 @@ Base URL: `http://localhost:8000`
 *   `GET /map/{map_id}/monsters`: List all live monsters on a map.
 *   `GET /content/missions`: List all available missions.
 
+## Editor Endpoints
+*   `GET /editor/world`: Get full world data (Maps, Monsters).
+*   `POST /editor/world`: Save world data.
+*   `GET /editor/missions`: Get all missions.
+*   `POST /editor/missions`: Save missions.
+*   `GET /editor/items`: Get list of all item templates.
+
 ## WebSocket Events
 URL: `ws://localhost:8000/ws/{player_id}`
 
