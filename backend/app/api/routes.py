@@ -283,6 +283,9 @@ async def start_mission(player_id: str, mission_id: str):
     if not mission:
         raise HTTPException(status_code=404, detail="Mission not found")
         
+    if player.level < mission["level_requirement"]:
+        raise HTTPException(status_code=400, detail="Level too low")
+        
     if player.active_mission_id != mission_id:
         player.active_mission_id = mission_id
         player.mission_progress = 0

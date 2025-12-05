@@ -52,7 +52,10 @@ export default {
     `,
     setup() {
         const allMissions = computed(() => {
-            return Object.values(missions.value).sort((a, b) => a.level_requirement - b.level_requirement);
+            const completed = player.value?.completed_missions || [];
+            return Object.values(missions.value)
+                .filter(m => !completed.includes(m.id))
+                .sort((a, b) => a.level_requirement - b.level_requirement);
         });
 
         const isActive = (mission) => {
@@ -64,45 +67,43 @@ export default {
             return (player.value?.mission_progress || 0) >= mission.target_count;
         };
 
+        const isLocked = (mission) => {
+            return (player.value?.level || 1) < mission.level_requirement;
+        };
+
         const getProgress = (mission) => {
             if (isActive(mission)) return player.value?.mission_progress || 0;
             return 0;
         };
 
         const getMissionClass = (mission) => {
+            if (isLocked(mission)) return 'border-red-600 bg-red-900/20 opacity-80 cursor-not-allowed';
             if (isCompleted(mission)) return 'border-green-500 bg-green-900/20';
             if (isActive(mission)) return 'border-yellow-500 bg-yellow-900/20';
             return 'border-gray-600 hover:border-gray-400';
         };
 
         const handleMissionClick = (mission) => {
-            if (isCompleted(mission)) {
-                // Do nothing on card click if completed, wait for claim button
-                return;
-            }
+            if (isLocked(mission)) return;
+            if (isCompleted(mission)) return;
 
             if (isActive(mission)) {
-                // Pause
                 stopMission();
             } else {
-                // Start
-                if (player.value.level < mission.level_requirement) {
-                    alert(`Level ${mission.level_requirement} required!`);
-                    return;
-                }
                 startMission(mission);
             }
         };
 
         const claimReward = async () => {
             await api.claimMission();
-            stopMission(); // Clear active mission state in frontend
+            stopMission();
         };
 
         return {
             allMissions,
             isActive,
             isCompleted,
+            isLocked,
             getProgress,
             getMissionClass,
             handleMissionClick,

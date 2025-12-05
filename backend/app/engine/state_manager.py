@@ -59,8 +59,12 @@ class StateManager:
                 gm = GameMap(
                     id=map_id,
                     name=map_data["name"],
+                    type=map_data.get("type", "field"),
+                    level_requirement=map_data.get("level_requirement", 0),
                     width=map_data["width"],
                     height=map_data["height"],
+                    respawn_x=map_data.get("respawn_x", 50.0),
+                    respawn_y=map_data.get("respawn_y", 50.0),
                     portals=map_data.get("portals", []),
                     spawns=map_data.get("spawns", [])
                 )

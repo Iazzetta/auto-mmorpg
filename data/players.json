@@ -4431,11 +4431,11 @@
       "speed": 21.0,
       "attack_cooldown": 1.0
     },
-    "current_map_id": "map_dungeon_1",
+    "current_map_id": "map_forest_2",
     "respawn_map_id": "map_castle_1",
     "position": {
-      "x": 19.634066355939613,
-      "y": 33.43495535034995
+      "x": 51.189007550589125,
+      "y": 2.148596835944904
     },
     "state": "idle",
     "target_monster_id": null,
@@ -4921,6 +4921,6 @@
     "diamonds": 0,
     "is_admin": true,
     "last_attack_time": 1764951889.45694,
-    "last_movement_broadcast": 1764952002.948274
+    "last_movement_broadcast": 1764952452.306006
   }
 }

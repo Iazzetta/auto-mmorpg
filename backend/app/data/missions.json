@@ -14,7 +14,7 @@
         "id": "mission_1764949964937",
         "title": "New Mission",
         "description": "Description",
-        "level_requirement": 5,
+        "level_requirement": 50,
         "map_id": "map_dungeon_1",
         "target_template_id": "king_rat",
         "target_count": 5,
