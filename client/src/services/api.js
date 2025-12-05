@@ -384,6 +384,7 @@ const handleCombatUpdate = (data) => {
     if (log.monster_died) {
         addLog(`Monster died! Gained ${log.xp_gained} XP.`, 'text-yellow-400');
         showGameAlert(`+${log.xp_gained} XP`, 'success');
+        if (log.gold_gained) showGameAlert(`+${log.gold_gained} Gold`, 'warning', '💰');
 
         // Remove from local state immediately using the ID from server
         if (data.monster_id) {

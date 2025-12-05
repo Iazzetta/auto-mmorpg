@@ -81,9 +81,13 @@ class CombatService:
             
             # Generate Loot
             try:
-                CombatService.generate_loot(player, monster)
+                drops, gold = CombatService.generate_loot(player, monster)
+                log['drops'] = drops
+                log['gold_gained'] = gold
             except Exception as e:
                 print(f"[ERROR] Loot generation failed: {e}")
+                log['drops'] = []
+                log['gold_gained'] = 0
             
             # Queue Respawn
             try:
@@ -123,6 +127,8 @@ class CombatService:
 
     @staticmethod
     def generate_loot(player: Player, monster: Monster):
+        dropped_items = []
+        
         # 1. Gold (Always drop some gold based on level/random)
         gold_amount = random.randint(10, 50) # Could be based on monster level
         player.gold += gold_amount
@@ -133,28 +139,29 @@ class CombatService:
         import uuid
         
         template = StateManager.get_instance().monster_templates.get(monster.template_id)
-        if not template or "drops" not in template:
-            return
-            
-        for drop in template["drops"]:
-            if random.random() < drop["chance"]:
-                item_template_id = drop["item_id"]
-                item_data = ITEMS.get(item_template_id)
-                
-                if item_data:
-                    # Create new item instance
-                    new_item = Item(
-                        id=f"{item_template_id}_{uuid.uuid4().hex[:8]}",
-                        name=item_data["name"],
-                        type=item_data["type"],
-                        slot=item_data["slot"],
-                        rarity=item_data["rarity"],
-                        stats=item_data["stats"].copy(),
-                        power_score=item_data["power_score"],
-                        icon=item_data.get("icon", "📦"),
-                        stackable=item_data["type"] in ["consumable", "material"]
-                    )
-                    InventoryService.add_item(player, new_item)
+        if template and "drops" in template:
+            for drop in template["drops"]:
+                if random.random() < drop["chance"]:
+                    item_template_id = drop["item_id"]
+                    item_data = ITEMS.get(item_template_id)
+                    
+                    if item_data:
+                        # Create new item instance
+                        new_item = Item(
+                            id=f"{item_template_id}_{uuid.uuid4().hex[:8]}",
+                            name=item_data["name"],
+                            type=item_data["type"],
+                            slot=item_data["slot"],
+                            rarity=item_data["rarity"],
+                            stats=item_data["stats"].copy(),
+                            power_score=item_data["power_score"],
+                            icon=item_data.get("icon", "📦"),
+                            stackable=item_data["type"] in ["consumable", "material"]
+                        )
+                        InventoryService.add_item(player, new_item)
+                        dropped_items.append(new_item.dict())
+        
+        return dropped_items, gold_amount
 
     @staticmethod
     def check_mission_progress(player: Player, monster: Monster):

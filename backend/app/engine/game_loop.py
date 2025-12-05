@@ -75,7 +75,8 @@ class GameLoop:
                                     "player_hp": player.stats.hp,
                                     "monster_hp": monster.stats.hp,
                                     "monster_max_hp": monster.stats.max_hp,
-                                    "monster_name": monster.name
+                                    "monster_name": monster.name,
+                                    "drops": log.get('drops', [])
                                 })
 
                             if log.get('monster_died'):
