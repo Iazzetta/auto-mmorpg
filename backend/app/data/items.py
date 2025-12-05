@@ -1,50 +1,34 @@
 from ..models.item import ItemType, ItemSlot, ItemRarity, ItemStats
 
-ITEMS = {
-    "item_sword_01": {
-        "name": "Iron Sword",
-        "type": ItemType.WEAPON,
-        "slot": ItemSlot.HAND_MAIN,
-        "rarity": ItemRarity.COMMON,
-        "stats": ItemStats(atk=5),
-        "power_score": 5,
-        "icon": "⚔️"
-    },
-    "item_sword_02": {
-        "name": "Steel Sword",
-        "type": ItemType.WEAPON,
-        "slot": ItemSlot.HAND_MAIN,
-        "rarity": ItemRarity.UNCOMMON,
-        "stats": ItemStats(atk=10, strength=2),
-        "power_score": 12,
-        "icon": "⚔️"
-    },
-    "item_sword_03": {
-        "name": "High Sword",
-        "type": ItemType.WEAPON,
-        "slot": ItemSlot.HAND_MAIN,
-        "rarity": ItemRarity.RARE,
-        "stats": ItemStats(atk=15, strength=5),
-        "power_score": 20,
-        "icon": "⚔️"
-    },
-    "item_armor_01": {
-        "name": "Leather Tunic",
-        "type": ItemType.ARMOR,
-        "slot": ItemSlot.CHEST,
-        "rarity": ItemRarity.COMMON,
-        "stats": ItemStats(def_=3),
-        "power_score": 3,
-        "icon": "🎽"
-    },
-    "item_potion_hp_01": {
-        "name": "Health Potion",
-        "type": ItemType.CONSUMABLE,
-        "slot": ItemSlot.NONE,
-        "rarity": ItemRarity.COMMON,
-        "stats": ItemStats(hp=50),
-        "power_score": 10,
-        "icon": "🧪",
-        "stackable": True
-    }
-}
+import json
+import os
+from ..models.item import ItemType, ItemSlot, ItemRarity, ItemStats
+
+# Load items from JSON
+ITEMS = {}
+
+def load_items():
+    global ITEMS
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    json_path = os.path.join(base_dir, "items.json")
+    
+    if os.path.exists(json_path):
+        with open(json_path, "r") as f:
+            data = json.load(f)
+            
+        ITEMS.clear()
+        for key, val in data.items():
+            stats_data = val.get("stats", {})
+            
+            ITEMS[key] = {
+                "name": val["name"],
+                "type": ItemType(val["type"]),
+                "slot": ItemSlot(val["slot"]),
+                "rarity": ItemRarity(val["rarity"]),
+                "stats": ItemStats(**stats_data),
+                "power_score": val.get("power_score", 0),
+                "icon": val.get("icon", "📦"),
+                "stackable": val.get("stackable", False)
+            }
+
+load_items()

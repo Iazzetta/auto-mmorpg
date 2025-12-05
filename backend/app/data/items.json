@@ -1,0 +1,104 @@
+{
+    "item_sword_01": {
+        "name": "Iron Sword",
+        "type": "weapon",
+        "slot": "hand_main",
+        "rarity": "common",
+        "stats": {
+            "strength": 0,
+            "intelligence": 0,
+            "atk": 5,
+            "def_": 0,
+            "speed": 0,
+            "hp": 0
+        },
+        "power_score": 5,
+        "icon": "\u2694\ufe0f",
+        "stackable": false
+    },
+    "item_sword_02": {
+        "name": "Steel Sword",
+        "type": "weapon",
+        "slot": "hand_main",
+        "rarity": "uncommon",
+        "stats": {
+            "strength": 2,
+            "intelligence": 0,
+            "atk": 10,
+            "def_": 0,
+            "speed": 0,
+            "hp": 0
+        },
+        "power_score": 12,
+        "icon": "\u2694\ufe0f",
+        "stackable": false
+    },
+    "item_sword_03": {
+        "name": "High Sword",
+        "type": "weapon",
+        "slot": "hand_main",
+        "rarity": "rare",
+        "stats": {
+            "strength": 5,
+            "intelligence": 0,
+            "atk": 15,
+            "def_": 0,
+            "speed": 0,
+            "hp": 0
+        },
+        "power_score": 20,
+        "icon": "\u2694\ufe0f",
+        "stackable": false
+    },
+    "item_armor_01": {
+        "name": "Leather Tunic",
+        "type": "armor",
+        "slot": "chest",
+        "rarity": "common",
+        "stats": {
+            "strength": 0,
+            "intelligence": 0,
+            "atk": 0,
+            "def_": 3,
+            "speed": 0,
+            "hp": 0
+        },
+        "power_score": 3,
+        "icon": "\ud83c\udfbd",
+        "stackable": false
+    },
+    "item_potion_hp_01": {
+        "name": "Health Potion",
+        "type": "consumable",
+        "slot": "none",
+        "rarity": "common",
+        "stats": {
+            "strength": 0,
+            "intelligence": 0,
+            "atk": 0,
+            "def_": 0,
+            "speed": 0,
+            "hp": 50
+        },
+        "power_score": 10,
+        "icon": "\ud83e\uddea",
+        "stackable": true
+    },
+    "Beta": {
+        "name": "Beta",
+        "type": "consumable",
+        "slot": "none",
+        "rarity": "legendary",
+        "stats": {
+            "strength": 0,
+            "intelligence": 0,
+            "atk": 0,
+            "def_": 0,
+            "speed": 0,
+            "hp": 0
+        },
+        "power_score": 500,
+        "icon": "\u2764\ufe0f",
+        "stackable": false
+    }
+}

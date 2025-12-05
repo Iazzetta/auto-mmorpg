@@ -15,6 +15,7 @@ export default {
                 <div class="flex gap-1 mb-4 bg-gray-800 p-1 rounded">
                     <button @click="activeTab = 'maps'" :class="{'bg-blue-600 text-white': activeTab === 'maps', 'text-gray-400 hover:text-white': activeTab !== 'maps'}" class="flex-1 py-1 rounded text-xs transition-colors">Maps</button>
                     <button @click="activeTab = 'monsters'" :class="{'bg-purple-600 text-white': activeTab === 'monsters', 'text-gray-400 hover:text-white': activeTab !== 'monsters'}" class="flex-1 py-1 rounded text-xs transition-colors">Monsters</button>
+                    <button @click="activeTab = 'items'" :class="{'bg-yellow-600 text-white': activeTab === 'items', 'text-gray-400 hover:text-white': activeTab !== 'items'}" class="flex-1 py-1 rounded text-xs transition-colors">Items</button>
                     <button @click="activeTab = 'missions'" :class="{'bg-green-600 text-white': activeTab === 'missions', 'text-gray-400 hover:text-white': activeTab !== 'missions'}" class="flex-1 py-1 rounded text-xs transition-colors">Missions</button>
                 </div>
 
@@ -153,7 +154,7 @@ export default {
                         <div class="space-y-1">
                             <div v-for="(drop, idx) in worldData.monster_templates[selectedMonsterId].drops" :key="idx" class="flex gap-1 items-center bg-black p-1 rounded border border-gray-700">
                                 <select v-model="drop.item_id" class="flex-1 bg-gray-800 rounded px-1 py-0.5 text-xs w-20">
-                                    <option v-for="item in availableItems" :key="item.id" :value="item.id">{{ item.name }}</option>
+                                    <option v-for="(item, iid) in availableItems" :key="iid" :value="iid">{{ item.name }}</option>
                                 </select>
                                 <input v-model.number="drop.chance" type="number" step="0.1" class="w-12 bg-gray-800 rounded px-1 py-0.5 text-xs">
                                 <button @click="removeDrop(idx)" class="text-red-500 text-xs px-1">x</button>
@@ -162,6 +163,84 @@ export default {
                         </div>
 
                         <button @click="deleteMonster" class="mt-4 bg-red-900/50 hover:bg-red-900 text-red-200 py-2 rounded text-xs border border-red-800">Delete Monster</button>
+                    </div>
+                </div>
+
+                <!-- ITEMS TAB SIDEBAR -->
+                <div v-if="activeTab === 'items'" class="flex flex-col gap-4">
+                    <button @click="addItem" class="w-full bg-yellow-700 hover:bg-yellow-600 p-2 rounded text-sm font-bold text-white">+ New Item</button>
+                    
+                    <div class="flex flex-col gap-1 max-h-60 overflow-y-auto border border-gray-700 rounded p-1">
+                        <div v-for="(item, id) in availableItems" :key="id" 
+                            @click="selectItem(id)"
+                            class="cursor-pointer p-2 rounded hover:bg-gray-800 text-xs flex justify-between items-center"
+                            :class="{'bg-gray-800 border-l-2 border-yellow-500': selectedItemId === id}">
+                            <span class="truncate">{{ item.name }}</span>
+                            <span class="text-gray-500 text-[10px]">{{ item.icon }}</span>
+                        </div>
+                    </div>
+
+                    <div v-if="selectedItemId && availableItems[selectedItemId]" class="flex flex-col gap-2 border-t border-gray-700 pt-4">
+                        <h3 class="font-bold text-gray-400 text-xs uppercase">Item Details</h3>
+                        <div>
+                            <label class="text-[10px] text-gray-500 uppercase">ID</label>
+                            <input v-model="selectedItemId" disabled class="w-full bg-black border border-gray-700 rounded px-2 py-1 text-gray-500 text-xs">
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-gray-500 uppercase">Name</label>
+                            <input v-model="availableItems[selectedItemId].name" class="w-full bg-black border border-gray-700 rounded px-2 py-1 text-xs">
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="text-[10px] text-gray-500 uppercase">Type</label>
+                                <select v-model="availableItems[selectedItemId].type" class="w-full bg-black border border-gray-700 rounded px-2 py-1 text-xs">
+                                    <option value="weapon">Weapon</option>
+                                    <option value="armor">Armor</option>
+                                    <option value="consumable">Consumable</option>
+                                    <option value="material">Material</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-[10px] text-gray-500 uppercase">Slot</label>
+                                <select v-model="availableItems[selectedItemId].slot" class="w-full bg-black border border-gray-700 rounded px-2 py-1 text-xs">
+                                    <option value="hand_main">Main Hand</option>
+                                    <option value="hand_off">Off Hand</option>
+                                    <option value="head">Head</option>
+                                    <option value="chest">Chest</option>
+                                    <option value="legs">Legs</option>
+                                    <option value="boots">Boots</option>
+                                    <option value="none">None</option>
+                                </select>
+                            </div>
+                        </div>
+                         <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="text-[10px] text-gray-500 uppercase">Rarity</label>
+                                <select v-model="availableItems[selectedItemId].rarity" class="w-full bg-black border border-gray-700 rounded px-2 py-1 text-xs">
+                                    <option value="common">Common</option>
+                                    <option value="uncommon">Uncommon</option>
+                                    <option value="rare">Rare</option>
+                                    <option value="epic">Epic</option>
+                                    <option value="legendary">Legendary</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-[10px] text-gray-500 uppercase">Icon</label>
+                                <input v-model="availableItems[selectedItemId].icon" class="w-full bg-black border border-gray-700 rounded px-2 py-1 text-xs text-center">
+                            </div>
+                        </div>
+                        
+                        <h3 class="font-bold text-gray-400 text-xs uppercase mt-2">Stats</h3>
+                        <div class="grid grid-cols-3 gap-1">
+                             <div><label class="text-[9px] text-gray-500">ATK</label><input v-model.number="availableItems[selectedItemId].stats.atk" type="number" class="w-full bg-black border border-gray-700 rounded px-1 py-0.5 text-xs"></div>
+                             <div><label class="text-[9px] text-gray-500">DEF</label><input v-model.number="availableItems[selectedItemId].stats.def_" type="number" class="w-full bg-black border border-gray-700 rounded px-1 py-0.5 text-xs"></div>
+                             <div><label class="text-[9px] text-gray-500">HP</label><input v-model.number="availableItems[selectedItemId].stats.hp" type="number" class="w-full bg-black border border-gray-700 rounded px-1 py-0.5 text-xs"></div>
+                             <div><label class="text-[9px] text-gray-500">SPD</label><input v-model.number="availableItems[selectedItemId].stats.speed" type="number" class="w-full bg-black border border-gray-700 rounded px-1 py-0.5 text-xs"></div>
+                             <div><label class="text-[9px] text-gray-500">STR</label><input v-model.number="availableItems[selectedItemId].stats.strength" type="number" class="w-full bg-black border border-gray-700 rounded px-1 py-0.5 text-xs"></div>
+                             <div><label class="text-[9px] text-gray-500">PWR</label><input v-model.number="availableItems[selectedItemId].power_score" type="number" class="w-full bg-black border border-gray-700 rounded px-1 py-0.5 text-xs"></div>
+                        </div>
+
+                        <button @click="deleteItem" class="mt-4 bg-red-900/50 hover:bg-red-900 text-red-200 py-2 rounded text-xs border border-red-800">Delete Item</button>
                     </div>
                 </div>
 
@@ -304,6 +383,21 @@ export default {
                     </div>
                 </div>
 
+                <!-- ITEMS PREVIEW -->
+                <div v-if="activeTab === 'items'" class="flex items-center justify-center text-gray-500">
+                     <div v-if="selectedItemId && availableItems[selectedItemId]" class="text-center p-8 border border-gray-700 rounded bg-gray-900">
+                        <div class="text-8xl mb-4">{{ availableItems[selectedItemId].icon }}</div>
+                        <h2 class="text-2xl font-bold text-white">{{ availableItems[selectedItemId].name }}</h2>
+                        <p class="text-sm" :class="{'text-gray-400': availableItems[selectedItemId].rarity === 'common', 'text-green-400': availableItems[selectedItemId].rarity === 'uncommon', 'text-blue-400': availableItems[selectedItemId].rarity === 'rare', 'text-purple-400': availableItems[selectedItemId].rarity === 'epic', 'text-yellow-400': availableItems[selectedItemId].rarity === 'legendary'}">
+                            {{ availableItems[selectedItemId].rarity.toUpperCase() }} {{ availableItems[selectedItemId].type.toUpperCase() }}
+                        </p>
+                    </div>
+                    <div v-else class="text-center">
+                        <span class="text-6xl block mb-4">⚔️</span>
+                        <p>Select an item to edit</p>
+                    </div>
+                </div>
+
                 <!-- MISSION PREVIEW (Placeholder) -->
                 <div v-if="activeTab === 'missions'" class="flex items-center justify-center text-gray-500">
                     <div class="text-center">
@@ -323,7 +417,8 @@ export default {
         const selectedMissionId = ref(null);
         const selectedMission = ref(null);
         const activeTab = ref('maps');
-        const availableItems = ref([]);
+        const availableItems = ref({}); // Changed to object
+        const selectedItemId = ref(null);
         const cursorX = ref(0);
         const cursorY = ref(0);
 
@@ -363,7 +458,14 @@ export default {
                     body: JSON.stringify(missions.value)
                 });
 
-                if (worldRes.ok && missionsRes.ok) alert('All changes saved successfully!');
+                // Save Items
+                const itemsRes = await fetch('http://localhost:8000/editor/items', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(availableItems.value)
+                });
+
+                if (worldRes.ok && missionsRes.ok && itemsRes.ok) alert('All changes saved successfully!');
                 else alert('Error saving some data.');
             } catch (e) {
                 console.error(e);
@@ -428,9 +530,31 @@ export default {
         };
         const addDrop = () => {
             if (!selectedMonsterId.value) return;
-            worldData.value.monster_templates[selectedMonsterId.value].drops.push({ item_id: availableItems.value[0]?.id || "", chance: 0.5 });
+            // Use Object.keys for availableItems since it's an object now
+            const firstItem = Object.keys(availableItems.value)[0] || "";
+            worldData.value.monster_templates[selectedMonsterId.value].drops.push({ item_id: firstItem, chance: 0.5 });
         };
         const removeDrop = (idx) => worldData.value.monster_templates[selectedMonsterId.value].drops.splice(idx, 1);
+
+        // --- ITEM LOGIC ---
+        const selectItem = (id) => selectedItemId.value = id;
+        const addItem = () => {
+            const id = prompt("Enter Item ID (e.g., item_sword_new):");
+            if (id && !availableItems.value[id]) {
+                availableItems.value[id] = {
+                    name: "New Item", type: "weapon", slot: "hand_main", rarity: "common",
+                    stats: { atk: 0, def_: 0, hp: 0, speed: 0, strength: 0 }, power_score: 0, icon: "📦"
+                };
+                selectedItemId.value = id;
+            }
+        };
+        const deleteItem = () => {
+            if (!selectedItemId.value) return;
+            if (confirm(`Delete ${selectedItemId.value}?`)) {
+                delete availableItems.value[selectedItemId.value];
+                selectedItemId.value = null;
+            }
+        };
 
         // --- MISSION LOGIC ---
         const selectMission = (id, mission) => {
@@ -480,10 +604,11 @@ export default {
 
         return {
             worldData, missions, availableItems,
-            activeTab, selectedMapId, selectedMonsterId, selectedMissionId, selectedMission,
+            activeTab, selectedMapId, selectedMonsterId, selectedMissionId, selectedMission, selectedItemId,
             selectMap, addMap, deleteMap, addPortal, removePortal, addSpawn, removeSpawn,
             selectMonster, addMonster, deleteMonster, addDrop, removeDrop,
             selectMission, createNewMission,
+            selectItem, addItem, deleteItem,
             saveAll,
             startDrag, handleMouseMove, handleMouseUp, cursorX, cursorY
         };

@@ -4421,21 +4421,21 @@
     "name": "admin",
     "p_class": "warrior",
     "level": 7,
-    "xp": 2935,
+    "xp": 2985,
     "next_level_xp": 4900,
     "stats": {
-      "hp": 200,
+      "hp": 98,
       "max_hp": 200,
       "atk": 105,
       "def_": 28,
       "speed": 21.0,
       "attack_cooldown": 1.0
     },
-    "current_map_id": "map_castle_1",
+    "current_map_id": "map_forest_2",
     "respawn_map_id": "map_castle_1",
     "position": {
-      "x": 53.29475378407543,
-      "y": 47.570310336585244
+      "x": 32.38164437979486,
+      "y": 33.1909788954985
     },
     "state": "idle",
     "target_monster_id": null,
@@ -4470,7 +4470,7 @@
         },
         "power_score": 10,
         "icon": "\ud83e\uddea",
-        "quantity": 166,
+        "quantity": 167,
         "stackable": true
       },
       {
@@ -4529,6 +4529,25 @@
         "icon": "\u2694\ufe0f",
         "quantity": 1,
         "stackable": false
+      },
+      {
+        "id": "Beta_a7af42af",
+        "name": "Beta",
+        "type": "consumable",
+        "slot": "none",
+        "rarity": "legendary",
+        "stats": {
+          "strength": 0,
+          "intelligence": 0,
+          "atk": 0,
+          "def_": 0,
+          "speed": 0.0,
+          "hp": 0
+        },
+        "power_score": 500,
+        "icon": "\u2764\ufe0f",
+        "quantity": 4,
+        "stackable": true
       }
     ],
     "equipment": {
@@ -4575,10 +4594,10 @@
       },
       "hand_off": null
     },
-    "gold": 20740,
+    "gold": 21158,
     "diamonds": 0,
     "is_admin": true,
-    "last_attack_time": 1764962191.322967,
-    "last_movement_broadcast": 1764962206.620626
+    "last_attack_time": 1764965627.398358,
+    "last_movement_broadcast": 1764965732.115115
   }
 }

@@ -1,4 +1,4 @@
-import { player, logs, socket, currentMonster, addLog, showToast, mapMonsters, mapPlayers, isFreeFarming, selectedTargetId, pendingAttackId, destinationMarker, inspectedPlayer, autoSellInferior, currentMapData, showGameAlert } from '../state.js';
+import { player, logs, socket, currentMonster, addLog, showToast, mapMonsters, mapPlayers, isFreeFarming, selectedTargetId, pendingAttackId, destinationMarker, inspectedPlayer, autoSellInferior, currentMapData, showGameAlert, isUpdating, worldData } from '../state.js';
 import { checkAndAct, stopAutoFarm } from './autoFarm.js';
 
 const API_URL = 'http://localhost:8000';
@@ -257,7 +257,7 @@ export const connectWebSocket = (playerId) => {
         addLog('Connected to server.', 'text-green-500');
     };
 
-    socket.value.onmessage = (event) => {
+    socket.value.onmessage = async (event) => {
         const data = JSON.parse(event.data);
 
         if (data.type === 'combat_update') {
@@ -322,6 +322,26 @@ export const connectWebSocket = (playerId) => {
                     }
                 }
             }
+        } else if (data.type === 'server_update') {
+            isUpdating.value = true;
+
+            // Reload world data
+            try {
+                const worldRes = await fetch('http://localhost:8000/editor/world');
+                if (worldRes.ok) worldData.value = await worldRes.json();
+
+                // Refresh current map
+                if (player.value) {
+                    api.fetchMapDetails(player.value.current_map_id);
+                    api.fetchMapMonsters(player.value.current_map_id);
+                }
+            } catch (e) { console.error(e); }
+
+            // Hide modal after a short delay
+            setTimeout(() => {
+                isUpdating.value = false;
+                showToast('✅', 'Server Updated', 'World data has been refreshed.', 'text-green-400');
+            }, 2000);
         } else if (data.type === 'monster_moved') {
             const m = mapMonsters.value.find(m => m.id === data.monster_id);
             if (m) {

@@ -50,6 +50,7 @@ manager = ConnectionManager()
 async def startup_event():
     # Inject manager into GameLoop
     game_loop.set_connection_manager(manager)
+    state_manager.connection_manager = manager
     
     # Start Game Loop
     logger.info("Starting Game Loop...")

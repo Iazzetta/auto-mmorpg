@@ -413,3 +413,36 @@ async def respawn_player(player_id: str):
         player.position.y = 50
         
     return {"message": "Respawned", "map_id": player.current_map_id, "position": player.position}
+@router.get("/editor/items")
+async def get_editor_items():
+    from ..data.items import ITEMS
+    return ITEMS
+
+@router.post("/editor/items")
+async def save_editor_items(items: dict):
+    import json
+    from ..data.items import load_items
+    
+    with open("backend/app/data/items.json", "w") as f:
+        json.dump(items, f, indent=4)
+    
+    load_items()
+    
+    # Broadcast Update
+    if hasattr(state_manager, 'connection_manager'):
+        await state_manager.connection_manager.broadcast({"type": "server_update"})
+    
+    return {"message": "Items saved"}
+
+@router.post("/editor/world")
+async def save_world(data: dict):
+    import json
+    with open("backend/app/data/world.json", "w") as f:
+        json.dump(data, f, indent=4)
+    
+    state_manager.load_world_data()
+    
+    if hasattr(state_manager, 'connection_manager'):
+        await state_manager.connection_manager.broadcast({"type": "server_update"})
+    
+    return {"message": "World saved"}

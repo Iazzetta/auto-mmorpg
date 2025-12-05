@@ -1,5 +1,5 @@
 import { ref, onMounted, onUnmounted, nextTick, watch, computed } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.js';
-import { player, logs, toasts, missions, inspectedPlayer, worldData } from './state.js';
+import { player, logs, toasts, missions, inspectedPlayer, worldData, isUpdating } from './state.js';
 import { api } from './services/api.js';
 import { toggleFreeFarm } from './services/autoFarm.js';
 
@@ -118,6 +118,13 @@ export default {
                         <div class="text-xs text-gray-400">{{ toast.message }}</div>
                     </div>
                 </div>
+            </div>
+
+            <!-- Server Updating Modal -->
+            <div v-if="isUpdating" class="fixed inset-0 bg-black/90 flex flex-col items-center justify-center z-[100]">
+                <div class="text-6xl animate-spin mb-4">⚙️</div>
+                <h2 class="text-2xl font-bold text-yellow-500 mb-2">Server Updating</h2>
+                <p class="text-gray-400">Applying changes to the world...</p>
             </div>
 
     </div>

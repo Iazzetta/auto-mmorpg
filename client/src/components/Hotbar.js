@@ -28,7 +28,7 @@ export default {
             <button v-if="player && player.is_admin" 
                 @click="$emit('open-editor')"
                 class="absolute right-4 bg-purple-600 hover:bg-purple-500 text-white px-3 py-1 rounded text-xs font-bold shadow-lg">
-                Map Editor
+                World Editor
             </button>
         </div>
     `,
