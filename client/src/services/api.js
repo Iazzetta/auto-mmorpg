@@ -277,48 +277,55 @@ export const connectWebSocket = (playerId) => {
             if (isFreeFarming.value || player.value.active_mission_id) {
                 checkAndAct();
             }
-        } else if (data.type === 'player_moved') {
-            if (data.player_id === player.value.id) {
-                if (!player.value.position) player.value.position = { x: 0, y: 0 };
-                player.value.position.x = data.x;
-                player.value.position.y = data.y;
+        } else if (data.type === 'batch_update') {
+            for (const entity of data.entities) {
+                if (entity.type === 'player') {
+                    if (entity.id === player.value.id) {
+                        if (!player.value.position) player.value.position = { x: 0, y: 0 };
+                        player.value.position.x = entity.x;
+                        player.value.position.y = entity.y;
 
-                if (player.value.current_map_id !== data.map_id) {
-                    player.value.current_map_id = data.map_id;
-                    api.fetchMapDetails(data.map_id);
-                }
+                        if (player.value.current_map_id !== entity.map_id) {
+                            player.value.current_map_id = entity.map_id;
+                            api.fetchMapDetails(entity.map_id);
+                        }
 
-                if (pendingAttackId.value) {
-                    const target = mapMonsters.value.find(m => m.id === pendingAttackId.value);
-                    if (target) {
-                        const mx_game = target.position_x;
-                        const my_game = target.position_y;
-                        const dx = player.value.position.x - mx_game;
-                        const dy = player.value.position.y - my_game;
-                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        if (pendingAttackId.value) {
+                            const target = mapMonsters.value.find(m => m.id === pendingAttackId.value);
+                            if (target) {
+                                const mx_game = target.position_x;
+                                const my_game = target.position_y;
+                                const dx = player.value.position.x - mx_game;
+                                const dy = player.value.position.y - my_game;
+                                const dist = Math.sqrt(dx * dx + dy * dy);
 
-                        if (dist < 1.0) {
-                            api.attackMonster(pendingAttackId.value);
-                            pendingAttackId.value = null;
+                                if (dist < 1.0) {
+                                    api.attackMonster(pendingAttackId.value);
+                                    pendingAttackId.value = null;
+                                }
+                            }
+                        }
+                    } else {
+                        const other = mapPlayers.value.find(p => p.id === entity.id);
+                        if (other) {
+                            if (!other.position) other.position = { x: 0, y: 0 };
+                            other.position.x = entity.x;
+                            other.position.y = entity.y;
+
+                            if (entity.map_id !== player.value.current_map_id) {
+                                mapPlayers.value = mapPlayers.value.filter(p => p.id !== entity.id);
+                            }
+                        } else {
+                            if (entity.map_id === player.value.current_map_id) {
+                                api.fetchMapPlayers(player.value.current_map_id);
+                            }
                         }
                     }
-                }
-            } else {
-                // Update other player
-                const other = mapPlayers.value.find(p => p.id === data.player_id);
-                if (other) {
-                    if (!other.position) other.position = { x: 0, y: 0 };
-                    other.position.x = data.x;
-                    other.position.y = data.y;
-
-                    // If they moved to a different map, remove them
-                    if (data.map_id !== player.value.current_map_id) {
-                        mapPlayers.value = mapPlayers.value.filter(p => p.id !== data.player_id);
-                    }
-                } else {
-                    // If new player entered our map, fetch list
-                    if (data.map_id === player.value.current_map_id) {
-                        api.fetchMapPlayers(player.value.current_map_id);
+                } else if (entity.type === 'monster') {
+                    const m = mapMonsters.value.find(m => m.id === entity.id);
+                    if (m) {
+                        m.position_x = entity.x;
+                        m.position_y = entity.y;
                     }
                 }
             }
@@ -342,12 +349,6 @@ export const connectWebSocket = (playerId) => {
                 isUpdating.value = false;
                 showToast('✅', 'Server Updated', 'World data has been refreshed.', 'text-green-400');
             }, 2000);
-        } else if (data.type === 'monster_moved') {
-            const m = mapMonsters.value.find(m => m.id === data.monster_id);
-            if (m) {
-                m.position_x = data.x;
-                m.position_y = data.y;
-            }
         } else if (data.type === 'player_left') {
             mapPlayers.value = mapPlayers.value.filter(p => p.id !== data.player_id);
             if (inspectedPlayer.value && inspectedPlayer.value.id === data.player_id) {

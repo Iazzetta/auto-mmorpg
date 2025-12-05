@@ -108,17 +108,7 @@ export default {
                 </div>
             </div>
 
-            <!-- Toasts -->
-            <div class="fixed bottom-24 right-4 flex flex-col gap-2 pointer-events-none z-50">
-                <div v-for="toast in toasts" :key="toast.id"
-                    class="bg-gray-800 border border-gray-600 text-white px-4 py-2 rounded shadow-lg flex items-center gap-2 animate-fade-in-up">
-                    <span class="text-2xl">{{ toast.icon }}</span>
-                    <div>
-                        <div class="font-bold text-sm" :class="toast.color">{{ toast.title }}</div>
-                        <div class="text-xs text-gray-400">{{ toast.message }}</div>
-                    </div>
-                </div>
-            </div>
+
 
             <!-- Server Updating Modal -->
             <div v-if="isUpdating" class="fixed inset-0 bg-black/90 flex flex-col items-center justify-center z-[100]">
@@ -209,19 +199,45 @@ export default {
         let respawnInterval = null;
 
         watch(isDead, (dead) => {
+            if (respawnInterval) clearInterval(respawnInterval);
+
             if (dead) {
-                respawnTimer.value = 10;
-                respawnInterval = setInterval(() => {
-                    respawnTimer.value--;
-                    if (respawnTimer.value <= 0) {
+                const updateTimer = () => {
+                    if (!player.value) return;
+
+                    // If no death_time from server (legacy or error), default to 10s local countdown
+                    if (!player.value.death_time) {
+                        if (respawnTimer.value > 0) respawnTimer.value--;
+                        else {
+                            clearInterval(respawnInterval);
+                            api.respawnPlayer();
+                        }
+                        return;
+                    }
+
+                    const now = Date.now() / 1000;
+                    const elapsed = now - player.value.death_time;
+                    const remaining = Math.max(0, 10 - Math.floor(elapsed));
+                    respawnTimer.value = remaining;
+
+                    if (remaining <= 0) {
                         clearInterval(respawnInterval);
                         api.respawnPlayer();
                     }
-                }, 1000);
-            } else {
-                if (respawnInterval) clearInterval(respawnInterval);
+                };
+
+                // Initial check
+                if (player.value && player.value.death_time) {
+                    const now = Date.now() / 1000;
+                    const elapsed = now - player.value.death_time;
+                    respawnTimer.value = Math.max(0, 10 - Math.floor(elapsed));
+                } else {
+                    respawnTimer.value = 10;
+                }
+
+                respawnInterval = setInterval(updateTimer, 1000);
             }
-        });
+        }, { immediate: true });
 
         const instantRevive = async () => {
             await api.revivePlayer();

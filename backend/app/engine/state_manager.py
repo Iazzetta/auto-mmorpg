@@ -53,6 +53,12 @@ class StateManager:
             self.world_data = data
             self.monster_templates = data.get("monster_templates", {})
             
+            # Clear existing monsters and maps to prevent duplicates
+            self.monsters = {}
+            self.map_monsters = {}
+            self.maps = {}
+            self.respawn_queue = []
+            
             # Load Maps
             for map_id, map_data in data.get("maps", {}).items():
                 # Create GameMap object

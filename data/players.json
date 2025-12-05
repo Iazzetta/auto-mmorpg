@@ -523,7 +523,8 @@
     "diamonds": 0,
     "is_admin": true,
     "last_attack_time": 1764935131.7643871,
-    "last_movement_broadcast": 1764803410.544847
+    "last_movement_broadcast": 1764803410.544847,
+    "death_time": null
   },
   "e0f144a6-691f-43f4-9633-12d7f6b4877b": {
     "id": "e0f144a6-691f-43f4-9633-12d7f6b4877b",
@@ -3441,7 +3442,8 @@
     "diamonds": 0,
     "is_admin": true,
     "last_attack_time": 1764878823.7520761,
-    "last_movement_broadcast": 1764958875.5897431
+    "last_movement_broadcast": 1764958875.5897431,
+    "death_time": null
   },
   "3061a6fb-550b-4d1a-9200-12c104dd7efa": {
     "id": "3061a6fb-550b-4d1a-9200-12c104dd7efa",
@@ -3624,7 +3626,8 @@
     "diamonds": 0,
     "is_admin": true,
     "last_attack_time": 1764818381.683369,
-    "last_movement_broadcast": 1764818377.4936461
+    "last_movement_broadcast": 1764818377.4936461,
+    "death_time": null
   },
   "56497b77-6622-4bb5-aece-f6914dc72ed9": {
     "id": "56497b77-6622-4bb5-aece-f6914dc72ed9",
@@ -3674,7 +3677,8 @@
     "diamonds": 0,
     "is_admin": true,
     "last_attack_time": 1764818986.404095,
-    "last_movement_broadcast": 1764859760.118707
+    "last_movement_broadcast": 1764859760.118707,
+    "death_time": null
   },
   "31268b48-b805-4965-932d-7b7d02862fe1": {
     "id": "31268b48-b805-4965-932d-7b7d02862fe1",
@@ -3780,7 +3784,8 @@
     "diamonds": 0,
     "is_admin": false,
     "last_attack_time": 1764882183.978621,
-    "last_movement_broadcast": 1764882771.761664
+    "last_movement_broadcast": 1764882771.761664,
+    "death_time": null
   },
   "54cc3731-11a3-4262-823a-35d0b838d45f": {
     "id": "54cc3731-11a3-4262-823a-35d0b838d45f",
@@ -4133,7 +4138,8 @@
     "diamonds": 0,
     "is_admin": false,
     "last_attack_time": 1764942178.54832,
-    "last_movement_broadcast": 1764883130.544616
+    "last_movement_broadcast": 1764883130.544616,
+    "death_time": null
   },
   "5efbb994-c578-43f9-8aa0-6e212dfb9cc5": {
     "id": "5efbb994-c578-43f9-8aa0-6e212dfb9cc5",
@@ -4413,29 +4419,30 @@
     "diamonds": 0,
     "is_admin": false,
     "last_attack_time": 1764935132.831764,
-    "last_movement_broadcast": 1764898082.048764
+    "last_movement_broadcast": 1764898082.048764,
+    "death_time": null
   },
   "cd29dc97-adc4-4430-aba6-9bb5ba48f7fa": {
     "id": "cd29dc97-adc4-4430-aba6-9bb5ba48f7fa",
     "token": "b830b614-f27b-43ec-959b-22ad310b2ced",
     "name": "admin",
     "p_class": "warrior",
-    "level": 7,
-    "xp": 2985,
-    "next_level_xp": 4900,
+    "level": 8,
+    "xp": 2475,
+    "next_level_xp": 6400,
     "stats": {
-      "hp": 98,
+      "hp": 200,
       "max_hp": 200,
-      "atk": 105,
-      "def_": 28,
+      "atk": 113,
+      "def_": 30,
       "speed": 21.0,
       "attack_cooldown": 1.0
     },
-    "current_map_id": "map_forest_2",
+    "current_map_id": "map_castle_1",
     "respawn_map_id": "map_castle_1",
     "position": {
-      "x": 32.38164437979486,
-      "y": 33.1909788954985
+      "x": 57.167498412276736,
+      "y": 33.04469352210685
     },
     "state": "idle",
     "target_monster_id": null,
@@ -4447,8 +4454,8 @@
       "mission_1764949959183"
     ],
     "attributes": {
-      "str": 35,
-      "agi": 15,
+      "str": 38,
+      "agi": 17,
       "vit": 10,
       "ini": 10
     },
@@ -4470,7 +4477,7 @@
         },
         "power_score": 10,
         "icon": "\ud83e\uddea",
-        "quantity": 167,
+        "quantity": 238,
         "stackable": true
       },
       {
@@ -4546,8 +4553,46 @@
         },
         "power_score": 500,
         "icon": "\u2764\ufe0f",
-        "quantity": 4,
+        "quantity": 25,
         "stackable": true
+      },
+      {
+        "id": "item_sword_03_09e0f97f",
+        "name": "High Sword",
+        "type": "weapon",
+        "slot": "hand_main",
+        "rarity": "rare",
+        "stats": {
+          "strength": 5,
+          "intelligence": 0,
+          "atk": 15,
+          "def_": 0,
+          "speed": 0.0,
+          "hp": 0
+        },
+        "power_score": 20,
+        "icon": "\u2694\ufe0f",
+        "quantity": 1,
+        "stackable": false
+      },
+      {
+        "id": "item_sword_03_9e4294ca",
+        "name": "High Sword",
+        "type": "weapon",
+        "slot": "hand_main",
+        "rarity": "rare",
+        "stats": {
+          "strength": 5,
+          "intelligence": 0,
+          "atk": 15,
+          "def_": 0,
+          "speed": 0.0,
+          "hp": 0
+        },
+        "power_score": 20,
+        "icon": "\u2694\ufe0f",
+        "quantity": 1,
+        "stackable": false
       }
     ],
     "equipment": {
@@ -4594,10 +4639,11 @@
       },
       "hand_off": null
     },
-    "gold": 21158,
+    "gold": 26574,
     "diamonds": 0,
     "is_admin": true,
-    "last_attack_time": 1764965627.398358,
-    "last_movement_broadcast": 1764965732.115115
+    "last_attack_time": 1764967748.878329,
+    "last_movement_broadcast": 1764965732.115115,
+    "death_time": null
   }
 }

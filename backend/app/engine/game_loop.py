@@ -18,7 +18,7 @@ class GameLoop:
         self.last_tick_time = time.time()
         while self.running:
             await self.tick()
-            await asyncio.sleep(0.05) # Sleep less to aim for higher tick rate, but dt will handle consistency
+            await asyncio.sleep(0.05) 
 
     async def tick(self):
         import time
@@ -26,7 +26,6 @@ class GameLoop:
         dt = current_time - self.last_tick_time
         self.last_tick_time = current_time
         
-        # Cap dt to prevent massive jumps if server hangs
         if dt > 0.5: dt = 0.5
         
         # Performance Logging
@@ -39,33 +38,26 @@ class GameLoop:
             respawn_count = len(getattr(self.state_manager, 'respawn_queue', []))
             print(f"[PERF] Tick: {self.tick_count} | FPS: {1/dt:.2f} | Players: {player_count} | Monsters: {monster_count} | RespawnQueue: {respawn_count}")
 
-        if dt > 0.15:
-            print(f"[WARN] Slow Tick! dt={dt:.4f}s")
+        movement_updates = []
 
         # Iterate over all players
         for player_id, player in self.state_manager.players.items():
             if player.state == PlayerState.COMBAT:
-                # print(f"[DEBUG_LOOP] Player {player.name} in COMBAT with {player.target_monster_id}")
-                # Combat Cooldown (Dynamic based on stats)
+                # Combat Logic (Keep immediate broadcast for responsiveness)
                 attack_cooldown = getattr(player.stats, 'attack_cooldown', 1.0)
-                
-                if not hasattr(player, 'last_attack_time'):
-                    player.last_attack_time = 0
+                if not hasattr(player, 'last_attack_time'): player.last_attack_time = 0
                 
                 if current_time - player.last_attack_time >= attack_cooldown:
                     player.last_attack_time = current_time
-                    
                     if player.target_monster_id:
                         monster = self.state_manager.monsters.get(player.target_monster_id)
                         if monster:
                             log = CombatService.process_combat_round(player, monster)
-                        
                             if not log:
                                 player.state = PlayerState.IDLE
                                 player.target_monster_id = None
                                 continue
                             
-                            # Broadcast log
                             if hasattr(self, 'connection_manager'):
                                 await self.connection_manager.broadcast({
                                     "type": "combat_update",
@@ -83,65 +75,59 @@ class GameLoop:
                                 player.state = PlayerState.IDLE
                                 player.target_monster_id = None
                                 self.state_manager.remove_monster(monster.id)
+                            
+                            if log.get('player_died'):
+                                player.state = PlayerState.IDLE
+                                player.target_monster_id = None
+                                player.death_time = current_time
                         else:
-                            # Monster gone
                             player.state = PlayerState.IDLE
                             player.target_monster_id = None
             
             elif player.state == PlayerState.MOVING and player.target_position:
-                # Calculate movement
-                # Use dynamic dt for consistent speed regardless of tick rate
                 reached = MovementService.move_towards_target(player, player.target_position.x, player.target_position.y, dt)
                 
-                # Broadcast movement (Throttle to ~10 FPS to save bandwidth)
-                if not hasattr(player, 'last_movement_broadcast'):
-                    player.last_movement_broadcast = 0
-                
-                if reached or (current_time - player.last_movement_broadcast >= 0.1):
-                    player.last_movement_broadcast = current_time
-                    if hasattr(self, 'connection_manager'):
-                        await self.connection_manager.broadcast({
-                            "type": "player_moved",
-                            "player_id": player.id,
-                            "x": player.position.x,
-                            "y": player.position.y,
-                            "map_id": player.current_map_id
-                        })
+                # Add to batch
+                movement_updates.append({
+                    "id": player.id,
+                    "type": "player",
+                    "x": player.position.x,
+                    "y": player.position.y,
+                    "map_id": player.current_map_id
+                })
                 
                 if reached:
                     player.state = PlayerState.IDLE
                     player.target_position = None
-                    
-                    # Broadcast final position (especially if map changed)
-                    if hasattr(self, 'connection_manager'):
-                        await self.connection_manager.broadcast({
-                            "type": "player_moved",
-                            "player_id": player.id,
-                            "x": player.position.x,
-                            "y": player.position.y,
-                            "map_id": player.current_map_id
-                        })
         
         # Process Monsters (AI)
-        await self.process_monsters(dt)
+        monster_updates = await self.process_monsters(dt)
+        movement_updates.extend(monster_updates)
+
+        # Broadcast Batch Updates
+        if movement_updates and hasattr(self, 'connection_manager'):
+            # Throttle updates? No, batching is already throttling frequency by tick rate.
+            # But we can limit to 20 FPS updates if tick is 60 FPS.
+            # For now, send every tick (20 FPS target in start loop).
+            await self.connection_manager.broadcast({
+                "type": "batch_update",
+                "entities": movement_updates
+            })
 
         # Check Respawns
         to_respawn = self.state_manager.check_respawns()
         for data in to_respawn:
-            # Create new monster instance
             import uuid
             from ..models.monster import Monster
-            
             template = self.state_manager.monster_templates.get(data['template_id'])
             if template:
-                print(f"[DEBUG_RESPAWN] Creating monster instance for {data['template_id']}")
                 new_monster = Monster(
                     id=f"{data['template_id']}_{uuid.uuid4().hex[:8]}",
                     template_id=data['template_id'],
                     name=template['name'],
                     level=template['level'],
                     m_type=template['m_type'],
-                    stats=template['stats'].copy(), # Important: Copy stats!
+                    stats=template['stats'].copy(),
                     map_id=data['map_id'],
                     position_x=data['x'],
                     position_y=data['y'],
@@ -150,8 +136,6 @@ class GameLoop:
                     xp_reward=template['xp_reward']
                 )
                 self.state_manager.add_monster(new_monster)
-                
-                # Broadcast Respawn (Optional but good for client)
                 if hasattr(self, 'connection_manager'):
                     asyncio.create_task(self.connection_manager.broadcast({
                         "type": "monster_respawn",
@@ -161,33 +145,32 @@ class GameLoop:
     async def process_monsters(self, dt: float):
         import math
         import random
-        current_time = self.last_tick_time
+        
+        updates = []
         
         for monster_id, monster in self.state_manager.monsters.items():
             if monster.stats.hp <= 0: continue
+            
+            moved = False
             
             # AI Logic
             target = None
             if monster.target_id:
                 target = self.state_manager.get_player(monster.target_id)
-                # Validate target
                 if not target or str(target.current_map_id) != str(monster.map_id) or target.stats.hp <= 0:
                     monster.target_id = None
                     monster.state = "RETURNING"
                     target = None
             
-            # Common Aggro Check (for IDLE and WANDERING)
             if monster.m_type == "aggressive" and not target and monster.state in ["IDLE", "WANDERING"]:
                 closest_dist = monster.aggro_range
                 closest_p = None
-                
                 for p in self.state_manager.players.values():
                     if str(p.current_map_id) == str(monster.map_id) and p.stats.hp > 0:
                         dist = math.sqrt((p.position.x - monster.position_x)**2 + (p.position.y - monster.position_y)**2)
                         if dist < closest_dist:
                             closest_dist = dist
                             closest_p = p
-                
                 if closest_p:
                     monster.target_id = closest_p.id
                     monster.state = "CHASING"
@@ -195,17 +178,13 @@ class GameLoop:
 
             # State Machine
             if monster.state == "IDLE":
-                # Wandering Logic
-                if random.random() < 0.02: # 2% chance per tick to start wandering
+                if random.random() < 0.02:
                     angle = random.random() * 2 * math.pi
-                    r = random.random() * 4.0 # 4 unit radius
+                    r = random.random() * 4.0
                     wx = monster.spawn_x + r * math.cos(angle)
                     wy = monster.spawn_y + r * math.sin(angle)
-                    
-                    # Clamp
                     wx = max(1, min(99, wx))
                     wy = max(1, min(99, wy))
-                    
                     monster.wander_target_x = wx
                     monster.wander_target_y = wy
                     monster.state = "WANDERING"
@@ -215,63 +194,34 @@ class GameLoop:
                     dx = monster.wander_target_x - monster.position_x
                     dy = monster.wander_target_y - monster.position_y
                     dist = math.sqrt(dx*dx + dy*dy)
-                    
                     if dist < 0.5:
                         monster.state = "IDLE"
                         monster.wander_target_x = None
                         monster.wander_target_y = None
                     else:
-                        speed = getattr(monster.stats, 'speed', 10.0) * dt * 0.3 # Walk slow (30% speed)
+                        speed = getattr(monster.stats, 'speed', 10.0) * dt * 0.3
                         monster.position_x += (dx/dist) * speed
                         monster.position_y += (dy/dist) * speed
-                        
-                        # Broadcast Move
-                        if not hasattr(monster, 'last_broadcast'): monster.last_broadcast = 0
-                        if current_time - monster.last_broadcast > 0.2: # Slower updates for wandering
-                            monster.last_broadcast = current_time
-                            if hasattr(self, 'connection_manager'):
-                                await self.connection_manager.broadcast({
-                                    "type": "monster_moved",
-                                    "monster_id": monster.id,
-                                    "x": monster.position_x,
-                                    "y": monster.position_y,
-                                    "map_id": monster.map_id
-                                })
-
+                        moved = True
+            
             elif monster.state == "CHASING":
                 if target:
-                    # Check Leash
                     dist_from_spawn = math.sqrt((monster.position_x - monster.spawn_x)**2 + (monster.position_y - monster.spawn_y)**2)
                     if dist_from_spawn > monster.leash_range:
                         monster.target_id = None
                         monster.state = "RETURNING"
                     else:
-                        # Move towards target
                         dx = target.position.x - monster.position_x
                         dy = target.position.y - monster.position_y
                         dist = math.sqrt(dx*dx + dy*dy)
-                        
-                        if dist <= 1.5: # Attack Range
+                        if dist <= 1.5:
                             monster.state = "ATTACKING"
                         else:
-                            # Move
                             speed = getattr(monster.stats, 'speed', 10.0) * dt
                             if dist > 0:
                                 monster.position_x += (dx/dist) * speed
                                 monster.position_y += (dy/dist) * speed
-                                
-                                # Broadcast Move
-                                if not hasattr(monster, 'last_broadcast'): monster.last_broadcast = 0
-                                if current_time - monster.last_broadcast > 0.1:
-                                    monster.last_broadcast = current_time
-                                    if hasattr(self, 'connection_manager'):
-                                        await self.connection_manager.broadcast({
-                                            "type": "monster_moved",
-                                            "monster_id": monster.id,
-                                            "x": monster.position_x,
-                                            "y": monster.position_y,
-                                            "map_id": monster.map_id
-                                        })
+                                moved = True
 
             elif monster.state == "ATTACKING":
                 if target:
@@ -279,7 +229,6 @@ class GameLoop:
                     if dist > 2.0:
                         monster.state = "CHASING"
                     else:
-                        # Ensure player is in combat
                         if target.state != PlayerState.COMBAT:
                             target.state = PlayerState.COMBAT
                             target.target_monster_id = monster.id
@@ -287,31 +236,29 @@ class GameLoop:
                     monster.state = "IDLE"
 
             elif monster.state == "RETURNING":
-                # Move to spawn
                 dx = monster.spawn_x - monster.position_x
                 dy = monster.spawn_y - monster.position_y
                 dist = math.sqrt(dx*dx + dy*dy)
-                
                 if dist < 0.5:
                     monster.position_x = monster.spawn_x
                     monster.position_y = monster.spawn_y
                     monster.state = "IDLE"
                 else:
-                    speed = getattr(monster.stats, 'speed', 10.0) * dt * 1.5 # Return faster
+                    speed = getattr(monster.stats, 'speed', 10.0) * dt * 1.5
                     if dist > 0:
                         monster.position_x += (dx/dist) * speed
                         monster.position_y += (dy/dist) * speed
-                        
-                        if not hasattr(monster, 'last_broadcast'): monster.last_broadcast = 0
-                        if current_time - monster.last_broadcast > 0.1:
-                            monster.last_broadcast = current_time
-                            if hasattr(self, 'connection_manager'):
-                                await self.connection_manager.broadcast({
-                                    "type": "monster_moved",
-                                    "monster_id": monster.id,
-                                    "x": monster.position_x,
-                                    "y": monster.position_y,
-                                    "map_id": monster.map_id
-                                })
+                        moved = True
+            
+            if moved:
+                updates.append({
+                    "id": monster.id,
+                    "type": "monster",
+                    "x": monster.position_x,
+                    "y": monster.position_y,
+                    "map_id": monster.map_id
+                })
+                
+        return updates
             
 

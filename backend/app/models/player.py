@@ -72,6 +72,7 @@ class Player(BaseModel):
     # Runtime State (Not persisted usually, but needed for game loop)
     last_attack_time: float = 0.0
     last_movement_broadcast: float = 0.0
+    death_time: Optional[float] = None
 
     def calculate_stats(self):
         # Base stats from attributes

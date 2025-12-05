@@ -386,6 +386,7 @@ async def revive_player(player_id: str):
     player.diamonds -= cost
     player.stats.hp = player.stats.max_hp
     player.state = PlayerState.IDLE
+    player.death_time = None
     
     return {"message": "Revived!", "hp": player.stats.hp, "diamonds": player.diamonds}
 
@@ -398,9 +399,17 @@ async def respawn_player(player_id: str):
     if player.stats.hp > 0:
         return {"message": "Player is already alive"}
         
+    # Check Timer
+    import time
+    if player.death_time:
+        elapsed = time.time() - player.death_time
+        if elapsed < 10:
+            raise HTTPException(status_code=400, detail=f"Respawn available in {int(10 - elapsed)}s")
+        
     # Respawn at save point
     player.stats.hp = player.stats.max_hp
     player.state = PlayerState.IDLE
+    player.death_time = None
     
     respawn_map = state_manager.get_map(player.respawn_map_id)
     if respawn_map:
