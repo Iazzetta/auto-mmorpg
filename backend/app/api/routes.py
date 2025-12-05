@@ -140,6 +140,9 @@ async def interact_npc(player_id: str, npc_id: str):
     if not player or not npc:
         raise HTTPException(status_code=404, detail="Player or NPC not found")
         
+    if player.stats.hp <= 0:
+        raise HTTPException(status_code=400, detail="Cannot interact while dead")
+        
     # Validate distance (e.g., 5 units)
     import math
     dist = math.sqrt((player.position.x - npc.x)**2 + (player.position.y - npc.y)**2)
@@ -181,6 +184,9 @@ async def buy_item(player_id: str, npc_id: str, item_id: str):
     
     if not player or not npc:
         raise HTTPException(status_code=404, detail="Not found")
+        
+    if player.stats.hp <= 0:
+        raise HTTPException(status_code=400, detail="Cannot buy items while dead")
         
     if npc.type != "merchant":
         raise HTTPException(status_code=400, detail="Not a merchant")
@@ -238,6 +244,9 @@ async def use_item(player_id: str, item_id: str):
     if not player:
         raise HTTPException(status_code=404, detail="Player not found")
         
+    if player.stats.hp <= 0:
+        raise HTTPException(status_code=400, detail="Cannot use items while dead")
+        
     # Find item
     item_to_use = None
     for item in player.inventory:
@@ -287,6 +296,9 @@ async def move_player(player_id: str, target_map_id: str, x: float, y: float):
     if not player:
         raise HTTPException(status_code=404, detail="Player not found")
     
+    if player.stats.hp <= 0:
+        raise HTTPException(status_code=400, detail="Cannot move while dead")
+    
     # Clamp coordinates
     x = max(0, min(100, x))
     y = max(0, min(100, y))
@@ -323,6 +335,9 @@ async def attack_monster(player_id: str, monster_id: str):
     player = state_manager.get_player(player_id)
     if not player:
         raise HTTPException(status_code=404, detail="Player not found")
+        
+    if player.stats.hp <= 0:
+        raise HTTPException(status_code=400, detail="Cannot attack while dead")
     
     monster = state_manager.monsters.get(monster_id)
     if not monster:
@@ -341,6 +356,9 @@ async def sell_item(player_id: str, item_id: str):
     player = state_manager.get_player(player_id)
     if not player:
         raise HTTPException(status_code=404, detail="Player not found")
+    
+    if player.stats.hp <= 0:
+        raise HTTPException(status_code=400, detail="Cannot sell items while dead")
     
     # Find item in inventory
     item_to_sell = None
@@ -465,6 +483,9 @@ async def equip_item_endpoint(player_id: str, item_id: str):
     player = state_manager.get_player(player_id)
     if not player:
         raise HTTPException(status_code=404, detail="Player not found")
+    
+    if player.stats.hp <= 0:
+        raise HTTPException(status_code=400, detail="Cannot equip items while dead")
     
     # Find item in inventory
     item_to_equip = None
