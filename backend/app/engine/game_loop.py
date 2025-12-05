@@ -105,9 +105,6 @@ class GameLoop:
                     player.state = PlayerState.IDLE
                     player.target_position = None
                     
-                    # Portal logic removed from here. Map switching is now explicit via move_player endpoint.
-
-                        
                     # Broadcast final position (especially if map changed)
                     if hasattr(self, 'connection_manager'):
                         await self.connection_manager.broadcast({
@@ -118,6 +115,9 @@ class GameLoop:
                             "map_id": player.current_map_id
                         })
         
+        # Process Monsters (AI)
+        await self.process_monsters(dt)
+
         # Check Respawns
         to_respawn = self.state_manager.check_respawns()
         for data in to_respawn:
@@ -138,6 +138,8 @@ class GameLoop:
                     map_id=data['map_id'],
                     position_x=data['x'],
                     position_y=data['y'],
+                    spawn_x=data['x'],
+                    spawn_y=data['y'],
                     xp_reward=template['xp_reward']
                 )
                 self.state_manager.add_monster(new_monster)
@@ -148,5 +150,116 @@ class GameLoop:
                         "type": "monster_respawn",
                         "monster": new_monster.dict()
                     }))
+
+    async def process_monsters(self, dt: float):
+        import math
+        current_time = self.last_tick_time
+        
+        for monster_id, monster in self.state_manager.monsters.items():
+            if monster.stats.hp <= 0: continue
+            
+            # AI Logic
+            target = None
+            if monster.target_id:
+                target = self.state_manager.get_player(monster.target_id)
+                # Validate target
+                if not target or target.current_map_id != monster.map_id or target.stats.hp <= 0:
+                    monster.target_id = None
+                    monster.state = "RETURNING"
+                    target = None
+            
+            # State Machine
+            if monster.state == "IDLE":
+                # Look for targets
+                if monster.m_type == "aggressive": # Only aggressive monsters aggro
+                    closest_dist = monster.aggro_range
+                    closest_p = None
+                    
+                    for p in self.state_manager.players.values():
+                        if p.current_map_id == monster.map_id and p.stats.hp > 0:
+                            dist = math.sqrt((p.position.x - monster.position_x)**2 + (p.position.y - monster.position_y)**2)
+                            if dist < closest_dist:
+                                closest_dist = dist
+                                closest_p = p
+                    
+                    if closest_p:
+                        monster.target_id = closest_p.id
+                        monster.state = "CHASING"
+            
+            elif monster.state == "CHASING":
+                if target:
+                    # Check Leash
+                    dist_from_spawn = math.sqrt((monster.position_x - monster.spawn_x)**2 + (monster.position_y - monster.spawn_y)**2)
+                    if dist_from_spawn > monster.leash_range:
+                        monster.target_id = None
+                        monster.state = "RETURNING"
+                    else:
+                        # Move towards target
+                        dx = target.position.x - monster.position_x
+                        dy = target.position.y - monster.position_y
+                        dist = math.sqrt(dx*dx + dy*dy)
+                        
+                        if dist <= 1.5: # Attack Range
+                            monster.state = "ATTACKING"
+                        else:
+                            # Move
+                            speed = getattr(monster.stats, 'speed', 10.0) * dt
+                            if dist > 0:
+                                monster.position_x += (dx/dist) * speed
+                                monster.position_y += (dy/dist) * speed
+                                
+                                # Broadcast Move
+                                if not hasattr(monster, 'last_broadcast'): monster.last_broadcast = 0
+                                if current_time - monster.last_broadcast > 0.1:
+                                    monster.last_broadcast = current_time
+                                    if hasattr(self, 'connection_manager'):
+                                        await self.connection_manager.broadcast({
+                                            "type": "monster_moved",
+                                            "monster_id": monster.id,
+                                            "x": monster.position_x,
+                                            "y": monster.position_y,
+                                            "map_id": monster.map_id
+                                        })
+
+            elif monster.state == "ATTACKING":
+                if target:
+                    dist = math.sqrt((target.position.x - monster.position_x)**2 + (target.position.y - monster.position_y)**2)
+                    if dist > 2.0:
+                        monster.state = "CHASING"
+                    else:
+                        # Ensure player is in combat
+                        if target.state != PlayerState.COMBAT:
+                            target.state = PlayerState.COMBAT
+                            target.target_monster_id = monster.id
+                else:
+                    monster.state = "IDLE"
+
+            elif monster.state == "RETURNING":
+                # Move to spawn
+                dx = monster.spawn_x - monster.position_x
+                dy = monster.spawn_y - monster.position_y
+                dist = math.sqrt(dx*dx + dy*dy)
+                
+                if dist < 0.5:
+                    monster.position_x = monster.spawn_x
+                    monster.position_y = monster.spawn_y
+                    monster.state = "IDLE"
+                else:
+                    speed = getattr(monster.stats, 'speed', 10.0) * dt * 1.5 # Return faster
+                    if dist > 0:
+                        monster.position_x += (dx/dist) * speed
+                        monster.position_y += (dy/dist) * speed
+                        
+                        if not hasattr(monster, 'last_broadcast'): monster.last_broadcast = 0
+                        if current_time - monster.last_broadcast > 0.1:
+                            monster.last_broadcast = current_time
+                            if hasattr(self, 'connection_manager'):
+                                await self.connection_manager.broadcast({
+                                    "type": "monster_moved",
+                                    "monster_id": monster.id,
+                                    "x": monster.position_x,
+                                    "y": monster.position_y,
+                                    "map_id": monster.map_id
+                                })
             
 

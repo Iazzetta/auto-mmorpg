@@ -261,6 +261,12 @@ export const connectWebSocket = (playerId) => {
                     }
                 }
             }
+        } else if (data.type === 'monster_moved') {
+            const m = mapMonsters.value.find(m => m.id === data.monster_id);
+            if (m) {
+                m.position_x = data.x;
+                m.position_y = data.y;
+            }
         } else if (data.type === 'player_left') {
             mapPlayers.value = mapPlayers.value.filter(p => p.id !== data.player_id);
             if (inspectedPlayer.value && inspectedPlayer.value.id === data.player_id) {

@@ -91,6 +91,8 @@ class StateManager:
                 map_id=map_id,
                 position_x=x,
                 position_y=y,
+                spawn_x=x,
+                spawn_y=y,
                 xp_reward=template["xp_reward"]
             )
             self.add_monster(new_monster)

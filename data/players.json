@@ -5,10 +5,10 @@
     "name": "gui",
     "p_class": "warrior",
     "level": 8,
-    "xp": 325,
+    "xp": 775,
     "next_level_xp": 800,
     "stats": {
-      "hp": 192,
+      "hp": 12,
       "max_hp": 200,
       "atk": 40,
       "def_": 23,
@@ -21,8 +21,8 @@
       "x": 79.06260999838138,
       "y": 23.88861157546822
     },
-    "state": "idle",
-    "target_monster_id": null,
+    "state": "combat",
+    "target_monster_id": "wolf_f5fb4e04",
     "target_position": null,
     "active_mission_id": "mission_02",
     "mission_progress": 3,
@@ -53,7 +53,7 @@
         },
         "power_score": 10,
         "icon": "\ud83e\uddea",
-        "quantity": 91,
+        "quantity": 95,
         "stackable": true
       },
       {
@@ -519,10 +519,10 @@
       },
       "hand_off": null
     },
-    "gold": 2844,
+    "gold": 3160,
     "diamonds": 0,
     "is_admin": true,
-    "last_attack_time": 1764803409.611155,
+    "last_attack_time": 1764898144.248848,
     "last_movement_broadcast": 1764803410.544847
   },
   "e0f144a6-691f-43f4-9633-12d7f6b4877b": {
@@ -3950,36 +3950,39 @@
     "token": "7cba3c54-9969-4582-821d-f4478a40e67a",
     "name": "zassss",
     "p_class": "warrior",
-    "level": 3,
-    "xp": 300,
-    "next_level_xp": 900,
+    "level": 5,
+    "xp": 850,
+    "next_level_xp": 2500,
     "stats": {
-      "hp": 188,
+      "hp": 132,
       "max_hp": 200,
-      "atk": 45,
-      "def_": 22,
+      "atk": 74,
+      "def_": 33,
       "speed": 21.0,
       "attack_cooldown": 1.0
     },
     "current_map_id": "map_forest_1",
     "respawn_map_id": "map_castle_1",
     "position": {
-      "x": 64.24262030973097,
-      "y": 21.01918585513252
+      "x": 68.9302639371741,
+      "y": 15.020044460221285
     },
-    "state": "idle",
-    "target_monster_id": "goblin_e9f182f3",
-    "target_position": null,
+    "state": "combat",
+    "target_monster_id": "wolf_58825110",
+    "target_position": {
+      "x": 68.8340699010936,
+      "y": 14.037862701818563
+    },
     "active_mission_id": null,
     "mission_progress": 0,
     "completed_missions": [],
     "attributes": {
-      "str": 10,
-      "agi": 10,
+      "str": 19,
+      "agi": 21,
       "vit": 10,
       "ini": 10
     },
-    "attribute_points": 10,
+    "attribute_points": 0,
     "inventory": [
       {
         "id": "potion_hp_94dbb3d6",
@@ -3997,7 +4000,7 @@
         },
         "power_score": 10,
         "icon": "\ud83d\udce6",
-        "quantity": 25,
+        "quantity": 39,
         "stackable": true
       },
       {
@@ -4016,6 +4019,101 @@
         },
         "power_score": 3,
         "icon": "\ud83d\udce6",
+        "quantity": 1,
+        "stackable": false
+      },
+      {
+        "id": "item_sword_01_6950e2b0",
+        "name": "Iron Sword",
+        "type": "weapon",
+        "slot": "hand_main",
+        "rarity": "common",
+        "stats": {
+          "strength": 0,
+          "intelligence": 0,
+          "atk": 5,
+          "def_": 0,
+          "speed": 0.0,
+          "hp": 0
+        },
+        "power_score": 5,
+        "icon": "\u2694\ufe0f",
+        "quantity": 1,
+        "stackable": false
+      },
+      {
+        "id": "item_sword_01_288c83fb",
+        "name": "Iron Sword",
+        "type": "weapon",
+        "slot": "hand_main",
+        "rarity": "common",
+        "stats": {
+          "strength": 0,
+          "intelligence": 0,
+          "atk": 5,
+          "def_": 0,
+          "speed": 0.0,
+          "hp": 0
+        },
+        "power_score": 5,
+        "icon": "\u2694\ufe0f",
+        "quantity": 1,
+        "stackable": false
+      },
+      {
+        "id": "item_sword_01_991914c9",
+        "name": "Iron Sword",
+        "type": "weapon",
+        "slot": "hand_main",
+        "rarity": "common",
+        "stats": {
+          "strength": 0,
+          "intelligence": 0,
+          "atk": 5,
+          "def_": 0,
+          "speed": 0.0,
+          "hp": 0
+        },
+        "power_score": 5,
+        "icon": "\u2694\ufe0f",
+        "quantity": 1,
+        "stackable": false
+      },
+      {
+        "id": "item_sword_01_3d8838ec",
+        "name": "Iron Sword",
+        "type": "weapon",
+        "slot": "hand_main",
+        "rarity": "common",
+        "stats": {
+          "strength": 0,
+          "intelligence": 0,
+          "atk": 5,
+          "def_": 0,
+          "speed": 0.0,
+          "hp": 0
+        },
+        "power_score": 5,
+        "icon": "\u2694\ufe0f",
+        "quantity": 1,
+        "stackable": false
+      },
+      {
+        "id": "item_sword_01_1947981b",
+        "name": "Iron Sword",
+        "type": "weapon",
+        "slot": "hand_main",
+        "rarity": "common",
+        "stats": {
+          "strength": 0,
+          "intelligence": 0,
+          "atk": 5,
+          "def_": 0,
+          "speed": 0.0,
+          "hp": 0
+        },
+        "power_score": 5,
+        "icon": "\u2694\ufe0f",
         "quantity": 1,
         "stackable": false
       }
@@ -4064,10 +4162,10 @@
       },
       "hand_off": null
     },
-    "gold": 953,
+    "gold": 2764,
     "diamonds": 0,
     "is_admin": false,
-    "last_attack_time": 1764895691.02101,
-    "last_movement_broadcast": 1764895694.943521
+    "last_attack_time": 1764898144.813461,
+    "last_movement_broadcast": 1764898082.048764
   }
 }
