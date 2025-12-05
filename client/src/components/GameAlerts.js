@@ -5,11 +5,11 @@ export default {
     template: `
     <div class="fixed top-20 left-1/2 transform -translate-x-1/2 flex flex-col gap-1 z-[100] pointer-events-none w-full max-w-xs items-center">
         <div v-for="alert in gameAlerts" :key="alert.id"
-             class="px-3 py-1.5 rounded shadow-md border backdrop-blur-md animate-bounce-in flex items-center gap-2 min-w-[160px] justify-center"
+             class="px-2 py-1 rounded shadow-sm border backdrop-blur-md animate-bounce-in flex items-center gap-2 min-w-[140px] justify-center"
              :class="getAlertClass(alert.type)">
              
-             <span class="text-base">{{ getIcon(alert.type) }}</span>
-             <span class="font-bold text-xs text-shadow-sm">{{ alert.message }}</span>
+             <span class="text-sm">{{ alert.icon || getIcon(alert.type) }}</span>
+             <span class="font-bold text-[10px] text-shadow-sm">{{ alert.message }}</span>
         </div>
     </div>
     `,

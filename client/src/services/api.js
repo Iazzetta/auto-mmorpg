@@ -374,6 +374,7 @@ const handleCombatUpdate = (data) => {
     if (log.monster_dmg) addLog(`Monster hit you for ${log.monster_dmg} dmg.`, 'text-red-300');
     if (log.monster_died) {
         addLog(`Monster died! Gained ${log.xp_gained} XP.`, 'text-yellow-400');
+        showGameAlert(`+${log.xp_gained} XP`, 'success');
 
         // Remove from local state immediately using the ID from server
         if (data.monster_id) {
@@ -432,7 +433,7 @@ const handleCombatUpdate = (data) => {
 
             if (!sold) {
                 showToast(drop.icon || '📦', drop.name, `x${drop.quantity || 1}`, getRarityColor(drop.rarity));
-                showGameAlert(`Dropped: ${drop.name} x${drop.quantity || 1}`, 'drop');
+                showGameAlert(`Dropped: ${drop.name} x${drop.quantity || 1}`, 'drop', drop.icon || '📦');
             }
         });
     }

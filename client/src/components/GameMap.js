@@ -536,34 +536,31 @@ export default {
                 lastFpsTime = now;
             }
 
-            // Throttle Label Updates (every 50ms)
-            if (now - lastLabelUpdate > 50) {
-                const labels = [];
-                for (const [id, mesh] of meshes) {
-                    if (!mesh.visible) continue;
+            // Update Labels (Every frame for smoothness)
+            const labels = [];
+            for (const [id, mesh] of meshes) {
+                if (!mesh.visible) continue;
 
-                    const pos = toScreenPosition(mesh);
-                    // Check if on screen (simple bounds check could optimize further)
-                    if (pos.x < -50 || pos.x > container.value.clientWidth + 50 ||
-                        pos.y < -50 || pos.y > container.value.clientHeight + 50) continue;
+                const pos = toScreenPosition(mesh);
+                // Check if on screen (simple bounds check could optimize further)
+                if (pos.x < -50 || pos.x > container.value.clientWidth + 50 ||
+                    pos.y < -50 || pos.y > container.value.clientHeight + 50) continue;
 
-                    const entity = mesh.userData.entity;
-                    if (entity) {
-                        labels.push({
-                            id: id,
-                            x: Math.round(pos.x), // Round to avoid sub-pixel rendering overhead
-                            y: Math.round(pos.y),
-                            name: entity.name,
-                            hp: entity.stats ? entity.stats.hp : (entity.hp || 0),
-                            max_hp: entity.stats ? entity.stats.max_hp : (entity.max_hp || 0),
-                            type: mesh.userData.type,
-                            isPlayer: mesh.userData.type === 'player'
-                        });
-                    }
+                const entity = mesh.userData.entity;
+                if (entity) {
+                    labels.push({
+                        id: id,
+                        x: Math.round(pos.x),
+                        y: Math.round(pos.y),
+                        name: entity.name,
+                        hp: entity.stats ? entity.stats.hp : (entity.hp || 0),
+                        max_hp: entity.stats ? entity.stats.max_hp : (entity.max_hp || 0),
+                        type: mesh.userData.type,
+                        isPlayer: mesh.userData.type === 'player'
+                    });
                 }
-                entityLabels.value = labels;
-                lastLabelUpdate = now;
             }
+            entityLabels.value = labels;
         };
 
         watch(() => player.value?.current_map_id, async (newMapId) => {

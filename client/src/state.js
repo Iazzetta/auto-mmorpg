@@ -40,11 +40,11 @@ export const showToast = (icon, title, message, color = 'text-gray-300') => {
 };
 export const gameAlerts = ref([]);
 let alertCounter = 0;
-export const showGameAlert = (message, type = 'info') => {
+export const showGameAlert = (message, type = 'info', icon = null) => {
     const id = alertCounter++;
     // Types: info, success, warning, error, drop, levelup
-    gameAlerts.value.push({ id, message, type });
-    if (gameAlerts.value.length > 3) gameAlerts.value.shift();
+    gameAlerts.value.push({ id, message, type, icon });
+    if (gameAlerts.value.length > 4) gameAlerts.value.shift();
     setTimeout(() => {
         gameAlerts.value = gameAlerts.value.filter(a => a.id !== id);
     }, 4000);
