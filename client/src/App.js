@@ -259,7 +259,8 @@ export default {
             checkCreatePlayer,
             isDead,
             respawnTimer,
-            instantRevive
+            instantRevive,
+            isUpdating
         };
     }
 };

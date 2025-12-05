@@ -30,7 +30,10 @@ class ItemStats(BaseModel):
     atk: int = 0
     def_: int = 0
     speed: float = 0.0
-    hp: int = 0 # For consumables (healing) # Pydantic alias might be needed or just use def_ to avoid keyword collision
+    hp: int = 0 
+    xp: int = 0
+    gold: int = 0
+    diamonds: int = 0
 
 class Item(BaseModel):
     id: str

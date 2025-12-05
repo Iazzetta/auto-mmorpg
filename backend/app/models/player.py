@@ -118,3 +118,22 @@ class Player(BaseModel):
             
     def get_combat_power(self) -> int:
         return self.stats.atk + self.stats.def_ + (self.stats.max_hp // 10)
+
+    def gain_xp(self, amount: int) -> dict:
+        self.xp += amount
+        leveled_up = False
+        old_level = self.level
+        
+        while self.xp >= self.next_level_xp:
+            self.xp -= self.next_level_xp
+            self.level += 1
+            self.attribute_points += 5
+            self.calculate_stats() # Recalculate next_level_xp and stats
+            self.stats.hp = self.stats.max_hp # Heal on level up
+            leveled_up = True
+            
+        return {
+            "leveled_up": leveled_up,
+            "new_level": self.level,
+            "xp_gained": amount
+        }

@@ -1,0 +1,20 @@
+{
+    "starter_chest": [
+        {
+            "item_id": "item_sword_01",
+            "quantity": 1
+        },
+        {
+            "item_id": "item_armor_01",
+            "quantity": 1
+        },
+        {
+            "item_id": "item_potion_hp_01",
+            "quantity": 5
+        },
+        {
+            "item_id": "Beta",
+            "quantity": 1
+        }
+    ]
+}

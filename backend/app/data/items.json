@@ -10,7 +10,10 @@
             "atk": 5,
             "def_": 0,
             "speed": 0,
-            "hp": 0
+            "hp": 0,
+            "xp": 0,
+            "gold": 0,
+            "diamonds": 0
         },
         "power_score": 5,
         "icon": "\u2694\ufe0f",
@@ -27,7 +30,10 @@
             "atk": 10,
             "def_": 0,
             "speed": 0,
-            "hp": 0
+            "hp": 0,
+            "xp": 0,
+            "gold": 0,
+            "diamonds": 0
         },
         "power_score": 12,
         "icon": "\u2694\ufe0f",
@@ -44,7 +50,10 @@
             "atk": 15,
             "def_": 0,
             "speed": 0,
-            "hp": 0
+            "hp": 0,
+            "xp": 0,
+            "gold": 0,
+            "diamonds": 0
         },
         "power_score": 20,
         "icon": "\u2694\ufe0f",
@@ -61,7 +70,10 @@
             "atk": 0,
             "def_": 3,
             "speed": 0,
-            "hp": 0
+            "hp": 0,
+            "xp": 0,
+            "gold": 0,
+            "diamonds": 0
         },
         "power_score": 3,
         "icon": "\ud83c\udfbd",
@@ -78,7 +90,10 @@
             "atk": 0,
             "def_": 0,
             "speed": 0,
-            "hp": 50
+            "hp": 50,
+            "xp": 0,
+            "gold": 0,
+            "diamonds": 0
         },
         "power_score": 10,
         "icon": "\ud83e\uddea",
@@ -95,7 +110,10 @@
             "atk": 0,
             "def_": 0,
             "speed": 0,
-            "hp": 0
+            "hp": 0,
+            "xp": 20000,
+            "gold": 10000,
+            "diamonds": 100
         },
         "power_score": 500,
         "icon": "\u2764\ufe0f",

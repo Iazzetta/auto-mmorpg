@@ -73,46 +73,60 @@ async def open_starter_chest(player_id: str):
     if not player:
         raise HTTPException(status_code=404, detail="Player not found")
     
-    # Generate Starter Set
-    # 1. Weapon
-    weapon = Item(
-        id=str(uuid.uuid4()),
-        name="Starter Sword",
-        type=ItemType.WEAPON,
-        slot=ItemSlot.HAND_MAIN,
-        rarity=ItemRarity.COMMON,
-        stats=ItemStats(atk=3)
-    )
-    weapon.calculate_power_score()
-    InventoryService.add_item(player, weapon)
+    from ..data.items import ITEMS
+    import json
     
-    # 2. Armor
-    armor = Item(
-        id=str(uuid.uuid4()),
-        name="Starter Tunic",
-        type=ItemType.ARMOR,
-        slot=ItemSlot.CHEST,
-        rarity=ItemRarity.COMMON,
-        stats=ItemStats(def_=2)
-    )
-    armor.calculate_power_score()
-    InventoryService.add_item(player, armor)
+    try:
+        with open("backend/app/data/rewards.json", "r") as f:
+            rewards_config = json.load(f)
+    except FileNotFoundError:
+        rewards_config = {"starter_chest": []}
+
+    chest_items = rewards_config.get("starter_chest", [])
     
-    # Add Potions
-    potion = Item(
-        id=f"potion_hp_{uuid.uuid4().hex[:8]}",
-        name="Health Potion",
-        type=ItemType.CONSUMABLE,
-        slot=ItemSlot.NONE,
-        rarity=ItemRarity.COMMON,
-        stats=ItemStats(hp=50), # Heals 50 HP
-        power_score=10,
-        quantity=10,
-        stackable=True
-    )
-    InventoryService.add_item(player, potion)
-    
+    for entry in chest_items:
+        template_id = entry["item_id"]
+        qty = entry["quantity"]
+        
+        template = ITEMS.get(template_id)
+        if template:
+            # Create new item instance
+            new_stats = template["stats"].model_copy()
+            
+            new_item = Item(
+                id=f"{template_id}_{uuid.uuid4().hex[:8]}",
+                name=template["name"],
+                type=template["type"],
+                slot=template["slot"],
+                rarity=template["rarity"],
+                stats=new_stats,
+                power_score=template["power_score"],
+                icon=template["icon"],
+                stackable=template["stackable"],
+                quantity=qty
+            )
+            
+            InventoryService.add_item(player, new_item)
+            
     return {"message": "Chest opened", "inventory": player.inventory, "equipment": player.equipment}
+
+# ... (existing code)
+
+@router.get("/editor/rewards")
+async def get_editor_rewards():
+    import json
+    try:
+        with open("backend/app/data/rewards.json", "r") as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return {"starter_chest": []}
+
+@router.post("/editor/rewards")
+async def save_editor_rewards(data: dict):
+    import json
+    with open("backend/app/data/rewards.json", "w") as f:
+        json.dump(data, f, indent=4)
+    return {"message": "Rewards saved"}
 
 @router.post("/player/{player_id}/use_item")
 async def use_item(player_id: str, item_id: str):
@@ -133,19 +147,35 @@ async def use_item(player_id: str, item_id: str):
     if item_to_use.type != ItemType.CONSUMABLE:
         raise HTTPException(status_code=400, detail="Item is not consumable")
         
-    # Effect (Hardcoded for HP potion for now)
-    if "Potion" in item_to_use.name:
-        healed = 50
+    # Apply Effects
+    effects = []
+    
+    if item_to_use.stats.hp > 0:
+        healed = item_to_use.stats.hp
         player.stats.hp = min(player.stats.hp + healed, player.stats.max_hp)
+        effects.append(f"Healed {healed} HP")
         
-        if item_to_use.stackable and item_to_use.quantity > 1:
-            item_to_use.quantity -= 1
-        else:
-            player.inventory.remove(item_to_use)
+    if item_to_use.stats.xp > 0:
+        res = player.gain_xp(item_to_use.stats.xp)
+        effects.append(f"Gained {item_to_use.stats.xp} XP")
+        if res['leveled_up']:
+            effects.append(f"Leveled Up to {res['new_level']}!")
             
-        return {"message": "Potion used", "hp_healed": healed, "current_hp": player.stats.hp}
+    if item_to_use.stats.gold > 0:
+        player.gold += item_to_use.stats.gold
+        effects.append(f"Gained {item_to_use.stats.gold} Gold")
         
-    return {"message": "Item used (no effect)"}
+    if item_to_use.stats.diamonds > 0:
+        player.diamonds += item_to_use.stats.diamonds
+        effects.append(f"Gained {item_to_use.stats.diamonds} Diamonds")
+        
+    # Consume Item
+    if item_to_use.stackable and item_to_use.quantity > 1:
+        item_to_use.quantity -= 1
+    else:
+        player.inventory.remove(item_to_use)
+            
+    return {"message": "Item used", "effects": effects, "player_stats": player.stats}
 
 @router.post("/player/{player_id}/move")
 async def move_player(player_id: str, target_map_id: str, x: float, y: float):
@@ -308,8 +338,11 @@ async def claim_mission(player_id: str):
         raise HTTPException(status_code=400, detail="Mission not completed")
         
     # Grant Rewards
-    player.xp += mission["reward_xp"]
-    player.gold += mission["reward_gold"]
+    xp_gained = mission["reward_xp"]
+    gold_gained = mission["reward_gold"]
+    
+    player.gold += gold_gained
+    result = player.gain_xp(xp_gained)
     
     # Archive
     player.completed_missions.append(player.active_mission_id)
@@ -318,7 +351,9 @@ async def claim_mission(player_id: str):
     
     return {
         "message": "Mission claimed", 
-        "rewards": {"xp": mission["reward_xp"], "gold": mission["reward_gold"]}
+        "rewards": {"xp": xp_gained, "gold": gold_gained},
+        "level_up": result["leveled_up"],
+        "new_level": result["new_level"]
     }
 
 @router.post("/player/{player_id}/equip")
