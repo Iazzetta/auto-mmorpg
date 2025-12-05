@@ -1,5 +1,5 @@
 import { ref, onMounted, onUnmounted, nextTick, watch, computed } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.js';
-import { player, logs, toasts, missions, inspectedPlayer } from './state.js';
+import { player, logs, toasts, missions, inspectedPlayer, worldData } from './state.js';
 import { api } from './services/api.js';
 import { toggleFreeFarm } from './services/autoFarm.js';
 
@@ -177,6 +177,13 @@ export default {
                     if (res.ok) return res.json();
                 }).then(data => {
                     if (data) missions.value = data;
+                });
+
+                // Load World Data for Navigation
+                fetch('http://localhost:8000/editor/world').then(res => {
+                    if (res.ok) return res.json();
+                }).then(data => {
+                    if (data) worldData.value = data;
                 });
             } catch (e) { console.error(e); }
 

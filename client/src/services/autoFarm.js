@@ -1,4 +1,4 @@
-import { player, isFreeFarming, selectedMapId, selectedTargetId, mapMonsters, addLog, pendingAttackId, destinationMarker, currentMapData, activeMission, missions } from '../state.js';
+import { player, isFreeFarming, selectedMapId, selectedTargetId, mapMonsters, addLog, pendingAttackId, destinationMarker, currentMapData, activeMission, missions, worldData } from '../state.js';
 import { api } from './api.js';
 
 let autoFarmInterval = null;
@@ -59,29 +59,50 @@ export const checkAndAct = async () => {
 
     // 1. Check Map
     if (player.value.current_map_id !== selectedMapId.value) {
-        addLog(`Moving to ${formatMapName(selectedMapId.value)}...`);
 
-        // Find portal to target map
-        let targetPortal = null;
-        if (currentMapData.value && currentMapData.value.portals) {
-            targetPortal = currentMapData.value.portals.find(p => p.target_map_id === selectedMapId.value);
+        // Pathfinding Logic
+        let nextMapId = null;
+
+        if (worldData.value && worldData.value.maps) {
+            const path = findPath(player.value.current_map_id, selectedMapId.value, worldData.value.maps);
+            if (path && path.length > 1) {
+                nextMapId = path[1]; // The next map in the sequence (0 is current)
+                addLog(`Navigating to ${formatMapName(selectedMapId.value)} via ${formatMapName(nextMapId)}...`);
+            }
         }
 
-        if (targetPortal) {
-            const dist = Math.sqrt((player.value.position.x - targetPortal.x) ** 2 + (player.value.position.y - targetPortal.y) ** 2);
-            if (dist < 3.0) {
-                // Enter portal automatically
-                addLog("Entering Portal...", "text-blue-400");
-                await api.movePlayer(targetPortal.target_map_id, targetPortal.target_x, targetPortal.target_y);
+        // If no path found or no world data, fallback to direct check (legacy)
+        if (!nextMapId) {
+            // Try to find direct portal
+            if (currentMapData.value && currentMapData.value.portals) {
+                const p = currentMapData.value.portals.find(p => p.target_map_id === selectedMapId.value);
+                if (p) nextMapId = selectedMapId.value;
+            }
+        }
+
+        if (nextMapId) {
+            // Find portal to nextMapId
+            let targetPortal = null;
+            if (currentMapData.value && currentMapData.value.portals) {
+                targetPortal = currentMapData.value.portals.find(p => p.target_map_id === nextMapId);
+            }
+
+            if (targetPortal) {
+                const dist = Math.sqrt((player.value.position.x - targetPortal.x) ** 2 + (player.value.position.y - targetPortal.y) ** 2);
+                if (dist < 3.0) {
+                    addLog("Entering Portal...", "text-blue-400");
+                    await api.movePlayer(targetPortal.target_map_id, targetPortal.target_x, targetPortal.target_y);
+                } else {
+                    await api.movePlayer(player.value.current_map_id, targetPortal.x, targetPortal.y);
+                }
             } else {
-                // Move to portal
-                await api.movePlayer(player.value.current_map_id, targetPortal.x, targetPortal.y);
+                addLog(`No portal found to ${formatMapName(nextMapId)}!`, "text-red-400");
+                // Fallback: Move to center
+                await api.movePlayer(player.value.current_map_id, 50, 50);
             }
         } else {
-            // Fallback: Move to center if no direct portal (simple fallback)
-            // Ideally we should pathfind through multiple maps, but for now let's assume direct connection
-            // Or try to find ANY portal? No, that's random walk.
-            addLog("No direct path found. Moving to center.", "text-red-400");
+            addLog(`Cannot find path to ${formatMapName(selectedMapId.value)}`, "text-red-400");
+            // Fallback: Move to center
             await api.movePlayer(player.value.current_map_id, 50, 50);
         }
 
@@ -153,4 +174,28 @@ const shouldAttack = (monster) => {
 const formatMapName = (id) => {
     if (!id) return '';
     return id.replace('map_', '').replace('_', ' ').toUpperCase();
+};
+const findPath = (startId, endId, maps) => {
+    const queue = [[startId]];
+    const visited = new Set();
+    visited.add(startId);
+
+    while (queue.length > 0) {
+        const path = queue.shift();
+        const currentId = path[path.length - 1];
+
+        if (currentId === endId) return path;
+
+        const map = maps[currentId];
+        if (map && map.portals) {
+            for (const portal of map.portals) {
+                if (!visited.has(portal.target_map_id) && maps[portal.target_map_id]) {
+                    visited.add(portal.target_map_id);
+                    const newPath = [...path, portal.target_map_id];
+                    queue.push(newPath);
+                }
+            }
+        }
+    }
+    return null;
 };

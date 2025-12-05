@@ -1,6 +1,6 @@
 {
-    "mission_1764947735404": {
-        "id": "mission_1764947735404",
+    "mission_1764948824324": {
+        "id": "mission_1764948824324",
         "title": "New Mission",
         "description": "Description",
         "level_requirement": 1,
@@ -10,15 +10,15 @@
         "reward_xp": 100,
         "reward_gold": 50
     },
-    "mission_1764947769647": {
-        "id": "mission_1764947769647",
-        "title": "misao 2",
+    "mission_1764948831285": {
+        "id": "mission_1764948831285",
+        "title": "dsadsa",
         "description": "Description",
         "level_requirement": 5,
         "map_id": "map_forest_1",
-        "target_template_id": "globin",
+        "target_template_id": "wolf",
         "target_count": 5,
-        "reward_xp": 100,
+        "reward_xp": 1000,
         "reward_gold": 50
     }
 }

@@ -18,6 +18,7 @@ export const toasts = ref([]);
 export const currentMapData = ref(null);
 export const activeMission = ref(null);
 export const missions = ref({});
+export const worldData = ref(null);
 
 // Computed
 export const nextLevelXp = computed(() => player.value?.next_level_xp || 100);
