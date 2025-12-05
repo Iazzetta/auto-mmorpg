@@ -544,8 +544,8 @@
     "current_map_id": "",
     "respawn_map_id": "map_castle_1",
     "position": {
-      "x": 34.184146208506625,
-      "y": 52.80016379405687
+      "x": 86.2899073649296,
+      "y": 46.729916385724614
     },
     "state": "idle",
     "target_monster_id": null,
@@ -3441,7 +3441,7 @@
     "diamonds": 0,
     "is_admin": true,
     "last_attack_time": 1764878823.7520761,
-    "last_movement_broadcast": 1764883142.5647202
+    "last_movement_broadcast": 1764895574.256255
   },
   "3061a6fb-550b-4d1a-9200-12c104dd7efa": {
     "id": "3061a6fb-550b-4d1a-9200-12c104dd7efa",
@@ -3805,7 +3805,7 @@
       "y": 21.887210675865134
     },
     "state": "idle",
-    "target_monster_id": "wolf_3392f515",
+    "target_monster_id": null,
     "target_position": null,
     "active_mission_id": null,
     "mission_progress": 0,
@@ -3944,5 +3944,130 @@
     "is_admin": false,
     "last_attack_time": 1764883129.478247,
     "last_movement_broadcast": 1764883130.544616
+  },
+  "5efbb994-c578-43f9-8aa0-6e212dfb9cc5": {
+    "id": "5efbb994-c578-43f9-8aa0-6e212dfb9cc5",
+    "token": "7cba3c54-9969-4582-821d-f4478a40e67a",
+    "name": "zassss",
+    "p_class": "warrior",
+    "level": 3,
+    "xp": 300,
+    "next_level_xp": 900,
+    "stats": {
+      "hp": 188,
+      "max_hp": 200,
+      "atk": 45,
+      "def_": 22,
+      "speed": 21.0,
+      "attack_cooldown": 1.0
+    },
+    "current_map_id": "map_forest_1",
+    "respawn_map_id": "map_castle_1",
+    "position": {
+      "x": 64.24262030973097,
+      "y": 21.01918585513252
+    },
+    "state": "idle",
+    "target_monster_id": "goblin_e9f182f3",
+    "target_position": null,
+    "active_mission_id": null,
+    "mission_progress": 0,
+    "completed_missions": [],
+    "attributes": {
+      "str": 10,
+      "agi": 10,
+      "vit": 10,
+      "ini": 10
+    },
+    "attribute_points": 10,
+    "inventory": [
+      {
+        "id": "potion_hp_94dbb3d6",
+        "name": "Health Potion",
+        "type": "consumable",
+        "slot": "none",
+        "rarity": "common",
+        "stats": {
+          "strength": 0,
+          "intelligence": 0,
+          "atk": 0,
+          "def_": 0,
+          "speed": 0.0,
+          "hp": 50
+        },
+        "power_score": 10,
+        "icon": "\ud83d\udce6",
+        "quantity": 25,
+        "stackable": true
+      },
+      {
+        "id": "ed1619fe-d9de-4305-8cef-f01ec4a1f4e3",
+        "name": "Starter Sword",
+        "type": "weapon",
+        "slot": "hand_main",
+        "rarity": "common",
+        "stats": {
+          "strength": 0,
+          "intelligence": 0,
+          "atk": 3,
+          "def_": 0,
+          "speed": 0.0,
+          "hp": 0
+        },
+        "power_score": 3,
+        "icon": "\ud83d\udce6",
+        "quantity": 1,
+        "stackable": false
+      }
+    ],
+    "equipment": {
+      "head": null,
+      "chest": {
+        "id": "aa074234-f562-47d0-8464-e7928d1f726b",
+        "name": "Starter Tunic",
+        "type": "armor",
+        "slot": "chest",
+        "rarity": "common",
+        "stats": {
+          "strength": 0,
+          "intelligence": 0,
+          "atk": 0,
+          "def_": 2,
+          "speed": 0.0,
+          "hp": 0
+        },
+        "power_score": 2,
+        "icon": "\ud83d\udce6",
+        "quantity": 1,
+        "stackable": false
+      },
+      "legs": null,
+      "boots": null,
+      "hand_main": {
+        "id": "item_sword_02_d4364572",
+        "name": "Steel Sword",
+        "type": "weapon",
+        "slot": "hand_main",
+        "rarity": "uncommon",
+        "stats": {
+          "strength": 2,
+          "intelligence": 0,
+          "atk": 10,
+          "def_": 0,
+          "speed": 0.0,
+          "hp": 0
+        },
+        "power_score": 12,
+        "icon": "\u2694\ufe0f",
+        "quantity": 1,
+        "stackable": false
+      },
+      "hand_off": null
+    },
+    "gold": 953,
+    "diamonds": 0,
+    "is_admin": false,
+    "last_attack_time": 1764895691.02101,
+    "last_movement_broadcast": 1764895694.943521
   }
 }

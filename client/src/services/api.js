@@ -1,4 +1,4 @@
-import { player, logs, socket, currentMonster, addLog, showToast, mapMonsters, mapPlayers, isFreeFarming, selectedTargetId, pendingAttackId, destinationMarker, inspectedPlayer, autoSellInferior } from '../state.js';
+import { player, logs, socket, currentMonster, addLog, showToast, mapMonsters, mapPlayers, isFreeFarming, selectedTargetId, pendingAttackId, destinationMarker, inspectedPlayer, autoSellInferior, currentMapData } from '../state.js';
 import { checkAndAct, stopAutoFarm } from './autoFarm.js';
 
 const API_URL = 'http://localhost:8000';
@@ -10,6 +10,7 @@ export const api = {
             const res = await fetch(`${API_URL}/player/${id}`);
             if (res.ok) {
                 player.value = await res.json();
+                this.fetchMapDetails(player.value.current_map_id);
                 connectWebSocket(id);
                 return true;
             }
@@ -34,12 +35,24 @@ export const api = {
             player.value = data;
             localStorage.setItem('rpg_player_id', data.id);
             localStorage.setItem('rpg_player_token', data.token);
+            this.fetchMapDetails(data.current_map_id);
             connectWebSocket(data.id);
             addLog(`Welcome, ${data.name}!`, 'text-yellow-400');
             return true;
         } catch (e) {
             console.error(e);
             return false;
+        }
+    },
+
+    async fetchMapDetails(mapId) {
+        try {
+            const res = await fetch(`${API_URL}/map/${mapId}`);
+            if (res.ok) {
+                currentMapData.value = await res.json();
+            }
+        } catch (e) {
+            console.error("Error fetching map details:", e);
         }
     },
 
@@ -208,7 +221,11 @@ export const connectWebSocket = (playerId) => {
                 if (!player.value.position) player.value.position = { x: 0, y: 0 };
                 player.value.position.x = data.x;
                 player.value.position.y = data.y;
-                player.value.current_map_id = data.map_id;
+
+                if (player.value.current_map_id !== data.map_id) {
+                    player.value.current_map_id = data.map_id;
+                    api.fetchMapDetails(data.map_id);
+                }
 
                 if (pendingAttackId.value) {
                     const target = mapMonsters.value.find(m => m.id === pendingAttackId.value);

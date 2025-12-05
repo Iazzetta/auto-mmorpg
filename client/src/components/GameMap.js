@@ -91,9 +91,30 @@ export default {
             return id.replace('map_', '').replace('_', ' ').toUpperCase();
         };
 
+        // Shared Resources
+        const geometries = {
+            player: null,
+            monster: null,
+            portal: null
+        };
+        const materials = {
+            player: null,
+            otherPlayer: null,
+            monster: null
+        };
+
         const initThree = () => {
             const width = container.value.clientWidth;
             const height = container.value.clientHeight;
+
+            // Initialize Shared Geometries/Materials
+            geometries.player = new THREE.BoxGeometry(1, 2, 1);
+            geometries.monster = new THREE.CylinderGeometry(0.5, 0.5, 1.5, 16);
+            geometries.portal = new THREE.TorusGeometry(1, 0.2, 8, 16);
+
+            materials.player = new THREE.MeshStandardMaterial({ color: 0x22c55e });
+            materials.otherPlayer = new THREE.MeshStandardMaterial({ color: 0x3b82f6 });
+            materials.monster = new THREE.MeshStandardMaterial({ color: 0xef4444 });
 
             // 1. Scene
             scene = new THREE.Scene();
@@ -109,9 +130,10 @@ export default {
             camera.lookAt(scene.position); // Will be updated to follow player
 
             // 3. Renderer
-            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
             renderer.setSize(width, height);
             renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Softer shadows
             container.value.appendChild(renderer.domElement);
 
             // Force initial resize to ensure correct dimensions
@@ -236,6 +258,7 @@ export default {
 
         const updateEntities = () => {
             const validIds = new Set();
+            const LERP_FACTOR = 0.15; // Smoothness factor
 
             // 1. Local Player
             if (player.value) {
@@ -243,25 +266,37 @@ export default {
                 validIds.add(pid);
                 let mesh = meshes.get(pid);
                 if (!mesh) {
-                    // Create Player Mesh (Green Cube)
-                    const geo = new THREE.BoxGeometry(1, 2, 1);
-                    const mat = new THREE.MeshStandardMaterial({ color: 0x22c55e });
-                    mesh = new THREE.Mesh(geo, mat);
+                    // Reuse Geometry/Material
+                    mesh = new THREE.Mesh(geometries.player, materials.player);
                     mesh.castShadow = true;
                     mesh.userData = { type: 'player', entity: player.value };
+                    mesh.position.set(player.value.position.x, 1, player.value.position.y);
                     scene.add(mesh);
                     meshes.set(pid, mesh);
                 }
-                // Update Position (Lerp for smoothness could be added here)
-                mesh.position.set(player.value.position.x, 1, player.value.position.y);
 
-                // Camera Follow
-                camera.position.set(
-                    player.value.position.x + 20,
-                    20,
-                    player.value.position.y + 20
-                );
-                camera.lookAt(player.value.position.x, 0, player.value.position.y);
+                // Interpolate Position
+                const targetX = player.value.position.x;
+                const targetZ = player.value.position.y;
+                const dist = Math.sqrt((targetX - mesh.position.x) ** 2 + (targetZ - mesh.position.z) ** 2);
+
+                if (dist > 10) {
+                    mesh.position.x = targetX;
+                    mesh.position.z = targetZ;
+                    camera.position.x = targetX + 20;
+                    camera.position.z = targetZ + 20;
+                    camera.lookAt(targetX, 0, targetZ);
+                } else {
+                    mesh.position.x += (targetX - mesh.position.x) * LERP_FACTOR;
+                    mesh.position.z += (targetZ - mesh.position.z) * LERP_FACTOR;
+
+                    // Camera Follow (Smooth)
+                    const targetCamX = mesh.position.x + 20;
+                    const targetCamZ = mesh.position.z + 20;
+                    camera.position.x += (targetCamX - camera.position.x) * LERP_FACTOR;
+                    camera.position.z += (targetCamZ - camera.position.z) * LERP_FACTOR;
+                    camera.lookAt(camera.position.x - 20, 0, camera.position.z - 20);
+                }
             }
 
             // 2. Other Players
@@ -270,15 +305,23 @@ export default {
                 validIds.add(p.id);
                 let mesh = meshes.get(p.id);
                 if (!mesh) {
-                    const geo = new THREE.BoxGeometry(1, 2, 1);
-                    const mat = new THREE.MeshStandardMaterial({ color: 0x3b82f6 });
-                    mesh = new THREE.Mesh(geo, mat);
+                    mesh = new THREE.Mesh(geometries.player, materials.otherPlayer);
                     mesh.castShadow = true;
                     mesh.userData = { type: 'player', entity: p };
+                    mesh.position.set(p.position.x, 1, p.position.y);
                     scene.add(mesh);
                     meshes.set(p.id, mesh);
                 }
-                mesh.position.set(p.position.x, 1, p.position.y);
+                // Interpolate
+                const targetX = p.position.x;
+                const targetZ = p.position.y;
+                if (Math.abs(targetX - mesh.position.x) > 10 || Math.abs(targetZ - mesh.position.z) > 10) {
+                    mesh.position.x = targetX;
+                    mesh.position.z = targetZ;
+                } else {
+                    mesh.position.x += (targetX - mesh.position.x) * LERP_FACTOR;
+                    mesh.position.z += (targetZ - mesh.position.z) * LERP_FACTOR;
+                }
             });
 
             // 3. Monsters
@@ -287,21 +330,25 @@ export default {
                 validIds.add(m.id);
                 let mesh = meshes.get(m.id);
                 if (!mesh) {
-                    // Create Monster Mesh (Red Cylinder)
-                    const geo = new THREE.CylinderGeometry(0.5, 0.5, 1.5, 16);
-                    const mat = new THREE.MeshStandardMaterial({ color: 0xef4444 });
-                    mesh = new THREE.Mesh(geo, mat);
+                    mesh = new THREE.Mesh(geometries.monster, materials.monster);
                     mesh.castShadow = true;
                     mesh.userData = { type: 'monster', entity: m };
+                    mesh.position.set(m.position_x, 0.75, m.position_y);
                     scene.add(mesh);
                     meshes.set(m.id, mesh);
                 }
-                mesh.position.set(m.position_x, 0.75, m.position_y);
+                // Interpolate
+                const targetX = m.position_x;
+                const targetZ = m.position_y;
+                if (Math.abs(targetX - mesh.position.x) > 10 || Math.abs(targetZ - mesh.position.z) > 10) {
+                    mesh.position.x = targetX;
+                    mesh.position.z = targetZ;
+                } else {
+                    mesh.position.x += (targetX - mesh.position.x) * LERP_FACTOR;
+                    mesh.position.z += (targetZ - mesh.position.z) * LERP_FACTOR;
+                }
 
-                // Update user data for raycasting
                 mesh.userData.entity = m;
-
-                // Color flash on hit? (Optional polish)
             });
 
             // 4. Portals
@@ -311,10 +358,13 @@ export default {
                     validIds.add(pid);
                     let mesh = meshes.get(pid);
                     if (!mesh) {
-                        const geo = new THREE.TorusGeometry(1, 0.2, 8, 16);
+                        // Portals might have different colors, so we might need individual materials or a shared one if white
+                        // For optimization, let's reuse geometry but maybe new material if color differs
+                        // Or just use one material if we don't care about custom colors for now
+                        // Let's stick to custom material for portal for now as they are few
                         const mat = new THREE.MeshStandardMaterial({ color: portal.color || 0xffffff, emissive: portal.color || 0x000000, emissiveIntensity: 0.5 });
-                        mesh = new THREE.Mesh(geo, mat);
-                        mesh.rotation.x = -Math.PI / 2; // Flat on ground? Or upright? Let's do upright.
+                        mesh = new THREE.Mesh(geometries.portal, mat);
+                        mesh.rotation.x = -Math.PI / 2;
                         mesh.rotation.x = 0;
                         mesh.position.set(portal.x, 1, portal.y);
                         scene.add(mesh);
@@ -329,8 +379,11 @@ export default {
             for (const [id, mesh] of meshes) {
                 if (!validIds.has(id)) {
                     scene.remove(mesh);
-                    mesh.geometry.dispose();
-                    mesh.material.dispose();
+                    // Only dispose material if it's a portal (custom)
+                    if (id.toString().startsWith('portal_')) {
+                        mesh.material.dispose();
+                    }
+                    // Do NOT dispose shared geometries/materials
                     meshes.delete(id);
                 }
             }
@@ -439,30 +492,32 @@ export default {
             if (e.key === 'd' || e.key === 'D') keys.d = false;
         };
 
+        const tempVec = new THREE.Vector3();
+
         const toScreenPosition = (obj) => {
             if (!container.value) return { x: 0, y: 0 };
 
-            const vector = new THREE.Vector3();
             obj.updateMatrixWorld();
-            vector.setFromMatrixPosition(obj.matrixWorld);
+            tempVec.setFromMatrixPosition(obj.matrixWorld);
 
             // Offset based on type
             const offset = obj.userData.type === 'player' ? 2.5 : 2.0;
-            vector.y += offset;
+            tempVec.y += offset;
 
-            vector.project(camera);
+            tempVec.project(camera);
 
             const widthHalf = 0.5 * container.value.clientWidth;
             const heightHalf = 0.5 * container.value.clientHeight;
 
             return {
-                x: (vector.x * widthHalf) + widthHalf,
-                y: -(vector.y * heightHalf) + heightHalf
+                x: (tempVec.x * widthHalf) + widthHalf,
+                y: -(tempVec.y * heightHalf) + heightHalf
             };
         };
 
         let frameCount = 0;
         let lastFpsTime = performance.now();
+        let lastLabelUpdate = 0;
 
         const animate = () => {
             animationId = requestAnimationFrame(animate);
@@ -470,30 +525,6 @@ export default {
             updateMovement();
             checkPortals();
             updateEntities();
-
-            // Update Labels
-            const labels = [];
-            for (const [id, mesh] of meshes) {
-                if (!mesh.visible) continue;
-                // Skip portals for labels
-                if (id.toString().startsWith('portal_')) continue;
-
-                const pos = toScreenPosition(mesh);
-                const entity = mesh.userData.entity;
-                if (entity) {
-                    labels.push({
-                        id: id,
-                        x: pos.x,
-                        y: pos.y,
-                        name: entity.name,
-                        hp: entity.stats ? entity.stats.hp : (entity.hp || 0),
-                        max_hp: entity.stats ? entity.stats.max_hp : (entity.max_hp || 0),
-                        type: mesh.userData.type,
-                        isPlayer: mesh.userData.type === 'player'
-                    });
-                }
-            }
-            entityLabels.value = labels;
 
             renderer.render(scene, camera);
 
@@ -504,6 +535,36 @@ export default {
                 fps.value = frameCount;
                 frameCount = 0;
                 lastFpsTime = now;
+            }
+
+            // Throttle Label Updates (every 50ms)
+            if (now - lastLabelUpdate > 50) {
+                const labels = [];
+                for (const [id, mesh] of meshes) {
+                    if (!mesh.visible) continue;
+                    if (id.toString().startsWith('portal_')) continue;
+
+                    const pos = toScreenPosition(mesh);
+                    // Check if on screen (simple bounds check could optimize further)
+                    if (pos.x < -50 || pos.x > container.value.clientWidth + 50 ||
+                        pos.y < -50 || pos.y > container.value.clientHeight + 50) continue;
+
+                    const entity = mesh.userData.entity;
+                    if (entity) {
+                        labels.push({
+                            id: id,
+                            x: Math.round(pos.x), // Round to avoid sub-pixel rendering overhead
+                            y: Math.round(pos.y),
+                            name: entity.name,
+                            hp: entity.stats ? entity.stats.hp : (entity.hp || 0),
+                            max_hp: entity.stats ? entity.stats.max_hp : (entity.max_hp || 0),
+                            type: mesh.userData.type,
+                            isPlayer: mesh.userData.type === 'player'
+                        });
+                    }
+                }
+                entityLabels.value = labels;
+                lastLabelUpdate = now;
             }
         };
 
