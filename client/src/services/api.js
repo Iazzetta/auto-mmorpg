@@ -1,4 +1,4 @@
-import { player, logs, socket, currentMonster, addLog, showToast, mapMonsters, mapPlayers, isFreeFarming, selectedTargetId, pendingAttackId, destinationMarker, inspectedPlayer, autoSellInferior, currentMapData } from '../state.js';
+import { player, logs, socket, currentMonster, addLog, showToast, mapMonsters, mapPlayers, isFreeFarming, selectedTargetId, pendingAttackId, destinationMarker, inspectedPlayer, autoSellInferior, currentMapData, showGameAlert } from '../state.js';
 import { checkAndAct, stopAutoFarm } from './autoFarm.js';
 
 const API_URL = 'http://localhost:8000';
@@ -78,7 +78,11 @@ export const api = {
 
     async movePlayer(mapId, x, y) {
         if (!player.value) return;
-        await fetch(`${API_URL}/player/${player.value.id}/move?target_map_id=${mapId}&x=${x}&y=${y}`, { method: 'POST' });
+        const res = await fetch(`${API_URL}/player/${player.value.id}/move?target_map_id=${mapId}&x=${x}&y=${y}`, { method: 'POST' });
+        if (!res.ok) {
+            const data = await res.json();
+            showGameAlert(data.detail || "Cannot move there!", "error");
+        }
     },
 
     async attackMonster(monsterId) {
@@ -132,6 +136,7 @@ export const api = {
         if (res.ok) {
             const data = await res.json();
             addLog(`Sold item for ${data.gold_gained} Gold.`, 'text-yellow-300');
+            showGameAlert(`Sold item for ${data.gold_gained} Gold`, 'success');
             await this.refreshPlayer();
         }
     },
@@ -408,17 +413,17 @@ const handleCombatUpdate = (data) => {
                         const equippedRarityVal = rarityValue[equipped.rarity] || 0;
 
                         // Rule: Sell Common/Uncommon if equipped is strictly better rarity
-                        // Common (1) < Uncommon (2) -> Sell
-                        // Uncommon (2) < Rare (3) -> Sell
                         if (dropRarityVal < equippedRarityVal) {
                             api.sellItem(drop.id);
                             showToast('💰', 'Auto-sold (Low Rarity)', `${drop.name}`, 'text-yellow-500');
+                            showGameAlert(`Auto-Sold: ${drop.name}`, 'warning');
                             sold = true;
                         }
                         // Rule: If same rarity (Common/Uncommon only), sell if inferior Power Score
                         else if (dropRarityVal === equippedRarityVal && drop.power_score <= equipped.power_score) {
                             api.sellItem(drop.id);
                             showToast('💰', 'Auto-sold (Inferior)', `${drop.name}`, 'text-yellow-500');
+                            showGameAlert(`Auto-Sold: ${drop.name}`, 'warning');
                             sold = true;
                         }
                     }
@@ -427,6 +432,7 @@ const handleCombatUpdate = (data) => {
 
             if (!sold) {
                 showToast(drop.icon || '📦', drop.name, `x${drop.quantity || 1}`, getRarityColor(drop.rarity));
+                showGameAlert(`Dropped: ${drop.name} x${drop.quantity || 1}`, 'drop');
             }
         });
     }
@@ -434,6 +440,7 @@ const handleCombatUpdate = (data) => {
     if (log.level_up) {
         showToast('🆙', 'Level Up!', `You reached level ${log.new_level}!`, 'text-yellow-400');
         addLog(`Level Up! You are now level ${log.new_level}.`, 'text-yellow-400 font-bold');
+        showGameAlert(`LEVEL UP! Level ${log.new_level}`, 'levelup');
     }
 };
 

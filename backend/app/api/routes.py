@@ -163,7 +163,7 @@ async def move_player(player_id: str, target_map_id: str, x: float, y: float):
         target_map = state_manager.get_map(target_map_id)
         if target_map:
             if player.level < target_map.level_requirement:
-                return {"message": f"Level {target_map.level_requirement} required to enter {target_map.name}", "position": player.position}
+                raise HTTPException(status_code=400, detail=f"Level {target_map.level_requirement} required to enter {target_map.name}")
             
             # Update Respawn if Castle
             if target_map.type == "castle":

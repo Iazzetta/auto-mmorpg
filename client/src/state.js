@@ -38,3 +38,14 @@ export const showToast = (icon, title, message, color = 'text-gray-300') => {
         toasts.value = toasts.value.filter(toast => toast.id !== id);
     }, 5000);
 };
+export const gameAlerts = ref([]);
+let alertCounter = 0;
+export const showGameAlert = (message, type = 'info') => {
+    const id = alertCounter++;
+    // Types: info, success, warning, error, drop, levelup
+    gameAlerts.value.push({ id, message, type });
+    if (gameAlerts.value.length > 3) gameAlerts.value.shift();
+    setTimeout(() => {
+        gameAlerts.value = gameAlerts.value.filter(a => a.id !== id);
+    }, 4000);
+};

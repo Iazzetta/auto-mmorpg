@@ -17,10 +17,10 @@ export default {
 
             <!-- Entity Labels -->
             <div v-for="label in entityLabels" :key="label.id" 
-                class="absolute pointer-events-none transform -translate-x-1/2 -translate-y-full flex flex-col items-center z-10"
+                class="absolute pointer-events-none transform -translate-x-1/2 -translate-y-full flex flex-col items-center z-30"
                 :style="{ left: label.x + 'px', top: label.y + 'px' }">
                 <span class="text-[10px] font-bold shadow-black drop-shadow-md whitespace-nowrap"
-                    :class="label.isPlayer ? 'text-green-300' : 'text-red-300'">
+                    :class="label.type === 'portal' ? 'text-cyan-300 text-xs tracking-wider bg-black/50 px-1 rounded' : (label.isPlayer ? 'text-green-300' : 'text-red-300')">
                     {{ label.name }}
                 </span>
                 <div v-if="label.max_hp > 0" class="w-8 h-1 bg-gray-700 mt-0.5 rounded-full overflow-hidden border border-black/50">
@@ -358,15 +358,11 @@ export default {
                     validIds.add(pid);
                     let mesh = meshes.get(pid);
                     if (!mesh) {
-                        // Portals might have different colors, so we might need individual materials or a shared one if white
-                        // For optimization, let's reuse geometry but maybe new material if color differs
-                        // Or just use one material if we don't care about custom colors for now
-                        // Let's stick to custom material for portal for now as they are few
                         const mat = new THREE.MeshStandardMaterial({ color: portal.color || 0xffffff, emissive: portal.color || 0x000000, emissiveIntensity: 0.5 });
                         mesh = new THREE.Mesh(geometries.portal, mat);
-                        mesh.rotation.x = -Math.PI / 2;
                         mesh.rotation.x = 0;
                         mesh.position.set(portal.x, 1, portal.y);
+                        mesh.userData = { type: 'portal', entity: { name: portal.label || 'Portal', hp: 0, max_hp: 0 } };
                         scene.add(mesh);
                         meshes.set(pid, mesh);
                     }
@@ -504,7 +500,7 @@ export default {
             tempVec.setFromMatrixPosition(obj.matrixWorld);
 
             // Offset based on type
-            const offset = obj.userData.type === 'player' ? 2.5 : 2.0;
+            const offset = obj.userData.type === 'player' ? 2.5 : (obj.userData.type === 'portal' ? 3.0 : 2.0);
             tempVec.y += offset;
 
             tempVec.project(camera);
@@ -545,7 +541,6 @@ export default {
                 const labels = [];
                 for (const [id, mesh] of meshes) {
                     if (!mesh.visible) continue;
-                    if (id.toString().startsWith('portal_')) continue;
 
                     const pos = toScreenPosition(mesh);
                     // Check if on screen (simple bounds check could optimize further)
@@ -617,7 +612,9 @@ export default {
             canEnterPortal,
             confirmPortal,
             isFreeFarming,
-            fps
+            fps,
+            entityLabels,
+            toggleAutoAttack
         };
     }
 };

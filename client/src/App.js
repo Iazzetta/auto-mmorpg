@@ -12,6 +12,7 @@ import RewardsModal from './components/RewardsModal.js';
 import InspectModal from './components/InspectModal.js';
 import WorldEditor from './components/WorldEditor.js';
 import MissionTracker from './components/MissionTracker.js';
+import GameAlerts from './components/GameAlerts.js';
 
 export default {
     components: {
@@ -23,7 +24,8 @@ export default {
         RewardsModal,
         InspectModal,
         WorldEditor,
-        MissionTracker
+        MissionTracker,
+        GameAlerts
     },
     template: `
     <div class="relative w-screen h-screen bg-gray-900 text-gray-100 font-sans overflow-hidden">
@@ -88,6 +90,7 @@ export default {
             <inspect-modal v-if="showInspect" :target="inspectedPlayer" :is-open="true" @close="inspectedPlayer = null"></inspect-modal>
             
             <mission-tracker></mission-tracker>
+            <game-alerts></game-alerts>
 
             <!-- Death Modal -->
             <div v-if="isDead" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
