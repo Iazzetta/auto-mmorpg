@@ -23,6 +23,10 @@ class CombatService:
         """
         log = {}
         
+        # Validate Combat (Same Map)
+        if str(player.current_map_id) != str(monster.map_id):
+            return log # No combat if different maps
+        
         # Player hits Monster
         dmg_to_monster = CombatService.calculate_damage(player.stats.atk, monster.stats.def_)
         monster.stats.hp -= dmg_to_monster

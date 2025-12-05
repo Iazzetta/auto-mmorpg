@@ -174,6 +174,8 @@ async def move_player(player_id: str, target_map_id: str, x: float, y: float):
         player.position.y = y
         player.state = PlayerState.IDLE
         player.target_position = None
+        player.target_monster_id = None # Clear combat target
+        
         return {"message": "Map switched", "map_id": target_map_id, "position": player.position}
 
     # Normal Movement
@@ -191,6 +193,9 @@ async def attack_monster(player_id: str, monster_id: str):
     monster = state_manager.monsters.get(monster_id)
     if not monster:
         raise HTTPException(status_code=404, detail="Monster not found")
+        
+    if str(player.current_map_id) != str(monster.map_id):
+        raise HTTPException(status_code=400, detail="Monster is in a different map")
         
     player.state = PlayerState.COMBAT
     player.target_monster_id = monster_id

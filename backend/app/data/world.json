@@ -46,7 +46,7 @@
                     "x": 97,
                     "y": 50,
                     "target_map_id": "map_forest_2",
-                    "target_x": 50,
+                    "target_x": 5,
                     "target_y": 50,
                     "label": "Dark Forest",
                     "color": "#169830"
@@ -96,7 +96,7 @@
                     "x": 3,
                     "y": 50,
                     "target_map_id": "map_forest_1",
-                    "target_x": 50,
+                    "target_x": 95,
                     "target_y": 50,
                     "label": "Forest",
                     "color": "#169830"
@@ -106,8 +106,8 @@
                     "x": 50,
                     "y": 3,
                     "target_map_id": "map_dungeon_1",
-                    "target_x": 50,
-                    "target_y": 50,
+                    "target_x": 7,
+                    "target_y": 7,
                     "label": "Dungeon Lv.1",
                     "color": "#ff0000"
                 }
@@ -146,9 +146,9 @@
                     "id": "p_1764863572823",
                     "x": 5,
                     "y": 5,
-                    "target_map_id": "",
+                    "target_map_id": "map_forest_2",
                     "target_x": 50,
-                    "target_y": 50,
+                    "target_y": 5,
                     "label": "Deep Forest",
                     "color": "#108e1f"
                 }

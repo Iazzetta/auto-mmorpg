@@ -45,6 +45,7 @@ class GameLoop:
         # Iterate over all players
         for player_id, player in self.state_manager.players.items():
             if player.state == PlayerState.COMBAT:
+                # print(f"[DEBUG_LOOP] Player {player.name} in COMBAT with {player.target_monster_id}")
                 # Combat Cooldown (Dynamic based on stats)
                 attack_cooldown = getattr(player.stats, 'attack_cooldown', 1.0)
                 
@@ -58,6 +59,11 @@ class GameLoop:
                         monster = self.state_manager.monsters.get(player.target_monster_id)
                         if monster:
                             log = CombatService.process_combat_round(player, monster)
+                        
+                            if not log:
+                                player.state = PlayerState.IDLE
+                                player.target_monster_id = None
+                                continue
                             
                             # Broadcast log
                             if hasattr(self, 'connection_manager'):
@@ -164,7 +170,7 @@ class GameLoop:
             if monster.target_id:
                 target = self.state_manager.get_player(monster.target_id)
                 # Validate target
-                if not target or target.current_map_id != monster.map_id or target.stats.hp <= 0:
+                if not target or str(target.current_map_id) != str(monster.map_id) or target.stats.hp <= 0:
                     monster.target_id = None
                     monster.state = "RETURNING"
                     target = None

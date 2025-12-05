@@ -91,7 +91,7 @@ const findAndAttackTarget = async () => {
         const py = player.value.position.y;
         const dist = Math.sqrt((px - mx) ** 2 + (py - my) ** 2);
 
-        if (dist > 1.0) {
+        if (dist > 2.0) {
             addLog(`Moving to ${target.name}...`, 'text-blue-300');
             const angle = Math.atan2(my - py, mx - px);
             const stopDist = 0;
@@ -107,6 +107,8 @@ const findAndAttackTarget = async () => {
             pendingAttackId.value = target.id;
         } else {
             addLog(`Found ${target.name}! Engaging...`, 'text-red-400');
+            // Optimistic update to prevent move spam
+            if (player.value) player.value.state = 'combat';
             api.attackMonster(target.id);
         }
     }
