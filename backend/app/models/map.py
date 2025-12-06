@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List, Dict
+from typing import List, Dict, Optional
 
 class Portal(BaseModel):
     id: str
@@ -22,3 +22,4 @@ class GameMap(BaseModel):
     respawn_y: float = 50.0
     portals: List[Portal] = []
     spawns: List[Dict] = []
+    texture: Optional[str] = None # Added texture field

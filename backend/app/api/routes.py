@@ -643,3 +643,19 @@ async def save_editor_npcs(npcs: dict):
         await state_manager.connection_manager.broadcast({"type": "server_update"})
     
     return {"message": "NPCs saved"}
+
+@router.get("/editor/textures/floors")
+async def get_floor_textures():
+    import os
+    # Path relative to backend execution root (usually repo root)
+    path = "client/src/assets/maps/floor"
+    try:
+        if not os.path.exists(path):
+            return []
+        
+        # List .png and .jpg files
+        files = [f for f in os.listdir(path) if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
+        return files
+    except Exception as e:
+        print(f"Error listing textures: {e}")
+        return []

@@ -74,7 +74,8 @@ class StateManager:
                     respawn_x=map_data.get("respawn_x", 50.0),
                     respawn_y=map_data.get("respawn_y", 50.0),
                     portals=map_data.get("portals", []),
-                    spawns=map_data.get("spawns", [])
+                    spawns=map_data.get("spawns", []),
+                    texture=map_data.get("texture")
                 )
                 self.maps[map_id] = gm
                 

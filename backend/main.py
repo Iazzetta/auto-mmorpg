@@ -22,6 +22,16 @@ app.add_middleware(
 app.include_router(router)
 app.include_router(editor_router)
 
+from fastapi.staticfiles import StaticFiles
+import os
+
+# Mount maps directory to serve textures
+# We assume the code runs from repository root
+if os.path.exists("client/public/maps"):
+    app.mount("/maps", StaticFiles(directory="client/public/maps"), name="maps")
+else:
+    print("Warning: client/public/maps not found")
+
 game_loop = GameLoop()
 state_manager = StateManager.get_instance()
 

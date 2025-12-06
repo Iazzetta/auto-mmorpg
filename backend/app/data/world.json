@@ -2,7 +2,7 @@
     "maps": {
         "map_castle_1": {
             "name": "Castle",
-            "type": "castle",
+            "type": "safe",
             "level_requirement": 0,
             "width": 100,
             "height": 100,
@@ -20,7 +20,8 @@
                     "label": "FOREST"
                 }
             ],
-            "spawns": []
+            "spawns": [],
+            "texture": "floor_castle.png"
         },
         "map_forest_1": {
             "name": "Forest",

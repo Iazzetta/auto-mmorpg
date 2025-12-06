@@ -252,9 +252,12 @@ export default {
 
             // Watch for Map Data changes to update texture
             watch(() => currentMapData.value, (newData) => {
+                console.log("[GameMap] Map Data Updated:", newData); // Debug Log
                 if (newData && newData.texture) {
+                    console.log("[GameMap] Loading texture:", newData.texture); // Debug Log
                     const loader = new THREE.TextureLoader();
-                    loader.load(`http://localhost:8000/maps/floor/${newData.texture}`, (tex) => {
+                    loader.load(`/maps/floor/${newData.texture}`, (tex) => {
+                        console.log("[GameMap] Texture loaded successfully"); // Debug Log
                         tex.wrapS = THREE.RepeatWrapping;
                         tex.wrapT = THREE.RepeatWrapping;
                         tex.repeat.set(10, 10); // Repeat texture 10 times across the 100x100 map
@@ -267,11 +270,13 @@ export default {
                         });
                         groundPlane.material = newMat;
                         groundPlane.material.needsUpdate = true;
+                        console.log("[GameMap] Applied texture to material"); // Debug log
                     }, undefined, (err) => {
                         console.error("Error loading floor texture:", err);
                         groundPlane.material = defaultMat; // Revert on error
                     });
                 } else {
+                    console.log("[GameMap] No texture found, using default"); // Debug Log
                     groundPlane.material = defaultMat;
                 }
             }, { deep: true, immediate: true });

@@ -254,7 +254,7 @@ export default {
             watch(() => currentMapData.value, (newData) => {
                 if (newData && newData.texture) {
                     const loader = new THREE.TextureLoader();
-                    loader.load(`http://localhost:8000/maps/floor/${newData.texture}`, (tex) => {
+                    loader.load(`/maps/floor/${newData.texture}`, (tex) => {
                         tex.wrapS = THREE.RepeatWrapping;
                         tex.wrapT = THREE.RepeatWrapping;
                         tex.repeat.set(10, 10); // Repeat texture 10 times across the 100x100 map
