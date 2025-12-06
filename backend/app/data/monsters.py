@@ -10,7 +10,8 @@ MONSTERS = {
         "respawn_time": 1.0,
         "drops": [
             {"item_id": "item_sword_01", "chance": 0.1},
-            {"item_id": "item_potion_hp_01", "chance": 1}
+            {"item_id": "item_potion_hp_01", "chance": 1},
+            {"item_id": "item_wolf_tooth", "chance": 0.5}
         ]
     },
     "mob_goblin_01": {

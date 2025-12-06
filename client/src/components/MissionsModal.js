@@ -1,5 +1,5 @@
 import { ref, computed, onMounted } from 'vue';
-import { player, availableMissions, addLog } from '../state.js';
+import { player, availableMissions, addLog, activeMission } from '../state.js';
 import { api } from '../services/api.js';
 import { startAutoFarm, stopAutoFarm } from '../services/autoFarm.js';
 import { selectedMapId, selectedTargetId } from '../state.js';
@@ -85,7 +85,7 @@ export default {
         };
 
         const selectMission = (id) => {
-            if (player.value.active_mission_id !== id && !isMissionCompleted(id)) {
+            if (!isMissionCompleted(id)) {
                 startMission(id);
             }
         };
@@ -121,6 +121,7 @@ export default {
 
         const startMission = async (missionId) => {
             if (!player.value) return;
+
             stopAutoFarm();
 
             try {
@@ -133,7 +134,8 @@ export default {
 
                 const mission = availableMissions.value[missionId];
                 selectedMapId.value = mission.map_id;
-                selectedTargetId.value = mission.target_monster_id;
+                selectedTargetId.value = mission.target_monster_id || mission.target_template_id;
+                activeMission.value = mission;
 
                 startAutoFarm();
                 emit('close');

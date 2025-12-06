@@ -775,7 +775,11 @@ export default {
 
         watch(() => player.value?.current_map_id, async (newMapId) => {
             if (newMapId) {
-                stopAutoFarm();
+                // Only stop auto-farm if we moved to a map that wasn't our target
+                if (newMapId !== selectedMapId.value) {
+                    stopAutoFarm();
+                }
+
                 await api.fetchMapMonsters(newMapId);
                 api.fetchMapPlayers(newMapId);
 

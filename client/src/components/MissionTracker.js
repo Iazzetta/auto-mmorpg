@@ -88,11 +88,8 @@ export default {
             if (isLocked(mission)) return;
             if (isCompleted(mission)) return;
 
-            if (isActive(mission)) {
-                stopMission();
-            } else {
-                startMission(mission);
-            }
+            // Always start mission (force restart behavior)
+            startMission(mission);
         };
 
         const claimReward = async () => {
