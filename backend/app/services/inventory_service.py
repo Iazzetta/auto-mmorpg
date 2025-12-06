@@ -14,6 +14,7 @@ class InventoryService:
             for existing_item in player.inventory:
                 if existing_item.name == item.name and existing_item.type == item.type:
                     existing_item.quantity += item.quantity
+                    InventoryService.check_mission_progress(player, item)
                     return
 
         # Auto-equip logic (only for equipment)
