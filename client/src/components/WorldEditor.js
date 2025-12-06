@@ -357,6 +357,18 @@ export default {
                                 </div>
                             </div>
 
+                            <!-- Dialogue Editor -->
+                            <div class="mt-2 text-white/50 border-t border-gray-700/50 pt-2">
+                                <label class="text-[10px] text-gray-500 uppercase">Opening Dialogue</label>
+                                <div class="flex flex-col gap-1">
+                                    <div v-for="(line, idx) in (npcs[selectedNpcId].dialog_start || [])" :key="idx" class="flex gap-1">
+                                         <input v-model="npcs[selectedNpcId].dialog_start[idx]" class="w-full bg-black border border-gray-700 rounded px-2 py-1 text-xs" placeholder="Dialogue Line...">
+                                         <button @click="npcs[selectedNpcId].dialog_start.splice(idx, 1)" class="text-red-500">x</button>
+                                    </div>
+                                    <button @click="if(!npcs[selectedNpcId].dialog_start) npcs[selectedNpcId].dialog_start = []; npcs[selectedNpcId].dialog_start.push('')" class="text-xs text-blue-400 self-start">+ Add Line</button>
+                                </div>
+                            </div>
+
                             <button @click="deleteNpc" class="mt-4 bg-red-900/50 hover:bg-red-900 text-red-200 py-2 rounded text-xs border border-red-800">Delete NPC</button>
                         </div>
                     </div>

@@ -1,4 +1,4 @@
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { api } from '../services/api.js';
 import { player, showToast } from '../state.js';
 
@@ -20,22 +20,22 @@ export default {
                     
                     <!-- Dialogue Mode -->
                     <div v-if="mode === 'dialogue'" class="flex flex-col gap-4">
-                        <div class="text-lg leading-relaxed text-gray-200 bg-black/30 p-4 rounded border border-gray-700">
-                            "{{ currentLine }}"
+                        <div class="text-lg leading-relaxed text-gray-200 bg-black/30 p-4 rounded border border-gray-700 min-h-[80px]">
+                            <span>{{ displayedText }}</span><span v-if="isTyping" class="animate-pulse text-yellow-500">|</span>
                         </div>
                         
                         <div class="flex justify-end gap-2 mt-4">
-                            <button v-if="hasNextLine" @click="nextLine" class="bg-blue-600 hover:bg-blue-500 px-6 py-2 rounded font-bold animate-pulse">
-                                Next (F)
+                            <button v-if="hasNextLine || isTyping" @click="nextDialog" class="bg-blue-600 hover:bg-blue-500 px-6 py-2 rounded font-bold animate-pulse">
+                                {{ isTyping ? 'Skip' : 'Next' }} (F)
                             </button>
-                            <button v-else-if="npc.type === 'quest_giver' && npc.quest_id" @click="offerQuest" class="bg-yellow-600 hover:bg-yellow-500 px-6 py-2 rounded font-bold">
-                                Discuss Quest
+                            <button v-else-if="npc.type === 'quest_giver' && npc.quest_id" @click="offerQuest" class="bg-yellow-600 hover:bg-yellow-500 px-6 py-2 rounded font-bold animate-pulse">
+                                Discuss Quest (F)
                             </button>
-                            <button v-else-if="npc.type === 'merchant'" @click="openShop" class="bg-green-600 hover:bg-green-500 px-6 py-2 rounded font-bold">
-                                Show Wares
+                            <button v-else-if="npc.type === 'merchant'" @click="openShop" class="bg-green-600 hover:bg-green-500 px-6 py-2 rounded font-bold animate-pulse">
+                                Show Wares (F)
                             </button>
-                            <button v-else @click="$emit('close')" class="bg-gray-700 hover:bg-gray-600 px-6 py-2 rounded font-bold">
-                                Goodbye
+                            <button v-else @click="$emit('close')" class="bg-gray-700 hover:bg-gray-600 px-6 py-2 rounded font-bold animate-pulse">
+                                Goodbye (F)
                             </button>
                         </div>
                     </div>
@@ -84,19 +84,56 @@ export default {
     setup(props, { emit }) {
         const mode = ref('dialogue'); // dialogue, quest_offer, shop
         const dialogueIndex = ref(0);
-        const shopItemsDetails = ref({}); // To store fetched item details
+        const shopItemsDetails = ref({});
 
-        const currentLine = computed(() => {
-            if (!props.npc.dialogue || props.npc.dialogue.length === 0) return "...";
-            return props.npc.dialogue[dialogueIndex.value];
+        // Typewriter
+        const displayedText = ref("");
+        const isTyping = ref(false);
+        let typeInterval = null;
+
+        const lines = computed(() => props.npc.dialog_start || []);
+
+        const currentFullLine = computed(() => {
+            if (lines.value.length === 0) return "...";
+            return lines.value[dialogueIndex.value] || "...";
         });
+
+        const startTyping = () => {
+            if (typeInterval) clearInterval(typeInterval);
+            displayedText.value = "";
+            isTyping.value = true;
+
+            const text = currentFullLine.value;
+            let i = 0;
+
+            typeInterval = setInterval(() => {
+                displayedText.value += text.charAt(i);
+                i++;
+                if (i >= text.length) {
+                    finishTyping();
+                }
+            }, 30);
+        };
+
+        const finishTyping = () => {
+            if (typeInterval) clearInterval(typeInterval);
+            displayedText.value = currentFullLine.value;
+            isTyping.value = false;
+        };
 
         const hasNextLine = computed(() => {
-            return props.npc.dialogue && dialogueIndex.value < props.npc.dialogue.length - 1;
+            return lines.value.length > 0 && dialogueIndex.value < lines.value.length - 1;
         });
 
-        const nextLine = () => {
-            if (hasNextLine.value) dialogueIndex.value++;
+        const nextDialog = () => {
+            if (isTyping.value) {
+                finishTyping();
+                return;
+            }
+            if (hasNextLine.value) {
+                dialogueIndex.value++;
+                startTyping();
+            }
         };
 
         const offerQuest = () => {
@@ -105,7 +142,6 @@ export default {
 
         const acceptQuest = async () => {
             try {
-                // Actually, let's fix the fetch call to pass action as query param
                 const res2 = await fetch(`http://localhost:8000/player/${player.value.id}/npc/${props.npc.id}/action?action=accept_quest`, {
                     method: 'POST'
                 });
@@ -147,7 +183,6 @@ export default {
                 });
                 if (res.ok) {
                     const data = await res.json();
-                    // Update player gold/inventory locally or wait for sync
                     player.value.gold = data.gold;
                     player.value.inventory = data.inventory;
                     showToast('💰', 'Item Purchased', `You bought ${getItemName(itemId)}`, 'text-yellow-400');
@@ -162,9 +197,10 @@ export default {
             if (e.key === 'Escape') emit('close');
             if (e.key === 'f' || e.key === 'F') {
                 if (mode.value === 'dialogue') {
-                    if (hasNextLine.value) nextLine();
+                    if (isTyping.value) finishTyping();
+                    else if (hasNextLine.value) nextDialog();
                     else {
-                        if (props.npc.type === 'quest_giver') offerQuest();
+                        if (props.npc.type === 'quest_giver' && props.npc.quest_id) offerQuest();
                         else if (props.npc.type === 'merchant') openShop();
                         else emit('close');
                     }
@@ -172,19 +208,26 @@ export default {
             }
         };
 
+        watch(() => props.npc, () => {
+            dialogueIndex.value = 0;
+            startTyping();
+        }, { immediate: true });
+
         onMounted(() => {
             window.addEventListener('keydown', handleKey);
         });
 
         onUnmounted(() => {
             window.removeEventListener('keydown', handleKey);
+            if (typeInterval) clearInterval(typeInterval);
         });
 
         return {
             mode,
-            currentLine,
+            displayedText,
+            isTyping,
             hasNextLine,
-            nextLine,
+            nextDialog,
             offerQuest,
             acceptQuest,
             openShop,
