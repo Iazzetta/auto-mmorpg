@@ -39,7 +39,7 @@ export default {
                     <div v-if="activeTab === 'maps'" class="flex-1 flex flex-col p-4 overflow-y-auto gap-4">
                         <button @click="addMap" class="w-full bg-blue-700 hover:bg-blue-600 p-2 rounded text-sm font-bold">+ New Map</button>
                         
-                        <div class="flex flex-col gap-1 max-h-60 overflow-y-auto border border-gray-700 rounded p-1 bg-black/50">
+                        <div class="flex flex-col gap-1 max-h-60 min-h-[200px] shrink-0 overflow-y-auto border border-gray-700 rounded p-1 bg-black/50">
                             <div v-for="(map, id) in worldData.maps" :key="id" 
                                 @click="selectMap(id)"
                                 class="cursor-pointer p-2 rounded hover:bg-gray-800 text-xs flex justify-between items-center"
@@ -123,7 +123,7 @@ export default {
                     <div v-if="activeTab === 'monsters'" class="flex-1 flex flex-col p-4 overflow-y-auto gap-4">
                         <button @click="addMonster" class="w-full bg-purple-700 hover:bg-purple-600 p-2 rounded text-sm font-bold">+ New Monster</button>
                         
-                        <div class="flex flex-col gap-1 max-h-60 overflow-y-auto border border-gray-700 rounded p-1 bg-black/50">
+                        <div class="flex flex-col gap-1 max-h-60 min-h-[200px] shrink-0 overflow-y-auto border border-gray-700 rounded p-1 bg-black/50">
                             <div v-for="(monster, id) in worldData.monster_templates" :key="id" 
                                 @click="selectMonster(id)"
                                 class="cursor-pointer p-2 rounded hover:bg-gray-800 text-xs flex justify-between items-center"
@@ -186,7 +186,7 @@ export default {
                     <div v-if="activeTab === 'items'" class="flex-1 flex flex-col p-4 overflow-y-auto gap-4">
                         <button @click="addItem" class="w-full bg-yellow-700 hover:bg-yellow-600 p-2 rounded text-sm font-bold text-white">+ New Item</button>
                         
-                        <div class="flex flex-col gap-1 max-h-60 overflow-y-auto border border-gray-700 rounded p-1 bg-black/50">
+                        <div class="flex flex-col gap-1 max-h-60 min-h-[200px] shrink-0 overflow-y-auto border border-gray-700 rounded p-1 bg-black/50">
                             <div v-for="(item, id) in availableItems" :key="id" 
                                 @click="selectItem(id)"
                                 class="cursor-pointer p-2 rounded hover:bg-gray-800 text-xs flex justify-between items-center"
@@ -276,7 +276,7 @@ export default {
                         
                         <div class="text-xs text-gray-500 mb-1">Total NPCs: {{ Object.keys(npcs).length }}</div>
 
-                        <div class="flex flex-col gap-1 max-h-60 overflow-y-auto border border-gray-700 rounded p-1 bg-black/50">
+                        <div class="flex flex-col gap-1 max-h-60 min-h-[200px] shrink-0 overflow-y-auto border border-gray-700 rounded p-1 bg-black/50">
                             <div v-for="(npc, id) in npcs" :key="id" 
                                 @click="selectNpc(id)"
                                 class="cursor-pointer p-2 rounded hover:bg-gray-800 text-xs flex justify-between items-center"
@@ -358,7 +358,7 @@ export default {
                     <div v-if="activeTab === 'missions'" class="flex-1 flex flex-col p-4 overflow-y-auto gap-4">
                         <button @click="createNewMission" class="w-full bg-green-700 hover:bg-green-600 p-2 rounded text-sm font-bold">+ New Mission</button>
                         
-                        <div class="flex flex-col gap-1 max-h-60 overflow-y-auto border border-gray-700 rounded p-1 bg-black/50">
+                        <div class="flex flex-col gap-1 max-h-60 min-h-[200px] shrink-0 overflow-y-auto border border-gray-700 rounded p-1 bg-black/50">
                             <div v-for="(mission, id) in missions" :key="id" 
                                  @click="selectMission(id, mission)"
                                  :class="{'bg-gray-800 border-l-2 border-green-500': selectedMissionId === id}"
