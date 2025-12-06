@@ -2,6 +2,8 @@ from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect
 from typing import List
 import uuid
 import random
+import json
+import os
 
 from ..models.player import Player, PlayerClass, PlayerStats, Position, PlayerState
 from ..models.item import Item, ItemType, ItemSlot, ItemRarity, ItemStats
@@ -11,6 +13,14 @@ from ..services.inventory_service import InventoryService
 
 router = APIRouter()
 state_manager = StateManager.get_instance()
+
+# Load Items
+ITEMS_DATA = {}
+try:
+    with open("backend/app/data/items.json", "r") as f:
+        ITEMS_DATA = json.load(f)
+except Exception as e:
+    print(f"Error loading items in routes: {e}")
 
 @router.post("/player", response_model=Player)
 async def create_player(name: str, p_class: PlayerClass):
@@ -522,12 +532,31 @@ async def get_map_monsters(map_id: str):
 async def get_missions():
     return load_missions()
 
-@router.get("/map/{map_id}", response_model=GameMap)
+@router.get("/map/{map_id}")
 async def get_map_details(map_id: str):
     m = state_manager.get_map(map_id)
     if not m:
         raise HTTPException(404, "Map not found")
-    return m
+        
+    # Inject Active Cooldowns
+    import time
+    active_cooldowns = {}
+    now = time.time()
+    
+    if m.resources:
+        for res in m.resources:
+            expiry = state_manager.resource_cooldowns.get(res.id)
+            if expiry and expiry > now:
+                active_cooldowns[res.id] = expiry - now
+    
+    # convert to dict
+    if hasattr(m, "model_dump"):
+        result = m.model_dump()
+    else:
+        result = m.dict()
+        
+    result["active_cooldowns"] = active_cooldowns
+    return result
 
 @router.post("/player/{player_id}/revive")
 async def revive_player(player_id: str):
@@ -597,11 +626,85 @@ async def save_editor_items(items: dict):
     
     load_items()
     
-    # Broadcast Update
-    if hasattr(state_manager, 'connection_manager'):
-        await state_manager.connection_manager.broadcast({"type": "server_update"})
+@router.post("/player/{player_id}/gather")
+async def gather_resource(player_id: str, resource_id: str):
+    player = state_manager.players.get(player_id)
+    if not player:
+        raise HTTPException(status_code=404, detail="Player not found")
+        
+    game_map = state_manager.maps.get(player.current_map_id)
+    if not game_map:
+        raise HTTPException(status_code=404, detail="Map not found")
+        
+    # Find resource
+    resource = next((r for r in game_map.resources if r.id == resource_id), None)
+    if not resource:
+        raise HTTPException(status_code=404, detail="Resource not found")
+        
+    # Check Cooldown
+    if not state_manager.is_resource_ready(resource_id):
+        raise HTTPException(status_code=400, detail="Resource is regenerating")
+
+    # Check Distance
+    dist = ((player.position.x - resource.x) ** 2 + (player.position.y - resource.y) ** 2) ** 0.5
+    if dist > 3.0:
+        raise HTTPException(status_code=400, detail="Too far away")
+        
+    # Process Drops
+    loot = []
+    import random
+    for drop in resource.drops:
+        if random.random() <= drop.chance:
+            qty = random.randint(drop.min_qty, drop.max_qty)
+            if qty > 0:
+                loot.append({"item_id": drop.item_id, "qty": qty})
     
-    return {"message": "Items saved"}
+    # Grant Loot
+    inv_service = InventoryService()
+    for item_drop in loot:
+        item_id = item_drop['item_id']
+        qty = item_drop['qty']
+        
+        item_def = ITEMS_DATA.get(item_id)
+        if not item_def:
+            print(f"Warning: Item {item_id} not found in database.")
+            continue
+            
+        # Create Item Instance
+        try:
+            new_item = Item(
+                id=str(uuid.uuid4()),
+                name=item_def['name'],
+                type=item_def['type'],
+                slot=item_def.get('slot', 'none'),
+                rarity=item_def.get('rarity', 'common'),
+                stats=item_def.get('stats', {}),
+                power_score=item_def.get('power_score', 0),
+                icon=item_def.get('icon', '📦'),
+                stackable=item_def.get('stackable', False),
+                quantity=qty
+            )
+            inv_service.add_item(player, new_item)
+        except Exception as e:
+            print(f"Error creating item {item_id}: {e}")
+            
+    # Set Cooldown
+    state_manager.set_resource_cooldown(resource_id, resource.respawn_time)
+    
+    # Broadcast Resource Update
+    if hasattr(state_manager, 'connection_manager'):
+        await state_manager.connection_manager.broadcast({
+            "type": "resource_update", 
+            "resource_id": resource_id, 
+            "status": "cooldown", 
+            "respawn_time": resource.respawn_time
+        })
+
+    return {"message": "Gathered successfully", "loot": loot, "cooldown": resource.respawn_time, "inventory": player.inventory}
+
+@router.get("/editor/world")
+async def get_editor_world():
+    return state_manager.world_data
 
 @router.post("/editor/world")
 async def save_world(data: dict):

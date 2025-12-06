@@ -18,6 +18,7 @@ export default {
                     <button @click="activeTab = 'items'" :class="{'bg-yellow-600 text-white': activeTab === 'items', 'text-gray-400 hover:text-white hover:bg-gray-700': activeTab !== 'items'}" class="px-4 py-1.5 rounded text-sm font-bold transition-colors">Items</button>
                     <button @click="activeTab = 'npcs'" :class="{'bg-orange-600 text-white': activeTab === 'npcs', 'text-gray-400 hover:text-white hover:bg-gray-700': activeTab !== 'npcs'}" class="px-4 py-1.5 rounded text-sm font-bold transition-colors">NPCs</button>
                     <button @click="activeTab = 'missions'" :class="{'bg-green-600 text-white': activeTab === 'missions', 'text-gray-400 hover:text-white hover:bg-gray-700': activeTab !== 'missions'}" class="px-4 py-1.5 rounded text-sm font-bold transition-colors">Missions</button>
+                    <button @click="activeTab = 'resources'" :class="{'bg-teal-600 text-white': activeTab === 'resources', 'text-gray-400 hover:text-white hover:bg-gray-700': activeTab !== 'resources'}" class="px-4 py-1.5 rounded text-sm font-bold transition-colors">Resources</button>
                     <button @click="activeTab = 'rewards'" :class="{'bg-pink-600 text-white': activeTab === 'rewards', 'text-gray-400 hover:text-white hover:bg-gray-700': activeTab !== 'rewards'}" class="px-4 py-1.5 rounded text-sm font-bold transition-colors">Rewards</button>
                 </div>
 
@@ -471,6 +472,179 @@ export default {
                         </div>
                     </div>
 
+                    <!-- RESOURCES SIDEBAR -->
+                    <div v-if="activeTab === 'resources'" class="flex-1 flex flex-col p-4 overflow-y-auto gap-4">
+                        
+                        <!-- 1. Global Map Selector (Sticky) -->
+                        <div class="bg-gray-800 p-2 rounded border border-gray-600 shadow-sm sticky top-0 z-10">
+                             <label class="text-[10px] text-teal-400 uppercase font-bold block mb-1">Target Map (For Placement)</label>
+                             <select v-model="selectedMapId" @change="selectedResourceId = null" class="w-full bg-black border border-gray-500 rounded px-2 py-1 text-xs text-white focus:border-teal-500 outline-none">
+                                <option :value="null" disabled>-- Select a Map --</option>
+                                <option v-for="(m, mid) in worldData.maps" :key="mid" :value="mid">{{ m.name }}</option>
+                            </select>
+                        </div>
+                        
+                        <!-- 2. Item Library (Global Definitions) -->
+                        <div class="border border-gray-700 rounded p-2 bg-gray-900/50">
+                            <div class="flex justify-between items-center mb-2">
+                                <h3 class="font-bold text-gray-300 text-xs uppercase">Item Library</h3>
+                                <button @click="addResourceTemplate" class="bg-teal-700 hover:bg-teal-600 text-white text-[10px] px-2 py-1 rounded border border-teal-500 font-bold">+ New Item Type</button>
+                            </div>
+                            
+                            <!-- Library List -->
+                            <div class="flex flex-col gap-1 max-h-40 overflow-y-auto border border-gray-700 rounded p-1 bg-black mb-2">
+                                <div v-for="(tpl, tid) in (worldData.resource_templates || {})" :key="tid" 
+                                     @click="selectedTemplateId = tid"
+                                     class="cursor-pointer p-1.5 rounded hover:bg-gray-800 text-xs flex justify-between items-center transition-colors"
+                                     :class="{'bg-teal-900/30 border-l-2 border-teal-500': selectedTemplateId === tid, 'text-gray-400': selectedTemplateId !== tid}">
+                                    <span class="font-medium">{{ tpl.name }}</span>
+                                    <span class="text-[9px] opacity-70 bg-gray-800 px-1 rounded">{{ tpl.type }}</span>
+                                </div>
+                                <div v-if="!worldData.resource_templates || Object.keys(worldData.resource_templates).length === 0" class="text-gray-500 text-[10px] text-center p-2">
+                                    No items in library. Create one!
+                                </div>
+                            </div>
+
+                            <!-- Selected Item Definition Editor -->
+                            <div v-if="selectedTemplateId && worldData.resource_templates && worldData.resource_templates[selectedTemplateId]" class="flex flex-col gap-2 p-2 bg-gray-800 rounded border border-gray-700 animate-fade-in relative">
+                                <h4 class="text-[10px] font-bold text-teal-400 uppercase border-b border-gray-700 pb-1">Edit Definition: {{ worldData.resource_templates[selectedTemplateId].name }}</h4>
+                                
+                                <input v-model="worldData.resource_templates[selectedTemplateId].name" class="w-full bg-black border border-gray-700 rounded px-1 py-1 text-xs text-white" placeholder="Item Name">
+                                
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <label class="text-[9px] text-gray-500 uppercase block">Geometry</label>
+                                        <select v-model="worldData.resource_templates[selectedTemplateId].type" class="w-full bg-black border border-gray-700 rounded px-1 py-1 text-xs">
+                                            <option value="box">Box</option>
+                                            <option value="cylinder">Cylinder</option>
+                                            <option value="sphere">Sphere</option>
+                                            <option value="tree">Tree</option>
+                                            <option value="rock">Rock</option>
+                                            <option value="flower">Flower</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="text-[9px] text-gray-500 uppercase block">Color</label>
+                                        <div class="flex gap-1">
+                                            <input v-model="worldData.resource_templates[selectedTemplateId].color" type="color" class="w-6 h-6 bg-black border border-gray-700 rounded cursor-pointer p-0">
+                                            <input v-model="worldData.resource_templates[selectedTemplateId].color" type="text" class="flex-1 bg-black border border-gray-700 rounded px-1 text-[10px] uppercase">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label class="text-[9px] text-gray-500 uppercase block">Respawn Time (s)</label>
+                                    <input v-model.number="worldData.resource_templates[selectedTemplateId].respawn_time" type="number" class="w-full bg-black border border-gray-700 rounded px-1 py-1 text-xs">
+                                </div>
+
+                                <!-- Drops Editor -->
+                                <div class="bg-black/30 rounded p-1 border border-gray-700/50">
+                                    <div class="flex justify-between items-center mb-1">
+                                         <label class="text-[9px] text-gray-500 uppercase">Drops</label>
+                                         <button @click="addTemplateDrop(selectedTemplateId)" class="text-[9px] text-teal-400 hover:text-teal-300 font-bold">+ Add Drop</button>
+                                    </div>
+                                    <div class="space-y-1 max-h-24 overflow-y-auto">
+                                        <div v-for="(drop, dIdx) in (worldData.resource_templates[selectedTemplateId].drops || [])" :key="dIdx" class="flex items-center gap-1 bg-gray-900 p-1 rounded border border-gray-800">
+                                             <select v-model="drop.item_id" class="w-20 bg-black border border-gray-700 rounded px-1 py-0.5 text-[10px]">
+                                                <option v-for="(item, iid) in (availableItems || {})" :key="iid" :value="iid">{{ item.name }}</option>
+                                             </select>
+                                             <input v-model.number="drop.min_qty" class="w-6 bg-black border border-gray-700 rounded px-1 py-0.5 text-[9px] text-center" title="Min">
+                                             <span class="text-gray-500 text-[9px]">-</span>
+                                             <input v-model.number="drop.max_qty" class="w-6 bg-black border border-gray-700 rounded px-1 py-0.5 text-[9px] text-center" title="Max">
+                                             <input v-model.number="drop.chance" class="w-8 bg-black border border-gray-700 rounded px-1 py-0.5 text-[9px] text-center" title="Chance (0-1)">
+                                             
+                                             <button @click="removeTemplateDrop(selectedTemplateId, dIdx)" class="text-red-500 hover:text-red-400 ml-auto font-bold px-1">✕</button>
+                                        </div>
+                                        <div v-if="!worldData.resource_templates[selectedTemplateId].drops || worldData.resource_templates[selectedTemplateId].drops.length === 0" class="text-[9px] text-gray-600 text-center italic">No drops defined</div>
+                                    </div>
+                                </div>
+
+                                <!-- ACTION: Place on Map -->
+                                <button @click="instantiateTemplate(selectedTemplateId)" 
+                                        class="mt-2 w-full py-2 rounded text-xs font-bold uppercase tracking-wide border transition-all"
+                                        :class="selectedMapId ? 'bg-blue-600 hover:bg-blue-500 border-blue-500 text-white shadow-lg shadow-blue-900/50' : 'bg-gray-700 text-gray-500 border-gray-600 cursor-not-allowed'"
+                                        :disabled="!selectedMapId">
+                                    {{ selectedMapId ? ('⬇ Add to ' + (worldData.maps[selectedMapId] ? worldData.maps[selectedMapId].name : 'Map')) : '⚠ Select Target Map Above' }}
+                                </button>
+                             </div>
+                             <div v-else class="text-center text-gray-500 text-xs italic py-4">
+                                Select an item from the library to edit or place.
+                             </div>
+                        </div>
+
+                        <!-- 3. Placed Resources List (Map Dependent) -->
+                        <div v-if="selectedMapId && worldData.maps[selectedMapId]" class="flex-1 flex flex-col min-h-0 border-t border-gray-700 pt-2">
+                             <h3 class="font-bold text-gray-400 text-xs uppercase mb-2">Placed on {{ worldData.maps[selectedMapId].name }} ({{ (worldData.maps[selectedMapId].resources || []).length }})</h3>
+                        <div class="flex flex-col gap-1 max-h-60 min-h-[200px] shrink-0 overflow-y-auto border border-gray-700 rounded p-1 bg-black/50">
+                            <div v-for="(res, idx) in (worldData.maps?.[selectedMapId]?.resources || [])" :key="idx" 
+                                 @click="selectResource(idx)"
+                                 class="cursor-pointer p-2 rounded hover:bg-gray-800 text-xs flex justify-between items-center"
+                                 :class="{'bg-gray-800 border-l-2 border-teal-500': selectedResourceId === idx}">
+                                <span>{{ res.name }}</span>
+                                <span class="text-gray-500 text-[10px]">{{ res.type }}</span>
+                            </div>
+                        </div>
+
+                        <div v-if="selectedResourceId !== null && worldData.maps[selectedMapId].resources[selectedResourceId]" class="flex flex-col gap-2 border-t border-gray-700 pt-4">
+                            <h3 class="font-bold text-gray-400 text-xs uppercase">Resource Details</h3>
+                            <div>
+                                <label class="text-[10px] text-gray-500 uppercase">Name</label>
+                                <input v-model="worldData.maps[selectedMapId].resources[selectedResourceId].name" class="w-full bg-black border border-gray-700 rounded px-2 py-1 text-xs">
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="text-[10px] text-gray-500 uppercase">Type (Shape)</label>
+                                    <select v-model="worldData.maps[selectedMapId].resources[selectedResourceId].type" class="w-full bg-black border border-gray-700 rounded px-2 py-1 text-xs">
+                                        <option value="box">Box</option>
+                                        <option value="cylinder">Cylinder</option>
+                                        <option value="sphere">Sphere</option>
+                                        <option value="tree">Tree</option>
+                                        <option value="rock">Rock</option>
+                                        <option value="flower">Flower</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="text-[10px] text-gray-500 uppercase">Color</label>
+                                    <input v-model="worldData.maps[selectedMapId].resources[selectedResourceId].color" type="color" class="w-full bg-black border border-gray-700 rounded h-6 cursor-pointer">
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="text-[10px] text-gray-500 uppercase">Respawn (s)</label>
+                                    <input v-model.number="worldData.maps[selectedMapId].resources[selectedResourceId].respawn_time" type="number" class="w-full bg-black border border-gray-700 rounded px-2 py-1 text-xs">
+                                </div>
+                                    <label class="text-[10px] text-gray-500 uppercase">ID</label>
+                                    <input v-model="worldData.maps[selectedMapId].resources[selectedResourceId].id" class="w-full bg-black border border-gray-700 rounded px-2 py-1 text-gray-500 text-xs" disabled>
+                                </div>
+                            </div>
+                        <div v-if="selectedResourceId !== null && worldData.maps[selectedMapId].resources[selectedResourceId]" class="flex flex-col gap-2 border-t border-gray-700 pt-4">
+                            <h3 class="font-bold text-gray-400 text-xs uppercase">Placed Resource Settings</h3>
+                            <div>
+                                <label class="text-[10px] text-gray-500 uppercase">Override Name (Optional)</label>
+                                <input v-model="worldData.maps[selectedMapId].resources[selectedResourceId].name" class="w-full bg-black border border-gray-700 rounded px-2 py-1 text-xs text-gray-300" placeholder="Inherit from Template">
+                            </div>
+
+                            <button @click="saveResourceAsTemplate" class="mt-2 w-full bg-teal-900 hover:bg-teal-800 text-teal-100 py-1.5 rounded text-xs border border-teal-700 font-bold">
+                                ⬆ Save to Library (Make Reusable)
+                            </button>
+
+                            <!-- Position Editor -->
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="text-[10px] text-gray-500 uppercase">X Position (%)</label>
+                                    <input v-model.number="worldData.maps[selectedMapId].resources[selectedResourceId].x" type="number" class="w-full bg-black border border-gray-700 rounded px-2 py-1 text-xs">
+                                </div>
+                                <div>
+                                    <label class="text-[10px] text-gray-500 uppercase">Y Position (%)</label>
+                                    <input v-model.number="worldData.maps[selectedMapId].resources[selectedResourceId].y" type="number" class="w-full bg-black border border-gray-700 rounded px-2 py-1 text-xs">
+                                </div>
+                            </div>
+                            </div>
+
+                            <button @click="deleteResource" class="mt-4 bg-red-900/50 hover:bg-red-900 text-red-200 py-2 rounded text-xs border border-red-800">Delete Resource</button>
+                        </div>
+                    </div>
+
                     <!-- REWARDS SIDEBAR -->
                     <div v-if="activeTab === 'rewards'" class="flex-1 flex flex-col p-4 overflow-y-auto gap-4">
                         <h3 class="font-bold text-pink-400 uppercase text-sm border-b border-gray-700 pb-2">Starter Chest</h3>
@@ -492,7 +666,7 @@ export default {
                 <div class="flex-1 bg-black relative overflow-hidden flex items-center justify-center">
                     
                     <!-- MAP VISUAL EDITOR -->
-                    <div v-if="activeTab === 'maps' || activeTab === 'npcs'" 
+                    <div v-if="activeTab === 'maps' || activeTab === 'npcs' || activeTab === 'resources'" 
                          class="relative w-full h-full flex items-center justify-center bg-gray-900"
                          @mousemove="handleMouseMove" @mouseup="handleMouseUp" @mouseleave="handleMouseUp">
                         
@@ -549,6 +723,24 @@ export default {
                                  @mousedown.prevent="startDrag('npc', id)"
                                  :title="npc.name">
                                  {{ npc.icon }}
+                            </div>
+
+                            <!-- RESOURCES -->
+                            <div v-if="worldData.maps[selectedMapId].resources" 
+                                 v-for="(res, idx) in worldData.maps[selectedMapId].resources" :key="'res-'+idx"
+                                 class="absolute w-5 h-5 border-2 border-white/50 flex items-center justify-center text-[10px] cursor-pointer hover:scale-110 transition-transform z-20 shadow-sm"
+                                 :style="{
+                                     left: res.x + '%', 
+                                     top: res.y + '%', 
+                                     backgroundColor: res.color,
+                                     borderRadius: res.type === 'sphere' ? '50%' : (res.type === 'cylinder' ? '30%' : (res.type === 'tree' ? '0' : '0'))
+                                 }"
+                                 @mousedown.prevent="startDrag('resource', idx)"
+                                 :title="res.name">
+                                 <span v-if="res.type === 'tree'">🌲</span>
+                                 <span v-else-if="res.type === 'rock'">🪨</span>
+                                 <span v-else-if="res.type === 'flower'">🌸</span>
+                                 <span v-else>📦</span>
                             </div>
                         </div>
                         <div v-else class="text-gray-500 flex flex-col items-center">
@@ -619,6 +811,7 @@ export default {
         const rewardsData = ref({ starter_chest: [] });
         const npcs = ref({});
         const selectedNpcId = ref(null);
+        const selectedResourceId = ref(null); // Added
         const floorTextures = ref([]);
 
         const fetchWorld = async () => {
@@ -626,6 +819,7 @@ export default {
                 const res = await fetch('http://localhost:8000/editor/world');
                 if (res.ok) {
                     worldData.value = await res.json();
+                    if (!worldData.value.resource_templates) worldData.value.resource_templates = {};
                     if (Object.keys(worldData.value.maps).length > 0) {
                         selectedMapId.value = Object.keys(worldData.value.maps)[0];
                     }
@@ -649,6 +843,28 @@ export default {
                     floorTextures.value = await texRes.json();
                 }
             } catch (e) { console.error(e); }
+        };
+
+        const saveResourceAsTemplate = () => {
+            if (!selectedMapId.value || selectedResourceId.value === null) return;
+            const res = worldData.value.maps[selectedMapId.value].resources[selectedResourceId.value];
+            if (!res) return;
+
+            const newTplId = `res_tpl_${Date.now()}`;
+            if (!worldData.value.resource_templates) worldData.value.resource_templates = {};
+
+            worldData.value.resource_templates[newTplId] = {
+                id: newTplId,
+                name: res.name,
+                type: res.type,
+                color: res.color,
+                respawn_time: res.respawn_time,
+                drops: JSON.parse(JSON.stringify(res.drops || [])),
+                width: res.width || 1.0,
+                height: res.height || 1.0
+            };
+            selectedTemplateId.value = newTplId;
+            alert(`Saved "${res.name}" to Item Library!`);
         };
 
         const saveAll = async () => {
@@ -826,6 +1042,90 @@ export default {
             }
         };
 
+        // --- RESOURCE LOGIC ---
+        const selectedTemplateId = ref(null);
+
+        const addResourceTemplate = () => {
+            const id = `res_tpl_${Date.now()}`;
+            if (!worldData.value.resource_templates) worldData.value.resource_templates = {};
+            worldData.value.resource_templates[id] = {
+                id: id,
+                name: "New Template",
+                type: "box",
+                color: "#8B4513",
+                respawn_time: 60,
+                drops: [],
+                width: 1.0, height: 1.0
+            };
+            selectedTemplateId.value = id;
+        };
+
+        const addTemplateDrop = (tplId) => {
+            const tpl = worldData.value.resource_templates[tplId];
+            if (!tpl) return;
+            if (!tpl.drops) tpl.drops = [];
+            tpl.drops.push({ item_id: 'mat_wood', min_qty: 1, max_qty: 1, chance: 1.0 });
+        };
+        const removeTemplateDrop = (tplId, idx) => {
+            const tpl = worldData.value.resource_templates[tplId];
+            if (tpl && tpl.drops) tpl.drops.splice(idx, 1);
+        };
+
+        const instantiateTemplate = (tplId) => {
+            if (!selectedMapId.value) {
+                alert("Please select a Working Map first.");
+                return;
+            }
+            if (!tplId || !worldData.value.resource_templates[tplId]) return;
+
+            const tpl = worldData.value.resource_templates[tplId];
+            const map = worldData.value.maps[selectedMapId.value];
+            if (!map.resources) map.resources = [];
+
+            // Add instance linked to template
+            // We copy visual properties specifically for the Editor to render it correctly immediately.
+            // On the server, the template_id will take precedence for logic.
+            map.resources.push({
+                id: `res_${Date.now()}`,
+                template_id: tplId,
+                name: tpl.name,
+                type: tpl.type,
+                color: tpl.color,
+                x: 50, y: 50,
+                width: tpl.width || 1.0,
+                height: tpl.height || 1.0,
+                respawn_time: tpl.respawn_time,
+                drops: JSON.parse(JSON.stringify(tpl.drops || []))
+            });
+            selectedResourceId.value = map.resources.length - 1;
+        };
+
+        const selectResource = (idx) => selectedResourceId.value = idx;
+        const addResource = () => {
+            if (!selectedMapId.value) return;
+            const map = worldData.value.maps[selectedMapId.value];
+            if (!map.resources) map.resources = [];
+            map.resources.push({
+                id: `res_${Date.now()}`,
+                name: "New Resource",
+                type: "box",
+                color: "#8B4513",
+                x: 50, y: 50,
+                width: 1.0, height: 1.0,
+                respawn_time: 60,
+                drops: []
+            });
+            selectedResourceId.value = map.resources.length - 1;
+        };
+        const deleteResource = () => {
+            if (selectedResourceId.value === null) return;
+            if (confirm('Delete Resource?')) {
+                const map = worldData.value.maps[selectedMapId.value];
+                map.resources.splice(selectedResourceId.value, 1);
+                selectedResourceId.value = null;
+            }
+        };
+
         // --- DRAG & DROP LOGIC ---
         const dragging = ref(null);
         const startDrag = (type, index) => dragging.value = { type, index };
@@ -857,6 +1157,12 @@ export default {
                     npc.x = Math.round(x);
                     npc.y = Math.round(y);
                 }
+            } else if (dragging.value.type === 'resource') {
+                const res = map.resources[dragging.value.index];
+                if (res) {
+                    res.x = Math.round(x);
+                    res.y = Math.round(y);
+                }
             }
         };
         const handleMouseUp = () => dragging.value = null;
@@ -871,7 +1177,11 @@ export default {
             selectMission, createNewMission,
             selectItem, addItem, deleteItem,
             addRewardItem, removeRewardItem,
-            selectNpc, addNpc, deleteNpc,
+            selectNpc, addNpc, deleteNpc, selectedResourceId, selectResource, addResource, deleteResource,
+            selectedTemplateId, addResourceTemplate, instantiateTemplate,
+            addTemplateDrop,
+            removeTemplateDrop,
+            saveResourceAsTemplate,
             saveAll,
             startDrag, handleMouseMove, handleMouseUp, cursorX, cursorY, floorTextures
         };

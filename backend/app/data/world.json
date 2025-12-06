@@ -21,7 +21,34 @@
                 }
             ],
             "spawns": [],
-            "texture": "floor_castle.png"
+            "texture": "floor_castle.png",
+            "resources": [
+                {
+                    "id": "res_1765041733109",
+                    "name": "Bau do Cu",
+                    "type": "box",
+                    "color": "#8B4513",
+                    "x": 53,
+                    "y": 60,
+                    "width": 1,
+                    "height": 1,
+                    "respawn_time": 60,
+                    "drops": [
+                        {
+                            "item_id": "mat_flower",
+                            "min_qty": 1,
+                            "max_qty": 1,
+                            "chance": 1
+                        },
+                        {
+                            "item_id": "Beta",
+                            "min_qty": 1,
+                            "max_qty": 3,
+                            "chance": 0.2
+                        }
+                    ]
+                }
+            ]
         },
         "map_forest_1": {
             "name": "Forest",
@@ -80,6 +107,34 @@
                         "y": 80,
                         "radius": 10
                     }
+                }
+            ],
+            "resources": [
+                {
+                    "id": "res_1765053478897",
+                    "template_id": "res_tpl_1765053472053",
+                    "name": "Bau do Cu",
+                    "type": "box",
+                    "color": "#8B4513",
+                    "x": 16,
+                    "y": 28,
+                    "width": 1,
+                    "height": 1,
+                    "respawn_time": 60,
+                    "drops": [
+                        {
+                            "item_id": "mat_flower",
+                            "min_qty": 1,
+                            "max_qty": 1,
+                            "chance": 1
+                        },
+                        {
+                            "item_id": "Beta",
+                            "min_qty": 1,
+                            "max_qty": 3,
+                            "chance": 0.2
+                        }
+                    ]
                 }
             ]
         },
@@ -369,6 +424,31 @@
                     "chance": 1
                 }
             ]
+        }
+    },
+    "resource_templates": {
+        "res_tpl_1765053472053": {
+            "id": "res_tpl_1765053472053",
+            "name": "Bau do Cu",
+            "type": "box",
+            "color": "#8B4513",
+            "respawn_time": 60,
+            "drops": [
+                {
+                    "item_id": "mat_flower",
+                    "min_qty": 1,
+                    "max_qty": 1,
+                    "chance": 1
+                },
+                {
+                    "item_id": "Beta",
+                    "min_qty": 1,
+                    "max_qty": 3,
+                    "chance": 0.2
+                }
+            ],
+            "width": 1,
+            "height": 1
         }
     }
 }

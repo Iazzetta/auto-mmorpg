@@ -138,5 +138,65 @@
         "power_score": 1,
         "icon": "\ud83e\uddb7",
         "stackable": true
+    },
+    "mat_wood": {
+        "name": "Wood",
+        "type": "material",
+        "slot": "none",
+        "rarity": "common",
+        "stats": {
+            "strength": 0,
+            "intelligence": 0,
+            "atk": 0,
+            "def_": 0,
+            "speed": 0,
+            "hp": 0,
+            "xp": 0,
+            "gold": 2,
+            "diamonds": 0
+        },
+        "power_score": 1,
+        "icon": "\ud83e\udeb5",
+        "stackable": true
+    },
+    "mat_stone": {
+        "name": "Stone",
+        "type": "material",
+        "slot": "none",
+        "rarity": "common",
+        "stats": {
+            "strength": 0,
+            "intelligence": 0,
+            "atk": 0,
+            "def_": 0,
+            "speed": 0,
+            "hp": 0,
+            "xp": 0,
+            "gold": 2,
+            "diamonds": 0
+        },
+        "power_score": 1,
+        "icon": "\ud83e\udea8",
+        "stackable": true
+    },
+    "mat_flower": {
+        "name": "Flower",
+        "type": "material",
+        "slot": "none",
+        "rarity": "common",
+        "stats": {
+            "strength": 0,
+            "intelligence": 0,
+            "atk": 0,
+            "def_": 0,
+            "speed": 0,
+            "hp": 0,
+            "xp": 0,
+            "gold": 3,
+            "diamonds": 0
+        },
+        "power_score": 1,
+        "icon": "\ud83c\udf38",
+        "stackable": true
     }
 }

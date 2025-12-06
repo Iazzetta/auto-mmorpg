@@ -1,7 +1,7 @@
 import { ref, onMounted, onUnmounted, watch } from 'vue';
 import * as THREE from 'three';
 import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
-import { player, mapMonsters, mapPlayers, destinationMarker, currentMonster, addLog, selectedTargetId, isFreeFarming, pendingAttackId, inspectedPlayer, selectedMapId, currentMapData, mapNpcs } from '../state.js';
+import { player, mapMonsters, mapPlayers, destinationMarker, currentMonster, addLog, selectedTargetId, isFreeFarming, pendingAttackId, inspectedPlayer, selectedMapId, currentMapData, mapNpcs, showGameAlert, socket } from '../state.js';
 import { api } from '../services/api.js';
 import { stopAutoFarm, checkAndAct } from '../services/autoFarm.js';
 
@@ -55,13 +55,24 @@ export default {
             </div>
             
             <!-- Interaction Button -->
-            <div v-if="(canEnterPortal || canInteractNpc) && !isFreeFarming" class="absolute bottom-24 left-1/2 transform -translate-x-1/2 z-50 flex flex-col gap-2 items-center">
+            <div v-if="(canEnterPortal || canInteractNpc || canGather) && !isFreeFarming && !isGathering" class="absolute bottom-24 left-1/2 transform -translate-x-1/2 z-50 flex flex-col gap-2 items-center">
                 <button v-if="canEnterPortal" @click="confirmPortal" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-6 rounded-full shadow-lg border-2 border-blue-400 animate-bounce">
                     Enter Portal (F)
                 </button>
                 <button v-if="canInteractNpc" @click="interactNpc" class="bg-yellow-600 hover:bg-yellow-500 text-white font-bold py-2 px-6 rounded-full shadow-lg border-2 border-yellow-400 animate-bounce">
                     Talk to {{ closestNpc?.name }} (F)
                 </button>
+                <button v-if="canGather" @click="startGathering" class="bg-teal-600 hover:bg-teal-500 text-white font-bold py-2 px-6 rounded-full shadow-lg border-2 border-teal-400 animate-bounce">
+                    Gather {{ closestResource?.name }} (F)
+                </button>
+            </div>
+
+            <!-- GATHERING PROGRESS -->
+            <div v-if="isGathering" class="absolute bottom-32 left-1/2 transform -translate-x-1/2 z-50 flex flex-col items-center">
+                 <div class="w-48 h-4 bg-gray-900 border-2 border-teal-500 rounded-full overflow-hidden shadow-[0_0_15px_rgba(20,184,166,0.5)]">
+                     <div class="h-full bg-teal-500 transition-all ease-linear" :style="{ width: gatherProgress + '%' }"></div>
+                 </div>
+                 <span class="text-teal-400 font-bold text-xs mt-1 shadow-black drop-shadow-md">Gathering...</span>
             </div>
             
             <!-- FPS Counter -->
@@ -77,7 +88,33 @@ export default {
         const pendingPortal = ref(null);
         const canInteractNpc = ref(false);
         const closestNpc = ref(null);
+        const canGather = ref(false);
+        const closestResource = ref(null);
+        const isGathering = ref(false);
+        const gatherProgress = ref(0);
+        const resourceCooldowns = ref({}); // Added
         const entityLabels = ref([]);
+
+        // Socket Listener
+        const handleWsMessage = (event) => {
+            try {
+                const data = JSON.parse(event.data);
+                if (data.type === 'resource_update' && data.status === 'cooldown') {
+                    resourceCooldowns.value[data.resource_id] = Date.now() + (data.respawn_time * 1000);
+                    // Immediate cleanup if valid
+                    const mesh = meshes.get(data.resource_id);
+                    if (mesh) {
+                        scene.remove(mesh);
+                        meshes.delete(data.resource_id);
+                    }
+                }
+            } catch (e) { }
+        };
+        watch(() => socket.value, (newSocket) => {
+            if (newSocket) {
+                newSocket.addEventListener('message', handleWsMessage);
+            }
+        }, { immediate: true });
 
         // Three.js variables
         let scene, camera, renderer, raycaster, mouse;
@@ -195,11 +232,16 @@ export default {
             geometries.monster = new THREE.CylinderGeometry(0.5, 0.5, 1.5, 16);
             geometries.portal = new THREE.TorusGeometry(1, 0.2, 8, 16);
             geometries.npc = new THREE.CylinderGeometry(0.5, 0.5, 2, 8);
+            geometries.res_box = new THREE.BoxGeometry(1, 1, 1);
+            geometries.res_tree = new THREE.CylinderGeometry(0.2, 0.8, 4, 8);
+            geometries.res_rock = new THREE.DodecahedronGeometry(0.8, 0);
+            geometries.res_flower = new THREE.OctahedronGeometry(0.4, 0);
 
             materials.player = new THREE.MeshStandardMaterial({ color: 0x22c55e });
             materials.otherPlayer = new THREE.MeshStandardMaterial({ color: 0x3b82f6 });
             materials.monster = new THREE.MeshStandardMaterial({ color: 0xef4444 });
             materials.npc = new THREE.MeshStandardMaterial({ color: 0xfacc15 });
+            materials.resource = new THREE.MeshStandardMaterial({ color: 0xffffff });
 
             // 1. Scene
             scene = new THREE.Scene();
@@ -538,15 +580,42 @@ export default {
                 });
             }
 
+            // 7. Resources
+            if (currentMapData.value && currentMapData.value.resources) {
+                currentMapData.value.resources.forEach(res => {
+                    // Check Cooldown
+                    if (resourceCooldowns.value[res.id] && Date.now() < resourceCooldowns.value[res.id]) {
+                        return; // Skip rendering
+                    }
+
+                    const rid = res.id;
+                    validIds.add(rid);
+                    let mesh = meshes.get(rid);
+                    if (!mesh) {
+                        let geom = geometries.res_box;
+                        let yOff = 0.5;
+                        if (res.type === 'tree') { geom = geometries.res_tree; yOff = 2; }
+                        else if (res.type === 'rock') { geom = geometries.res_rock; yOff = 0.4; }
+                        else if (res.type === 'flower') { geom = geometries.res_flower; yOff = 0.2; }
+
+                        const mat = new THREE.MeshStandardMaterial({ color: res.color || 0x8B4513 });
+                        mesh = new THREE.Mesh(geom, mat);
+                        mesh.castShadow = true;
+                        mesh.userData = { type: 'resource', entity: res };
+                        mesh.position.set(res.x, yOff, res.y);
+                        scene.add(mesh);
+                        meshes.set(rid, mesh);
+                    }
+                });
+            }
+
             // 6. Cleanup
             for (const [id, mesh] of meshes) {
                 if (!validIds.has(id)) {
                     scene.remove(mesh);
-                    // Only dispose material if it's a portal (custom)
-                    if (id.toString().startsWith('portal_')) {
+                    if (id.toString().startsWith('portal_') || id.toString().startsWith('res_')) {
                         mesh.material.dispose();
                     }
-                    // Do NOT dispose shared geometries/materials
                     meshes.delete(id);
                 }
             }
@@ -588,59 +657,119 @@ export default {
 
             // Portals
             let closestDist = 999;
-            let closestPortal = null;
+            let closestP = null;
 
             if (currentMapData.value.portals) {
                 for (const portal of currentMapData.value.portals) {
                     const dist = Math.sqrt((p.x - portal.x) ** 2 + (p.y - portal.y) ** 2);
                     if (dist < closestDist) {
                         closestDist = dist;
-                        closestPortal = portal;
+                        closestP = portal;
                     }
                 }
             }
 
-            if (closestPortal && closestDist < 4.0) {
-                pendingPortal.value = {
-                    name: closestPortal.label || 'Portal',
-                    targetMap: closestPortal.target_map_id,
-                    x: closestPortal.target_x,
-                    y: closestPortal.target_y
-                };
+            if (closestP && closestDist < 3.0) {
                 canEnterPortal.value = true;
-                if (isFreeFarming.value) confirmPortal();
+                pendingPortal.value = closestP;
             } else {
                 canEnterPortal.value = false;
                 pendingPortal.value = null;
             }
 
             // NPCs
-            let closestNpcDist = 999;
-            let targetNpc = null;
-
+            let npcDist = 999;
+            let closestN = null;
             if (mapNpcs.value) {
                 for (const npc of mapNpcs.value) {
                     const dist = Math.sqrt((p.x - npc.x) ** 2 + (p.y - npc.y) ** 2);
-                    if (dist < closestNpcDist) {
-                        closestNpcDist = dist;
-                        targetNpc = npc;
+                    if (dist < npcDist) {
+                        npcDist = dist;
+                        closestN = npc;
                     }
                 }
             }
 
-            if (targetNpc && closestNpcDist < 3.0) {
-                closestNpc.value = targetNpc;
+            if (closestN && npcDist < 3.0) {
                 canInteractNpc.value = true;
+                closestNpc.value = closestN;
             } else {
-                closestNpc.value = null;
                 canInteractNpc.value = false;
+                closestNpc.value = null;
             }
+
+            // Resources
+            let resDist = 999;
+            let closestR = null;
+            if (currentMapData.value.resources) {
+                for (const res of currentMapData.value.resources) {
+                    const dist = Math.sqrt((p.x - res.x) ** 2 + (p.y - res.y) ** 2);
+                    if (dist < resDist) {
+                        resDist = dist;
+                        closestR = res;
+                    }
+                }
+            }
+
+            if (closestR && resDist < 3.0) {
+                canGather.value = true;
+                closestResource.value = closestR;
+            } else {
+                canGather.value = false;
+                closestResource.value = null;
+            }
+        };
+
+        const startGathering = async () => {
+            if (!closestResource.value || isGathering.value) return;
+            isGathering.value = true;
+            gatherProgress.value = 0;
+            const totalTime = 2000;
+            const interval = 50;
+            const step = (interval / totalTime) * 100;
+
+            const timer = setInterval(async () => {
+                gatherProgress.value += step;
+                if (gatherProgress.value >= 100) {
+                    clearInterval(timer);
+                    isGathering.value = false;
+                    try {
+                        const res = await fetch(`http://localhost:8000/player/${player.value.id}/gather?resource_id=${closestResource.value.id}`, { method: 'POST' });
+                        if (res.ok) {
+                            const data = await res.json();
+                            if (data.loot) {
+                                let lootMsg = [];
+                                data.loot.forEach(l => {
+                                    // Assuming item name is basically available or raw ID
+                                    showGameAlert(`+${l.qty} ${l.item_id}`, 'drop', '🌿');
+                                    lootMsg.push(`${l.qty}x ${l.item_id}`);
+                                });
+                                addLog(`Gathered: ${lootMsg.join(', ')}`, 'text-green-400');
+                            }
+                        } else {
+                            const err = await res.json();
+                            showGameAlert(err.detail || "Gather failed", 'error', '❌');
+                            addLog(err.detail || "Gather failed", "error");
+                        }
+                    } catch (e) {
+                        showGameAlert("Error gathering", 'error');
+                        addLog("Error gathering", "error");
+                    }
+                }
+            }, interval);
         };
 
         const confirmPortal = async () => {
             if (pendingPortal.value) {
-                await api.movePlayer(pendingPortal.value.targetMap, pendingPortal.value.x, pendingPortal.value.y);
-                canEnterPortal.value = false;
+                const target = pendingPortal.value.targetMap || pendingPortal.value.target_map_id;
+                // Use target coordinates if available, otherwise current (fallback, though unlikely desired)
+                const tx = pendingPortal.value.target_x !== undefined ? pendingPortal.value.target_x : pendingPortal.value.x;
+                const ty = pendingPortal.value.target_y !== undefined ? pendingPortal.value.target_y : pendingPortal.value.y;
+
+                if (target) {
+                    await api.movePlayer(target, tx, ty);
+                    canEnterPortal.value = false;
+                }
             }
         };
 
@@ -676,6 +805,7 @@ export default {
             if (e.key === 'f' || e.key === 'F') {
                 if (canEnterPortal.value) confirmPortal();
                 else if (canInteractNpc.value) interactNpc();
+                else if (canGather.value) startGathering();
             }
             if (e.key === ' ') {
                 toggleAutoAttack();
@@ -817,7 +947,17 @@ export default {
 
                 try {
                     const res = await fetch(`http://localhost:8000/map/${newMapId}`);
-                    if (res.ok) currentMapData.value = await res.json();
+                    if (res.ok) {
+                        const mapData = await res.json();
+                        currentMapData.value = mapData;
+
+                        // Process initial cooldowns
+                        if (mapData.active_cooldowns) {
+                            Object.entries(mapData.active_cooldowns).forEach(([rid, remSeconds]) => {
+                                resourceCooldowns.value[rid] = Date.now() + (remSeconds * 1000);
+                            });
+                        }
+                    }
                 } catch (e) { console.error(e); }
             }
         }, { immediate: true });
@@ -853,15 +993,13 @@ export default {
             player,
             currentMonster,
             formatMapName,
-            canEnterPortal,
-            confirmPortal,
+            canEnterPortal, confirmPortal,
             isFreeFarming,
             fps,
-            entityLabels,
             toggleAutoAttack,
-            canInteractNpc,
-            closestNpc,
-            interactNpc
+            canInteractNpc, closestNpc, interactNpc,
+            canGather, closestResource, startGathering, isGathering, gatherProgress,
+            entityLabels
         };
     }
 };

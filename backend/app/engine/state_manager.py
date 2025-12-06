@@ -17,7 +17,16 @@ class StateManager:
             cls._instance.map_monsters: Dict[str, List[str]] = {}
             cls._instance.npcs: Dict[str, NPC] = {} # Added NPC dictionary
             cls._instance.respawn_queue: List[dict] = [] # Initialize respawn_queue here
+            cls._instance.resource_cooldowns: Dict[str, float] = {}
         return cls._instance
+
+    def is_resource_ready(self, resource_id: str) -> bool:
+        import time
+        return time.time() >= self.resource_cooldowns.get(resource_id, 0)
+
+    def set_resource_cooldown(self, resource_id: str, duration: int):
+        import time
+        self.resource_cooldowns[resource_id] = time.time() + duration
 
     def load_missions(self):
         import json
@@ -60,9 +69,29 @@ class StateManager:
             self.map_monsters = {}
             self.maps = {}
             self.respawn_queue = []
+
+            # Resource Templates
+            self.resource_templates = data.get("resource_templates", {})
             
             # Load Maps
             for map_id, map_data in data.get("maps", {}).items():
+                
+                # Expand Resources with Templates
+                resources_data = map_data.get("resources", [])
+                expanded_resources = []
+                for res in resources_data:
+                    if 'template_id' in res and res['template_id']:
+                        template = self.resource_templates.get(res['template_id'])
+                        if template:
+                            # Merge template into res, but res overrides
+                            merged = template.copy()
+                            merged.update(res)
+                            expanded_resources.append(merged)
+                        else:
+                            expanded_resources.append(res)
+                    else:
+                        expanded_resources.append(res)
+
                 # Create GameMap object
                 gm = GameMap(
                     id=map_id,
@@ -75,7 +104,8 @@ class StateManager:
                     respawn_y=map_data.get("respawn_y", 50.0),
                     portals=map_data.get("portals", []),
                     spawns=map_data.get("spawns", []),
-                    texture=map_data.get("texture")
+                    texture=map_data.get("texture"),
+                    resources=expanded_resources
                 )
                 self.maps[map_id] = gm
                 
