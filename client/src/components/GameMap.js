@@ -257,7 +257,7 @@ export default {
                     loader.load(`http://localhost:8000/maps/floor/${newData.texture}`, (tex) => {
                         tex.wrapS = THREE.RepeatWrapping;
                         tex.wrapT = THREE.RepeatWrapping;
-                        tex.repeat.set(10, 10); // Repeat texture 10 times across the 100x100 map
+                        tex.repeat.set(4, 4); // Repeat 4 times (larger tiles)
 
                         const newMat = new THREE.MeshStandardMaterial({
                             map: tex,
@@ -698,7 +698,7 @@ export default {
             tempVec.setFromMatrixPosition(obj.matrixWorld);
 
             // Offset based on type
-            const offset = obj.userData.type === 'player' ? 2.5 : (obj.userData.type === 'portal' ? 3.0 : (obj.userData.type === 'npc' ? 2.5 : 2.0));
+            const offset = obj.userData.type === 'player' ? 4.0 : (obj.userData.type === 'portal' ? 3.0 : (obj.userData.type === 'npc' ? 3.2 : 2.5));
             tempVec.y += offset;
 
             tempVec.project(camera);
