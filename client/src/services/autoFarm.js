@@ -137,7 +137,7 @@ const findAndAttackTarget = async () => {
 
     if (!target) {
         target = monsters
-            .filter(m => m.template_id === huntId)
+            .filter(m => !huntId || m.template_id === huntId)
             .sort((a, b) => {
                 const distA = (a.position_x - px) ** 2 + (a.position_y - py) ** 2;
                 const distB = (b.position_x - px) ** 2 + (b.position_y - py) ** 2;
