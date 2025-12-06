@@ -1,4 +1,4 @@
-import { ref, onMounted, computed, reactive } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.js';
+import { ref, onMounted, computed, reactive } from 'vue';
 import { missions } from '../state.js';
 import { api } from '../services/api.js';
 

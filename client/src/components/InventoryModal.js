@@ -1,4 +1,4 @@
-import { ref, computed, watch } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.js';
+import { ref, computed, watch } from 'vue';
 import { player, autoSellInferior } from '../state.js';
 import { api, getRarityColor } from '../services/api.js';
 

@@ -1,4 +1,4 @@
-import { ref, reactive, computed } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.js';
+import { ref, reactive, computed } from 'vue';
 
 export const player = ref(null);
 export const logs = ref([]);

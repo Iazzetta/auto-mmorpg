@@ -1,6 +1,6 @@
 import { player, availableMissions } from '../state.js';
 
-import { computed, onMounted, ref } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.js';
+import { computed, onMounted, ref, Teleport } from 'vue';
 import { api } from '../services/api.js';
 
 export default {

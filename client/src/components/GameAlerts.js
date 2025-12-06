@@ -1,4 +1,4 @@
-import { ref } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.js';
+import { ref } from 'vue';
 import { gameAlerts } from '../state.js';
 
 export default {

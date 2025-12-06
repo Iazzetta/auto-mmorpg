@@ -1,4 +1,4 @@
-import { ref, computed, onMounted } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.js';
+import { ref, computed, onMounted } from 'vue';
 import { player, availableMissions, addLog } from '../state.js';
 import { api } from '../services/api.js';
 import { startAutoFarm, stopAutoFarm } from '../services/autoFarm.js';

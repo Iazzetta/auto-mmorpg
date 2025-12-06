@@ -1,5 +1,6 @@
-import { ref, onMounted, onUnmounted, watch } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.js';
-import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
+import { ref, onMounted, onUnmounted, watch } from 'vue';
+import * as THREE from 'three';
+import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
 import { player, mapMonsters, mapPlayers, destinationMarker, currentMonster, addLog, selectedTargetId, isFreeFarming, pendingAttackId, inspectedPlayer, selectedMapId, currentMapData, mapNpcs } from '../state.js';
 import { api } from '../services/api.js';
 import { stopAutoFarm, checkAndAct } from '../services/autoFarm.js';
@@ -85,6 +86,82 @@ export default {
 
         // Entity Meshes Map: ID -> Mesh
         const meshes = new Map();
+
+        // --- ANIMATION SYSTEM ---
+        const fbxLoader = new FBXLoader();
+        const clock = new THREE.Clock();
+        const mixers = [];
+
+        // Animation Maps: ID -> { mixer: Mixer, actions: { idle, run, attack }, currentAction }
+        const playerAnimations = new Map();
+
+        const loadPlayerModel = (playerData, material, id) => {
+            const group = new THREE.Group();
+            group.userData = { type: 'player', entity: playerData };
+
+            // Add Placeholder
+            const placeholder = new THREE.Mesh(geometries.player, material);
+            placeholder.castShadow = true;
+            group.add(placeholder);
+
+            const basePath = `/characters/${playerData.p_class.toLowerCase()}`;
+
+            fbxLoader.load(`${basePath}/idle.fbx`, (object) => {
+                // Remove placeholder
+                group.remove(placeholder);
+
+                // Process Model
+                object.traverse(child => {
+                    if (child.isMesh) {
+                        child.castShadow = true;
+                        child.receiveShadow = true;
+                    }
+                });
+
+                // Scale (Auto-fit to height ~3.5)
+                const box = new THREE.Box3().setFromObject(object);
+                const size = box.getSize(new THREE.Vector3());
+                const scale = 3.5 / size.y;
+                object.scale.set(scale, scale, scale);
+                object.position.y = 0;
+
+                group.add(object);
+
+                // Setup Mixer
+                const mixer = new THREE.AnimationMixer(object);
+                const anims = { idle: null, run: null, attack: null };
+
+                // Track this player's animations
+                playerAnimations.set(id, { mixer, actions: anims, currentAction: null });
+                mixers.push(mixer);
+
+                // Idle Action
+                if (object.animations.length > 0) {
+                    const action = mixer.clipAction(object.animations[0]);
+                    anims.idle = action;
+                    action.play();
+                    playerAnimations.get(id).currentAction = action;
+                }
+
+                // Load Run
+                fbxLoader.load(`${basePath}/running.fbx`, (anim) => {
+                    if (anim.animations.length > 0) anims.run = mixer.clipAction(anim.animations[0]);
+                });
+
+                // Load Attack
+                fbxLoader.load(`${basePath}/attack1.fbx`, (anim) => {
+                    if (anim.animations.length > 0) {
+                        const action = mixer.clipAction(anim.animations[0]);
+                        action.loop = THREE.LoopRepeat;
+                        anims.attack = action;
+                    }
+                });
+            }, undefined, (error) => {
+                console.error("Failed to load model:", error);
+            });
+
+            return group;
+        };
 
         const keys = { w: false, a: false, s: false, d: false };
         let lastMoveTime = 0;
@@ -273,20 +350,35 @@ export default {
                 validIds.add(pid);
                 let mesh = meshes.get(pid);
                 if (!mesh) {
-                    // Reuse Geometry/Material
-                    mesh = new THREE.Mesh(geometries.player, materials.player);
-                    mesh.castShadow = true;
-                    mesh.userData = { type: 'player', entity: player.value };
-                    mesh.position.set(player.value.position.x, 1, player.value.position.y);
-                    scene.add(mesh);
+                    if (player.value.p_class && player.value.p_class.toLowerCase() === 'warrior') {
+                        mesh = loadPlayerModel(player.value, materials.player, pid);
+                    } else {
+                        mesh = new THREE.Mesh(geometries.player, materials.player);
+                        mesh.castShadow = true;
+                        mesh.userData = { type: 'player', entity: player.value };
+                        mesh.position.set(player.value.position.x, 1, player.value.position.y);
+                    }
+                    if (!mesh.parent) scene.add(mesh);
                     meshes.set(pid, mesh);
                 }
+
+                // Update Entity Data
                 mesh.userData.entity = player.value;
 
-                // Interpolate Position
+                // Interpolate Position & Rotation
                 const targetX = player.value.position.x;
                 const targetZ = player.value.position.y;
-                const dist = Math.sqrt((targetX - mesh.position.x) ** 2 + (targetZ - mesh.position.z) ** 2);
+
+                // Calculate movement direction for rotation
+                const dx = targetX - mesh.position.x;
+                const dz = targetZ - mesh.position.z;
+
+                if (Math.abs(dx) > 0.1 || Math.abs(dz) > 0.1) {
+                    const angle = Math.atan2(dx, dz);
+                    mesh.rotation.y = angle;
+                }
+
+                const dist = Math.sqrt(dx * dx + dz * dz);
 
                 if (dist > 10) {
                     mesh.position.x = targetX;
@@ -313,16 +405,33 @@ export default {
                 validIds.add(p.id);
                 let mesh = meshes.get(p.id);
                 if (!mesh) {
-                    mesh = new THREE.Mesh(geometries.player, materials.otherPlayer);
-                    mesh.castShadow = true;
-                    mesh.userData = { type: 'player', entity: p };
-                    mesh.position.set(p.position.x, 1, p.position.y);
-                    scene.add(mesh);
+                    if (p.p_class && p.p_class.toLowerCase() === 'warrior') {
+                        mesh = loadPlayerModel(p, materials.otherPlayer, p.id);
+                    } else {
+                        mesh = new THREE.Mesh(geometries.player, materials.otherPlayer);
+                        mesh.castShadow = true;
+                        mesh.userData = { type: 'player', entity: p };
+                        mesh.position.set(p.position.x, 1, p.position.y);
+                    }
+                    if (!mesh.parent) scene.add(mesh);
                     meshes.set(p.id, mesh);
                 }
+
+                mesh.userData.entity = p;
+
                 // Interpolate
                 const targetX = p.position.x;
                 const targetZ = p.position.y;
+
+                // Calculate movement direction for rotation
+                const dx = targetX - mesh.position.x;
+                const dz = targetZ - mesh.position.z;
+
+                if (Math.abs(dx) > 0.1 || Math.abs(dz) > 0.1) {
+                    const angle = Math.atan2(dx, dz);
+                    mesh.rotation.y = angle;
+                }
+
                 if (Math.abs(targetX - mesh.position.x) > 10 || Math.abs(targetZ - mesh.position.z) > 10) {
                     mesh.position.x = targetX;
                     mesh.position.z = targetZ;
@@ -576,6 +685,37 @@ export default {
 
         const animate = () => {
             animationId = requestAnimationFrame(animate);
+
+            // Update Animations
+            const delta = clock.getDelta();
+            mixers.forEach(m => m.update(delta));
+
+            // State Machine for Player Animations (ALL Players)
+            for (const [id, animData] of playerAnimations) {
+                // Find entity data
+                let entity = null;
+                if (player.value && player.value.id === id) entity = player.value;
+                else entity = mapPlayers.value.find(p => p.id === id);
+
+                if (!entity) continue;
+
+                const { actions, currentAction } = animData;
+                let desired = actions.idle;
+                if (!desired) continue;
+
+                const state = (entity.state || 'IDLE').toUpperCase();
+
+                if (state === 'MOVING' && actions.run) desired = actions.run;
+                else if (state === 'COMBAT' && actions.attack) desired = actions.attack;
+
+                if (desired && desired !== currentAction) {
+                    if (desired === actions.attack) desired.reset();
+
+                    if (currentAction) currentAction.fadeOut(0.2);
+                    desired.reset().fadeIn(0.2).play();
+                    animData.currentAction = desired;
+                }
+            }
 
             updateMovement();
             checkInteractions();

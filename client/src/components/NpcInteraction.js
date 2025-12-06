@@ -1,4 +1,4 @@
-import { ref, computed, onMounted, onUnmounted } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.js';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { api } from '../services/api.js';
 import { player, showToast } from '../state.js';
 

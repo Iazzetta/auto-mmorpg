@@ -1,4 +1,4 @@
-import { ref, onMounted, onUnmounted, nextTick, watch, computed } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.js';
+import { ref, onMounted, onUnmounted, nextTick, watch, computed } from 'vue';
 import { player, logs, toasts, missions, inspectedPlayer, worldData, isUpdating } from './state.js';
 import { api } from './services/api.js';
 import { toggleFreeFarm } from './services/autoFarm.js';
