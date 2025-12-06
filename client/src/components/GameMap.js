@@ -153,7 +153,7 @@ export default {
                     if (anim.animations.length > 0) {
                         const action = mixer.clipAction(anim.animations[0]);
                         action.loop = THREE.LoopRepeat;
-                        action.timeScale = 2.5;
+                        action.timeScale = 3.5;
                         anims.attack = action;
                     }
                 });
