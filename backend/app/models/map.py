@@ -53,3 +53,4 @@ class GameMap(BaseModel):
     spawns: List[Dict] = []
     resources: List[ResourceNode] = []
     texture: Optional[str] = None # Added texture field
+    texture_scale: int = 10

@@ -23,6 +23,11 @@ async def save_world_data(data: dict):
         
         # Reload state
         state_manager.load_world_data()
+        
+        # Broadcast update
+        if hasattr(state_manager, 'connection_manager'):
+            await state_manager.connection_manager.broadcast({"type": "server_update"})
+
         return {"message": "World saved"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
