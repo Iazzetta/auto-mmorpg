@@ -906,11 +906,11 @@ export default {
 
                 const state = (entity.state || 'IDLE').toUpperCase();
 
-                if ((state === 'MOVING' || isMoving) && actions.run) {
-                    desired = actions.run;
-                }
-                else if (state === 'COMBAT' && actions.attack) {
+                if (state === 'COMBAT' && actions.attack) {
                     desired = actions.attack;
+                }
+                else if ((state === 'MOVING' || isMoving) && actions.run) {
+                    desired = actions.run;
                 }
 
                 if (desired && desired !== currentAction) {

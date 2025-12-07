@@ -181,12 +181,13 @@ export default {
 
         // Key Bindings
         const handleKeydown = (e) => {
+            if (!player.value) return;
             if (showEditor.value || showNpcInteraction.value) return; // Disable game keys in editor/dialog
 
-            if (e.key === 'e' || e.key === 'E') {
+            if (e.key === 'b' || e.key === 'B') {
                 showInventory.value = !showInventory.value;
             }
-            if (e.key === 'p' || e.key === 'P') {
+            if (e.key === 'c' || e.key === 'C') {
                 showAttributes.value = !showAttributes.value;
             }
             if (e.key === 'r' || e.key === 'R') {
