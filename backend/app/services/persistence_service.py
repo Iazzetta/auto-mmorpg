@@ -5,7 +5,7 @@ from typing import Dict
 from ..models.player import Player
 from ..engine.state_manager import StateManager
 
-DATA_DIR = "backend/app/data"
+DATA_DIR = "data"
 PLAYERS_FILE = os.path.join(DATA_DIR, "players.json")
 
 class PersistenceService:
