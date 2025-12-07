@@ -515,6 +515,14 @@ export default {
                 // Calculate movement direction for rotation
                 const dx = targetX - mesh.position.x;
                 const dz = targetZ - mesh.position.z;
+                const dist = Math.sqrt(dx * dx + dz * dz);
+
+                mesh.userData.isMoving = dist > 0.2;
+
+                if (Math.abs(dx) > 0.1 || Math.abs(dz) > 0.1) {
+                    const angle = Math.atan2(dx, dz);
+                    mesh.rotation.y = angle;
+                }
 
                 if (dist > 10) {
                     mesh.position.x = targetX;
