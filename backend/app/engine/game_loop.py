@@ -98,6 +98,7 @@ class GameLoop:
                     "x": player.position.x,
                     "y": player.position.y,
                     "state": player.state,
+                    "target_id": player.target_monster_id,
                     "map_id": player.current_map_id
                 })
             
@@ -115,6 +116,7 @@ class GameLoop:
                     "x": player.position.x,
                     "y": player.position.y,
                     "state": player.state,
+                    "target_id": player.target_monster_id,
                     "map_id": player.current_map_id
                 })
         

@@ -602,9 +602,27 @@ export default {
                 mesh.userData.speed = dist;
                 mesh.userData.isMoving = dist > 0.05;
 
-                if (Math.abs(dx) > 0.1 || Math.abs(dz) > 0.1) {
+                if (mesh.userData.isMoving) {
                     const angle = Math.atan2(dx, dz);
-                    mesh.rotation.y = angle;
+                    // Smooth turn
+                    let rotDiff = angle - mesh.rotation.y;
+                    while (rotDiff > Math.PI) rotDiff -= Math.PI * 2;
+                    while (rotDiff < -Math.PI) rotDiff += Math.PI * 2;
+                    mesh.rotation.y += rotDiff * 0.2;
+                } else if ((p.state === 'COMBAT' || p.state === 'ATTACKING') && p.target_id) {
+                    // Look at target
+                    const targetMonster = mapMonsters.value.find(m => m.id === p.target_id);
+                    if (targetMonster) {
+                        const tdx = targetMonster.position_x - mesh.position.x;
+                        const tdz = targetMonster.position_y - mesh.position.z;
+                        const angle = Math.atan2(tdx, tdz);
+
+                        // Smooth turn
+                        let rotDiff = angle - mesh.rotation.y;
+                        while (rotDiff > Math.PI) rotDiff -= Math.PI * 2;
+                        while (rotDiff < -Math.PI) rotDiff += Math.PI * 2;
+                        mesh.rotation.y += rotDiff * 0.1;
+                    }
                 }
 
                 if (dist > 10) {
@@ -796,16 +814,40 @@ export default {
                 const targetX = player.value.position.x + dx * dist;
                 const targetY = player.value.position.y + dy * dist;
 
+                // Rotate Local Player
+                const mesh = meshes.get(player.value.id);
+                if (mesh) {
+                    const angle = Math.atan2(dx, dy);
+                    let rotDiff = angle - mesh.rotation.y;
+                    while (rotDiff > Math.PI) rotDiff -= Math.PI * 2;
+                    while (rotDiff < -Math.PI) rotDiff += Math.PI * 2;
+                    mesh.rotation.y += rotDiff * 0.2;
+                }
+
                 api.movePlayer(player.value.current_map_id, targetX, targetY);
                 lastMoveTime = now;
             } else {
+                // Combat Rotation
+                const mesh = meshes.get(player.value.id);
+                if (mesh && (player.value.state === 'COMBAT' || player.value.state === 'ATTACKING') && player.value.target_id) {
+                    const targetMonster = mapMonsters.value.find(m => m.id === player.value.target_id);
+                    if (targetMonster) {
+                        const tdx = targetMonster.position_x - player.value.position.x;
+                        const tdz = targetMonster.position_y - player.value.position.y;
+                        const angle = Math.atan2(tdx, tdz);
+                        let rotDiff = angle - mesh.rotation.y;
+                        while (rotDiff > Math.PI) rotDiff -= Math.PI * 2;
+                        while (rotDiff < -Math.PI) rotDiff += Math.PI * 2;
+                        mesh.rotation.y += rotDiff * 0.1;
+                    }
+                }
+
                 if (isFreeFarming.value || activeMission.value) return;
 
                 // If keys released and we are technically in moving state, send stop
                 // This ensures server knows we stopped intentionally
                 if (player.value.state && player.value.state.toLowerCase() === 'moving') {
                     player.value.state = 'idle';
-                    const mesh = meshes.get(player.value.id);
                     if (mesh) mesh.userData.isMoving = false;
 
                     api.stopMovement();

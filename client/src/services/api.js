@@ -314,6 +314,7 @@ export const connectWebSocket = (playerId) => {
                         player.value.position.x = entity.x;
                         player.value.position.y = entity.y;
                         if (entity.state) player.value.state = entity.state;
+                        if (entity.target_id !== undefined) player.value.target_id = entity.target_id;
 
                         if (player.value.current_map_id !== entity.map_id) {
                             player.value.current_map_id = entity.map_id;
@@ -342,6 +343,7 @@ export const connectWebSocket = (playerId) => {
                             other.position.x = entity.x;
                             other.position.y = entity.y;
                             if (entity.state) other.state = entity.state;
+                            if (entity.target_id !== undefined) other.target_id = entity.target_id;
 
                             if (entity.map_id !== player.value.current_map_id) {
                                 mapPlayers.value = mapPlayers.value.filter(p => p.id !== entity.id);
