@@ -90,9 +90,23 @@ class GameLoop:
                         else:
                             player.state = PlayerState.IDLE
                             player.target_monster_id = None
+                
+                # Broadcast state (Combat or potentially Idle now)
+                movement_updates.append({
+                    "id": player.id,
+                    "type": "player",
+                    "x": player.position.x,
+                    "y": player.position.y,
+                    "state": player.state,
+                    "map_id": player.current_map_id
+                })
             
             elif player.state == PlayerState.MOVING and player.target_position:
                 reached = MovementService.move_towards_target(player, player.target_position.x, player.target_position.y, dt)
+                
+                if reached:
+                    player.state = PlayerState.IDLE
+                    player.target_position = None
                 
                 # Add to batch
                 movement_updates.append({
@@ -103,10 +117,6 @@ class GameLoop:
                     "state": player.state,
                     "map_id": player.current_map_id
                 })
-                
-                if reached:
-                    player.state = PlayerState.IDLE
-                    player.target_position = None
         
         # Process Monsters (AI)
         monster_updates = await self.process_monsters(dt)
