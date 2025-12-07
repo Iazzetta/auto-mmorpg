@@ -83,8 +83,8 @@ export default {
                                     </select>
                                 </div>
                                 <div>
-                                    <label class="text-[10px] text-gray-500 uppercase">Tex Scale (Rep)</label>
-                                    <input v-model.number="worldData.maps[selectedMapId].texture_scale" type="number" class="w-full bg-black border border-gray-700 rounded px-2 py-1 text-xs" title="Repeat Count (Default 10)">
+                                    <label class="text-[10px] text-gray-500 uppercase">Tex Size</label>
+                                    <input v-model.number="worldData.maps[selectedMapId].texture_scale" type="number" class="w-full bg-black border border-gray-700 rounded px-2 py-1 text-xs" title="Size Factor: 1=Small Tiles. 10=Large Tiles.">
                                 </div>
                             </div>
 
@@ -685,7 +685,7 @@ export default {
                                  class="absolute inset-0 pointer-events-none"
                                  :style="{
                                      backgroundImage: 'url(http://localhost:8000/maps/' + worldData.maps[selectedMapId].texture + ')',
-                                     backgroundSize: (100 / (worldData.maps[selectedMapId].texture_scale || 10)) + '% ' + (100 / (worldData.maps[selectedMapId].texture_scale || 10)) + '%',
+                                     backgroundSize: (worldData.maps[selectedMapId].texture_scale || 10) + '% ' + (worldData.maps[selectedMapId].texture_scale || 10) + '%',
                                      backgroundRepeat: 'repeat'
                                  }">
                             </div>

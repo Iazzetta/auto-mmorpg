@@ -309,9 +309,11 @@ export default {
                         tex.wrapS = THREE.RepeatWrapping;
                         tex.wrapT = THREE.RepeatWrapping;
 
-                        // Default to 10 if not specified. Lower number = larger texture features.
-                        const scale = newData.texture_scale || 10;
-                        tex.repeat.set(scale, scale);
+
+                        // User Logic: Size Factor. 1 = Small (100 reps). 10 = Large (10 reps).
+                        const sizeFactor = newData.texture_scale || 10;
+                        const repeats = 100 / Math.max(1, sizeFactor);
+                        tex.repeat.set(repeats, repeats);
 
                         const newMat = new THREE.MeshStandardMaterial({
                             map: tex,
