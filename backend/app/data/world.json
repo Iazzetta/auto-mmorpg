@@ -135,8 +135,29 @@
                             "chance": 0.2
                         }
                     ]
+                },
+                {
+                    "id": "res_1765053684773",
+                    "template_id": "res_tpl_1765053663426",
+                    "name": "Arvore",
+                    "type": "tree",
+                    "color": "#09f505",
+                    "x": 14,
+                    "y": 23,
+                    "width": 1,
+                    "height": 1,
+                    "respawn_time": 10,
+                    "drops": [
+                        {
+                            "item_id": "mat_wood",
+                            "min_qty": 1,
+                            "max_qty": 1,
+                            "chance": 1
+                        }
+                    ]
                 }
-            ]
+            ],
+            "texture": "pebbles spritesheet.png"
         },
         "map_forest_2": {
             "name": "Deep Forest",
@@ -186,6 +207,54 @@
                         "y": 25,
                         "radius": 10
                     }
+                }
+            ],
+            "resources": [
+                {
+                    "id": "res_1765054072750",
+                    "template_id": "res_tpl_1765053663426",
+                    "name": "Arvore",
+                    "type": "tree",
+                    "color": "#09f505",
+                    "x": 70,
+                    "y": 26,
+                    "width": 1,
+                    "height": 1,
+                    "respawn_time": 10,
+                    "drops": [
+                        {
+                            "item_id": "mat_wood",
+                            "min_qty": 1,
+                            "max_qty": 1,
+                            "chance": 1
+                        }
+                    ]
+                },
+                {
+                    "id": "res_1765054077195",
+                    "template_id": "res_tpl_1765053472053",
+                    "name": "Bau do Cu",
+                    "type": "box",
+                    "color": "#8B4513",
+                    "x": 58,
+                    "y": 26,
+                    "width": 1,
+                    "height": 1,
+                    "respawn_time": 60,
+                    "drops": [
+                        {
+                            "item_id": "mat_flower",
+                            "min_qty": 1,
+                            "max_qty": 1,
+                            "chance": 1
+                        },
+                        {
+                            "item_id": "Beta",
+                            "min_qty": 1,
+                            "max_qty": 3,
+                            "chance": 0.2
+                        }
+                    ]
                 }
             ]
         },
@@ -445,6 +514,23 @@
                     "min_qty": 1,
                     "max_qty": 3,
                     "chance": 0.2
+                }
+            ],
+            "width": 1,
+            "height": 1
+        },
+        "res_tpl_1765053663426": {
+            "id": "res_tpl_1765053663426",
+            "name": "Arvore",
+            "type": "tree",
+            "color": "#09f505",
+            "respawn_time": 10,
+            "drops": [
+                {
+                    "item_id": "mat_wood",
+                    "min_qty": 1,
+                    "max_qty": 1,
+                    "chance": 1
                 }
             ],
             "width": 1,
