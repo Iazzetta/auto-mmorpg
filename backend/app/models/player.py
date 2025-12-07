@@ -29,6 +29,7 @@ class Player(BaseModel):
     id: str
     token: str
     name: str
+    password_hash: str = ""
     p_class: PlayerClass
     level: int = 1
     xp: int = 0

@@ -21,28 +21,46 @@ export const api = {
         }
     },
 
-    async createPlayer(name) {
+    async login(name, password) {
         try {
-            const res = await fetch(`${API_URL}/player?name=${encodeURIComponent(name)}&p_class=warrior`, { method: 'POST' });
+            const res = await fetch(`${API_URL}/login?name=${encodeURIComponent(name)}&password=${encodeURIComponent(password)}`, { method: 'POST' });
+            if (res.ok) {
+                const data = await res.json();
+                this.handleAuthSuccess(data);
+                return true;
+            }
+            if (res.status === 401) alert("Wrong password");
+            else if (res.status === 404) alert("User not found");
+            return false;
+        } catch (e) {
+            console.error(e);
+            return false;
+        }
+    },
+
+    async register(name, password) {
+        try {
+            const res = await fetch(`${API_URL}/register?name=${encodeURIComponent(name)}&password=${encodeURIComponent(password)}&p_class=warrior`, { method: 'POST' });
             if (!res.ok) {
-                if (res.status === 409) {
-                    alert("Name already taken!");
-                    return false;
-                }
-                throw new Error("Failed to create player");
+                if (res.status === 409) alert("Name taken");
+                return false;
             }
             const data = await res.json();
-            player.value = data;
-            localStorage.setItem('rpg_player_id', data.id);
-            localStorage.setItem('rpg_player_token', data.token);
-            this.fetchMapDetails(data.current_map_id);
-            connectWebSocket(data.id);
-            addLog(`Welcome, ${data.name}!`, 'text-yellow-400');
+            this.handleAuthSuccess(data);
             return true;
         } catch (e) {
             console.error(e);
             return false;
         }
+    },
+
+    handleAuthSuccess(data) {
+        player.value = data;
+        localStorage.setItem('rpg_player_id', data.id);
+        localStorage.setItem('rpg_player_token', data.token);
+        this.fetchMapDetails(data.current_map_id);
+        connectWebSocket(data.id);
+        addLog(`Welcome, ${data.name}!`, 'text-yellow-400');
     },
 
     async fetchMapDetails(mapId) {

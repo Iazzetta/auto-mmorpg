@@ -5,7 +5,7 @@ from typing import Dict
 from ..models.player import Player
 from ..engine.state_manager import StateManager
 
-DATA_DIR = "data"
+DATA_DIR = "backend/app/data"
 PLAYERS_FILE = os.path.join(DATA_DIR, "players.json")
 
 class PersistenceService:
@@ -64,7 +64,7 @@ class PersistenceService:
             # Run blocking I/O in executor
             await asyncio.to_thread(self._write_file, temp_file, players_data)
             
-            os.rename(temp_file, PLAYERS_FILE)
+            os.replace(temp_file, PLAYERS_FILE)
             # print("Saved players to disk.")
         except Exception as e:
             print(f"Error saving players: {e}")

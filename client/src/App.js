@@ -70,21 +70,35 @@ export default {
             <!-- NPC Interaction -->
             <NpcInteraction v-if="showNpcInteraction && activeNpc" :npc="activeNpc" @close="closeNpcInteraction" />
 
-            <!-- Login Screen -->
+            <!-- Login/Register Screen -->
             <div v-if="!player && !showEditor" class="absolute inset-0 bg-gray-900 flex items-center justify-center z-50">
-                <div class="text-center bg-gray-800 p-8 rounded-lg border border-gray-700 shadow-2xl">
-                    <h1 class="text-6xl font-bold text-yellow-500 mb-8">⚔️ Auto RPG</h1>
-                    <div class="mb-4">
-                        <input v-model="playerName" type="text" placeholder="Enter Hero Name"
-                            class="bg-gray-700 text-white px-4 py-2 rounded text-xl w-full border border-gray-600 focus:border-blue-500 outline-none"
-                            @keyup="checkCreatePlayer">
+                <div class="text-center bg-gray-800 p-8 rounded-lg border border-gray-700 shadow-2xl w-96">
+                    <h1 class="text-4xl font-bold text-yellow-500 mb-8">⚔️ Auto RPG</h1>
+                    
+                    <div class="flex gap-2 mb-6 bg-gray-700 p-1 rounded">
+                        <button @click="isLoginMode = true" class="flex-1 py-1 rounded transition-colors" :class="isLoginMode ? 'bg-blue-600 text-white shadow' : 'text-gray-400 hover:text-white'">Login</button>
+                        <button @click="isLoginMode = false" class="flex-1 py-1 rounded transition-colors" :class="!isLoginMode ? 'bg-green-600 text-white shadow' : 'text-gray-400 hover:text-white'">Register</button>
                     </div>
-                    <button @click="createPlayer"
-                        class="bg-blue-600 hover:bg-blue-500 px-8 py-4 rounded text-2xl font-bold text-white shadow-lg w-full transition-transform active:scale-95"
-                        :disabled="!playerName">
-                        Start Adventure
+
+                    <div class="mb-4 text-left">
+                        <label class="text-xs text-gray-400 block mb-1">Username</label>
+                        <input v-model="playerName" type="text" placeholder="Hero Name"
+                            class="bg-gray-700 text-white px-3 py-2 rounded w-full border border-gray-600 focus:border-blue-500 outline-none">
+                    </div>
+
+                    <div class="mb-6 text-left">
+                        <label class="text-xs text-gray-400 block mb-1">Password</label>
+                        <input v-model="password" type="password" placeholder="Secret Password"
+                            class="bg-gray-700 text-white px-3 py-2 rounded w-full border border-gray-600 focus:border-blue-500 outline-none"
+                            @keyup.enter="handleAuth">
+                    </div>
+
+                    <button @click="handleAuth"
+                        class="w-full py-3 rounded text-xl font-bold text-white shadow-lg transition-transform active:scale-95"
+                        :class="isLoginMode ? 'bg-blue-600 hover:bg-blue-500' : 'bg-green-600 hover:bg-green-500'"
+                        :disabled="!playerName || !password">
+                        {{ isLoginMode ? 'Enter World' : 'Create Hero' }}
                     </button>
-                    <div class="mt-4 text-gray-500 text-sm">Enter a unique name to start or resume.</div>
                 </div>
             </div>
 
@@ -133,14 +147,17 @@ export default {
         const activeNpc = ref(null);
         const logContainer = ref(null);
         const playerName = ref('');
+        const password = ref('');
+        const isLoginMode = ref(true);
 
-        const createPlayer = async () => {
-            if (!playerName.value) return;
-            await api.createPlayer(playerName.value);
-        };
+        const handleAuth = async () => {
+            if (!playerName.value || !password.value) return;
 
-        const checkCreatePlayer = (e) => {
-            if (e.key === 'Enter') createPlayer();
+            if (isLoginMode.value) {
+                await api.login(playerName.value, password.value);
+            } else {
+                await api.register(playerName.value, password.value);
+            }
         };
 
         const handleNpcInteraction = (npc) => {
@@ -276,8 +293,9 @@ export default {
             inspectedPlayer,
             toasts,
             playerName,
-            createPlayer,
-            checkCreatePlayer,
+            password,
+            isLoginMode,
+            handleAuth,
             isDead,
             respawnTimer,
             instantRevive,

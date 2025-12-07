@@ -22,8 +22,13 @@ try:
 except Exception as e:
     print(f"Error loading items in routes: {e}")
 
-@router.post("/player", response_model=Player)
-async def create_player(name: str, p_class: PlayerClass):
+import hashlib
+
+def hash_password(password: str) -> str:
+    return hashlib.sha256(password.encode()).hexdigest()
+
+@router.post("/register", response_model=Player)
+async def register(name: str, password: str, p_class: PlayerClass):
     # Check if name exists
     for p in state_manager.players.values():
         if p.name == name:
@@ -41,15 +46,31 @@ async def create_player(name: str, p_class: PlayerClass):
         id=str(uuid.uuid4()),
         token=str(uuid.uuid4()),
         name=name,
+        password_hash=hash_password(password),
         p_class=p_class,
         stats=stats,
         current_map_id="map_castle_1", # Default start
-        position=Position(x=0, y=0),
+        position=Position(x=50, y=50),
         is_admin=(name.lower() == "admin")
     )
     
     state_manager.add_player(player)
     return player
+
+@router.post("/login")
+async def login(name: str, password: str):
+    hashed = hash_password(password)
+    for p in state_manager.players.values():
+        if p.name == name:
+            if p.password_hash == hashed:
+                return p
+            elif not p.password_hash: # Migration for existing users
+                p.password_hash = hashed
+                return p
+            else:
+                raise HTTPException(status_code=401, detail="Invalid password")
+    
+    raise HTTPException(status_code=404, detail="Player not found")
 
 @router.get("/map/{map_id}/players")
 async def get_map_players(map_id: str):
