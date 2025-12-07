@@ -14,6 +14,10 @@ export const api = {
                 connectWebSocket(id);
                 return true;
             }
+            console.warn("Failed to fetch player, clearing session.");
+            localStorage.removeItem('rpg_player_id');
+            localStorage.removeItem('rpg_player_token');
+            player.value = null;
             return false;
         } catch (e) {
             console.error(e);

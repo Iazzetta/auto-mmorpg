@@ -55,6 +55,11 @@ async def register(name: str, password: str, p_class: PlayerClass):
     )
     
     state_manager.add_player(player)
+    
+    # Force immediate persistence
+    from ..services.persistence_service import PersistenceService
+    await PersistenceService.get_instance().save_players()
+    
     return player
 
 @router.post("/login")

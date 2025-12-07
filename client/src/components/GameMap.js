@@ -1,7 +1,7 @@
 import { ref, onMounted, onUnmounted, watch } from 'vue';
 import * as THREE from 'three';
 import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
-import { player, mapMonsters, mapPlayers, destinationMarker, currentMonster, addLog, selectedTargetId, isFreeFarming, pendingAttackId, inspectedPlayer, selectedMapId, currentMapData, mapNpcs, showGameAlert, socket } from '../state.js';
+import { player, mapMonsters, mapPlayers, destinationMarker, currentMonster, addLog, selectedTargetId, isFreeFarming, pendingAttackId, inspectedPlayer, selectedMapId, currentMapData, mapNpcs, showGameAlert, socket, activeMission } from '../state.js';
 import { api } from '../services/api.js';
 import { stopAutoFarm, checkAndAct } from '../services/autoFarm.js';
 
@@ -671,7 +671,7 @@ export default {
                 api.movePlayer(player.value.current_map_id, targetX, targetY);
                 lastMoveTime = now;
             } else {
-                if (isFreeFarming.value) return;
+                if (isFreeFarming.value || activeMission.value) return;
 
                 // If keys released and we are technically in moving state, send stop
                 // This ensures server knows we stopped intentionally
