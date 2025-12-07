@@ -357,6 +357,7 @@ export const connectWebSocket = (playerId) => {
                     if (m) {
                         m.position_x = entity.x;
                         m.position_y = entity.y;
+                        if (entity.state) m.state = entity.state;
                     }
                 }
             }
