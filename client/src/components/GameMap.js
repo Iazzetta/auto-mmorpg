@@ -900,7 +900,9 @@ export default {
                 if (!entity) continue;
 
                 const mesh = meshes.get(id);
-                const isMoving = mesh && mesh.userData ? mesh.userData.isMoving : false;
+                if (!mesh) continue;
+
+                const isMoving = mesh.userData ? mesh.userData.isMoving : false;
 
                 const { actions, currentAction } = animData;
                 let desired = actions.idle;
