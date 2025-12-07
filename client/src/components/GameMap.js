@@ -151,7 +151,7 @@ export default {
 
             const basePath = `/characters/${playerData.p_class.toLowerCase()}`;
 
-            fbxLoader.load(`${basePath}/idle.fbx`, (object) => {
+            fbxLoader.load(`${basePath}/idle2.fbx`, (object) => {
                 // Remove placeholder
                 group.remove(placeholder);
 
