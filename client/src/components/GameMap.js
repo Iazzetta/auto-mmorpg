@@ -209,6 +209,77 @@ export default {
             return group;
         };
 
+        const loadMonsterModel = (monster, pid) => {
+            const group = new THREE.Group();
+
+            // Placeholder cylinder
+            const placeholder = new THREE.Mesh(geometries.monster, materials.monster);
+            placeholder.position.y = 0.75;
+            group.add(placeholder);
+
+            const folderName = monster.template_id;
+            const path = `/characters/${folderName}`;
+
+            fbxLoader.load(`${path}/idle.fbx`, (object) => {
+                group.remove(placeholder);
+
+                object.traverse(child => {
+                    if (child.isMesh) {
+                        child.castShadow = true;
+                        child.receiveShadow = true;
+                    }
+                });
+
+                // Auto-scale
+                const box = new THREE.Box3().setFromObject(object);
+                const size = box.getSize(new THREE.Vector3());
+                const baseHeight = 1.5; // Standard Monster Height
+                const customScale = monster.model_scale || 1.0;
+
+                const scale = (baseHeight / size.y) * customScale;
+                object.scale.set(scale, scale, scale);
+                object.position.y = 0;
+
+                group.add(object);
+
+                // Animation
+                const mixer = new THREE.AnimationMixer(object);
+                mixers.push(mixer);
+
+                const anims = { idle: null, run: null, attack: null };
+
+                if (object.animations.length > 0) {
+                    const action = mixer.clipAction(object.animations[0]);
+                    action.play();
+                    anims.idle = action;
+                    group.userData.currentAction = action;
+                }
+
+                // Load Run
+                fbxLoader.load(`${path}/running.fbx`, (anim) => {
+                    if (anim.animations.length > 0) anims.run = mixer.clipAction(anim.animations[0]);
+                }, undefined, () => { });
+
+                // Load Attack
+                fbxLoader.load(`${path}/attack1.fbx`, (anim) => {
+                    if (anim.animations.length > 0) {
+                        const act = mixer.clipAction(anim.animations[0]);
+                        act.timeScale = 1.5;
+                        anims.attack = act;
+                    }
+                }, undefined, () => { });
+
+                group.userData.mixer = mixer;
+                group.userData.anims = anims;
+
+            }, undefined, (err) => {
+                // 404 or error -> Keep placeholder
+                // console.warn(`No model found for ${folderName}, using placeholder.`);
+            });
+
+            return group;
+        };
+
         const keys = { w: false, a: false, s: false, d: false };
         let lastMoveTime = 0;
 
@@ -552,12 +623,37 @@ export default {
                 validIds.add(m.id);
                 let mesh = meshes.get(m.id);
                 if (!mesh) {
-                    mesh = new THREE.Mesh(geometries.monster, materials.monster);
+                    // Try to load custom model if template_id suggests it
+                    // Heuristic: check if template_id is valid string
+                    mesh = loadMonsterModel(m, m.id);
                     mesh.castShadow = true;
                     mesh.userData = { type: 'monster', entity: m };
-                    mesh.position.set(m.position_x, 0.75, m.position_y);
+                    mesh.position.set(m.position_x, 0, m.position_y); // y=0 because model handles offset
                     scene.add(mesh);
                     meshes.set(m.id, mesh);
+                }
+
+                // Update Monster Animation State
+                if (mesh.userData.mixer && mesh.userData.anims) {
+                    const anims = mesh.userData.anims;
+                    const speed = mesh.userData.speed || 0;
+
+                    // Simple State Machine
+                    let nextAction = anims.idle;
+
+                    // If moving significantly
+                    if (speed > 0.05 && anims.run) {
+                        nextAction = anims.run;
+                    }
+
+                    // Combat override (if we had state)
+                    // if (m.state === 'COMBAT' && anims.attack) nextAction = anims.attack;
+
+                    if (nextAction && mesh.userData.currentAction !== nextAction) {
+                        if (mesh.userData.currentAction) mesh.userData.currentAction.fadeOut(0.2);
+                        nextAction.reset().fadeIn(0.2).play();
+                        mesh.userData.currentAction = nextAction;
+                    }
                 }
                 // Interpolate
                 const targetX = m.position_x;
