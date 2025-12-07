@@ -21,7 +21,7 @@
                 }
             ],
             "spawns": [],
-            "texture": "floor_castle.png",
+            "texture": "floor/Brickwall2_Texture.png",
             "resources": [
                 {
                     "id": "res_1765041733109",
@@ -48,7 +48,8 @@
                         }
                     ]
                 }
-            ]
+            ],
+            "texture_scale": 34
         },
         "map_forest_1": {
             "name": "Forest",
