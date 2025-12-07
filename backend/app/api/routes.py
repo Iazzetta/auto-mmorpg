@@ -815,13 +815,14 @@ async def save_editor_npcs(npcs: dict):
 async def get_floor_textures():
     import os
     # Path relative to backend execution root (usually repo root)
-    path = "client/src/assets/maps/floor"
+    path = "client/public/maps/floor"
     try:
         if not os.path.exists(path):
             return []
         
         # List .png and .jpg files
-        files = [f for f in os.listdir(path) if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
+        # Return as "floor/filename" so it works with /maps/ mount
+        files = [f"floor/{f}" for f in os.listdir(path) if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
         return files
     except Exception as e:
         print(f"Error listing textures: {e}")
