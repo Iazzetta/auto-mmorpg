@@ -170,6 +170,7 @@ class GameLoop:
             if monster.stats.hp <= 0: continue
             
             moved = False
+            initial_state = monster.state
             
             # AI Logic
             target = None
@@ -268,12 +269,14 @@ class GameLoop:
                         monster.position_y += (dy/dist) * speed
                         moved = True
             
-            if moved:
+            # Send update if moved OR state changed
+            if moved or monster.state != initial_state:
                 updates.append({
                     "id": monster.id,
                     "type": "monster",
                     "x": monster.position_x,
                     "y": monster.position_y,
+                    "state": monster.state,
                     "map_id": monster.map_id
                 })
                 
