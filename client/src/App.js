@@ -36,7 +36,7 @@ export default {
             <GameMap v-if="player" @interact-npc="handleNpcInteraction" />
 
             <!-- UI Overlay -->
-            <div v-if="player" class="absolute inset-0 pointer-events-none flex flex-col justify-between">
+            <div v-if="player" class="absolute inset-0 pointer-events-none flex flex-col justify-between z-40">
 
                 <!-- Navbar -->
                 <div class="pointer-events-auto">

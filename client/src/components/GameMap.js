@@ -931,7 +931,7 @@ export default {
 
             // Update Labels (Throttled to ~15 FPS)
             const nowTime = performance.now();
-            if (nowTime - lastLabelUpdate > 66) { // ~60ms
+            if (nowTime - lastLabelUpdate > 16) { // ~60 FPS for smoothness
                 lastLabelUpdate = nowTime;
                 const labels = [];
                 for (const [id, mesh] of meshes) {

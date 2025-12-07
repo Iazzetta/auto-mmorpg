@@ -5,7 +5,7 @@ import { api } from '../services/api.js';
 
 export default {
     template: `
-    <div class="absolute top-1/2 right-0 transform -translate-y-1/2 flex flex-col gap-2 pointer-events-auto pr-2 max-h-[80vh] overflow-y-auto">
+    <div class="absolute top-1/2 right-0 transform -translate-y-1/2 flex flex-col gap-2 pointer-events-auto pr-2 max-h-[80vh] overflow-y-auto z-40">
         
         <div v-for="mission in allMissions" :key="mission.id"
              class="relative bg-black/40 backdrop-blur-sm border-l-4 pl-3 pr-4 py-2 cursor-pointer hover:bg-black/60 transition-all w-64 group"
