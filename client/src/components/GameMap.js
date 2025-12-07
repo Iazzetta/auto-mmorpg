@@ -304,10 +304,14 @@ export default {
             watch(() => currentMapData.value, (newData) => {
                 if (newData && newData.texture) {
                     const loader = new THREE.TextureLoader();
-                    loader.load(`http://localhost:8000/maps/floor/${newData.texture}`, (tex) => {
+                    // texture field already contains "floor/filename.png", so just append to base /maps/
+                    loader.load(`http://localhost:8000/maps/${newData.texture}`, (tex) => {
                         tex.wrapS = THREE.RepeatWrapping;
                         tex.wrapT = THREE.RepeatWrapping;
-                        tex.repeat.set(4, 4); // Repeat 4 times (larger tiles)
+
+                        // Default to 10 if not specified. Lower number = larger texture features.
+                        const scale = newData.texture_scale || 10;
+                        tex.repeat.set(scale, scale);
 
                         const newMat = new THREE.MeshStandardMaterial({
                             map: tex,

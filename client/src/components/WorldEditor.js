@@ -73,14 +73,20 @@ export default {
                                     <label class="text-[10px] text-gray-500 uppercase">Level Req.</label>
                                     <input v-model.number="worldData.maps[selectedMapId].level_requirement" type="number" class="w-full bg-black border border-gray-700 rounded px-2 py-1 text-xs">
                                 </div>
-                                <div class="col-span-2">
+                            <div class="grid grid-cols-2 gap-2">
+                                <div class="col-span-1">
                                     <label class="text-[10px] text-gray-500 uppercase">Floor Texture</label>
                                     <select v-model="worldData.maps[selectedMapId].texture" class="w-full bg-black border border-gray-700 rounded px-2 py-1 text-xs">
                                         <option value="">None (Grid)</option>
                                         <option v-for="t in floorTextures" :key="t" :value="t">{{ t }}</option>
                                     </select>
                                 </div>
+                                <div>
+                                    <label class="text-[10px] text-gray-500 uppercase">Tex Scale (Rep)</label>
+                                    <input v-model.number="worldData.maps[selectedMapId].texture_scale" type="number" class="w-full bg-black border border-gray-700 rounded px-2 py-1 text-xs" title="Repeat Count (Default 10)">
+                                </div>
                             </div>
+
 
                             <h3 class="font-bold text-gray-400 text-xs uppercase mt-2">Portals</h3>
                             <div class="space-y-2">
@@ -674,12 +680,11 @@ export default {
                              class="relative bg-black border border-gray-700 shadow-2xl" 
                              style="width: 80vh; height: 80vh;">
                             
-                            <!-- Texture Preview -->
                             <div v-if="worldData.maps[selectedMapId].texture"
                                  class="absolute inset-0 pointer-events-none"
                                  :style="{
                                      backgroundImage: 'url(http://localhost:8000/maps/' + worldData.maps[selectedMapId].texture + ')',
-                                     backgroundSize: '10% 10%',
+                                     backgroundSize: (100 / (worldData.maps[selectedMapId].texture_scale || 10)) + '% ' + (100 / (worldData.maps[selectedMapId].texture_scale || 10)) + '%',
                                      backgroundRepeat: 'repeat'
                                  }">
                             </div>
