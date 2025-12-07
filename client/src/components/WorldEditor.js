@@ -1,4 +1,7 @@
-import { ref, onMounted, computed, reactive } from 'vue';
+import { ref, onMounted, computed, reactive, watch, onBeforeUnmount, nextTick } from 'vue';
+import * as THREE from 'three';
+import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { missions } from '../state.js';
 import { api } from '../services/api.js';
 
@@ -169,6 +172,10 @@ export default {
                                 <div>
                                     <label class="text-[10px] text-gray-500 uppercase">Level</label>
                                     <input v-model.number="worldData.monster_templates[selectedMonsterId].level" type="number" class="w-full bg-black border border-gray-700 rounded px-2 py-1 text-xs">
+                                </div>
+                                <div class="col-span-2">
+                                    <label class="text-[10px] text-gray-500 uppercase">Model Scale</label>
+                                    <input v-model.number="worldData.monster_templates[selectedMonsterId].model_scale" type="number" step="0.1" class="w-full bg-black border border-gray-700 rounded px-2 py-1 text-xs" placeholder="1.0">
                                 </div>
                             </div>
                             
@@ -766,12 +773,12 @@ export default {
                     </div>
 
                     <!-- MONSTER PREVIEW (Placeholder) -->
-                    <div v-if="activeTab === 'monsters'" class="flex items-center justify-center text-gray-500">
-                        <div class="text-center">
-                            <span class="text-6xl block mb-4">👾</span>
-                            <p>Monster Visual Preview</p>
-                            <p class="text-sm opacity-50">(Coming Soon)</p>
-                        </div>
+                    <!-- MONSTER PREVIEW -->
+                    <div v-show="activeTab === 'monsters'" class="relative w-full h-full bg-gray-900 border border-gray-700 shadow-inner flex items-center justify-center overflow-hidden" ref="monsterPreviewContainer">
+                         <div class="absolute top-2 left-2 text-xs text-white/50 z-10 pointer-events-none">
+                            Preview<br>
+                            Scale: {{ worldData.monster_templates[selectedMonsterId]?.model_scale || 1.0 }}
+                         </div>
                     </div>
 
                     <!-- ITEMS PREVIEW -->
@@ -829,6 +836,117 @@ export default {
         const selectedNpcId = ref(null);
         const selectedResourceId = ref(null); // Added
         const floorTextures = ref([]);
+
+        const monsterPreviewContainer = ref(null);
+        let mpScene, mpCamera, mpRenderer, mpModel, mpControls, mpFrameId;
+
+        const disposeMonsterPreview = () => {
+            if (mpFrameId) cancelAnimationFrame(mpFrameId);
+            if (mpRenderer) {
+                mpRenderer.dispose();
+                if (mpRenderer.domElement && mpRenderer.domElement.parentNode) {
+                    mpRenderer.domElement.parentNode.removeChild(mpRenderer.domElement);
+                }
+            }
+            mpScene = null;
+            mpRenderer = null;
+        };
+
+        const updateMonsterPreview = () => {
+            if (!mpScene || !selectedMonsterId.value || !worldData.value.monster_templates[selectedMonsterId.value]) return;
+
+            // Remove old model
+            if (mpModel) mpScene.remove(mpModel);
+
+            const monster = worldData.value.monster_templates[selectedMonsterId.value];
+            const folder = monster.template_id;
+
+            const loader = new FBXLoader();
+            loader.load(`/characters/${folder}/idle.fbx`, (obj) => {
+                mpModel = obj;
+                // Normalize Scale
+                const box = new THREE.Box3().setFromObject(obj);
+                const size = box.getSize(new THREE.Vector3());
+                const baseHeight = 1.5;
+                const customScale = monster.model_scale || 1.0;
+                const scale = (baseHeight / size.y) * customScale;
+
+                obj.scale.set(scale, scale, scale);
+                mpScene.add(obj);
+            }, undefined, (err) => {
+                // Fallback
+                const h = 1.5 * (monster.model_scale || 1.0);
+                const geo = new THREE.CylinderGeometry(0.3, 0.3, h, 16);
+                const mat = new THREE.MeshStandardMaterial({ color: 0xff0000 });
+                mpModel = new THREE.Mesh(geo, mat);
+                mpModel.position.y = h / 2;
+                mpScene.add(mpModel);
+            });
+        };
+
+        const initMonsterPreview = () => {
+            if (!monsterPreviewContainer.value) return;
+            disposeMonsterPreview();
+
+            mpScene = new THREE.Scene();
+            mpScene.background = new THREE.Color(0x111827);
+
+            const aspect = monsterPreviewContainer.value.clientWidth / monsterPreviewContainer.value.clientHeight;
+            mpCamera = new THREE.PerspectiveCamera(45, aspect, 0.1, 100);
+            mpCamera.position.set(3, 3, 5);
+            mpCamera.lookAt(0, 1, 0);
+
+            mpRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            mpRenderer.setSize(monsterPreviewContainer.value.clientWidth, monsterPreviewContainer.value.clientHeight);
+            mpRenderer.shadowMap.enabled = true;
+            monsterPreviewContainer.value.appendChild(mpRenderer.domElement);
+
+            const ambient = new THREE.AmbientLight(0xffffff, 0.6);
+            mpScene.add(ambient);
+            const dirLight = new THREE.DirectionalLight(0xffffff, 1);
+            dirLight.position.set(5, 10, 5);
+            dirLight.castShadow = true;
+            mpScene.add(dirLight);
+
+            const grid = new THREE.GridHelper(10, 10, 0x444444, 0x222222);
+            mpScene.add(grid);
+
+            mpControls = new OrbitControls(mpCamera, mpRenderer.domElement);
+            mpControls.enableDamping = true;
+            mpControls.target.set(0, 1, 0);
+
+            const animate = () => {
+                mpFrameId = requestAnimationFrame(animate);
+                mpControls.update();
+                mpRenderer.render(mpScene, mpCamera);
+            };
+            animate();
+
+            updateMonsterPreview();
+        };
+
+        watch(activeTab, (val) => {
+            if (val === 'monsters') {
+                nextTick(() => initMonsterPreview());
+            } else {
+                disposeMonsterPreview();
+            }
+        });
+
+        watch(selectedMonsterId, () => {
+            if (activeTab.value === 'monsters') updateMonsterPreview();
+        });
+
+        watch(() => {
+            if (selectedMonsterId.value && worldData.value.monster_templates[selectedMonsterId.value]) {
+                return worldData.value.monster_templates[selectedMonsterId.value].model_scale;
+            }
+            return null;
+        }, () => {
+            if (activeTab.value === 'monsters') updateMonsterPreview();
+        });
+
+        onBeforeUnmount(() => disposeMonsterPreview());
 
         const fetchWorld = async () => {
             try {

@@ -233,7 +233,7 @@ export default {
                 // Auto-scale
                 const box = new THREE.Box3().setFromObject(object);
                 const size = box.getSize(new THREE.Vector3());
-                const baseHeight = 1.5; // Standard Monster Height
+                const baseHeight = 3.0; // Standard Monster Height (Match Player)
                 const customScale = monster.model_scale || 1.0;
 
                 const scale = (baseHeight / size.y) * customScale;
@@ -658,6 +658,15 @@ export default {
                 // Interpolate
                 const targetX = m.position_x;
                 const targetZ = m.position_y;
+
+                // Rotation
+                const dx = targetX - mesh.position.x;
+                const dz = targetZ - mesh.position.z;
+                if (Math.abs(dx) > 0.1 || Math.abs(dz) > 0.1) {
+                    const angle = Math.atan2(dx, dz);
+                    mesh.rotation.y = angle;
+                }
+
                 if (Math.abs(targetX - mesh.position.x) > 10 || Math.abs(targetZ - mesh.position.z) > 10) {
                     mesh.position.x = targetX;
                     mesh.position.z = targetZ;
@@ -665,6 +674,10 @@ export default {
                     mesh.position.x += (targetX - mesh.position.x) * LERP_FACTOR;
                     mesh.position.z += (targetZ - mesh.position.z) * LERP_FACTOR;
                 }
+
+                // Update speed for animation
+                const dist = Math.sqrt(dx * dx + dz * dz);
+                mesh.userData.speed = dist; // Used in animation logic next frame
 
                 mesh.userData.entity = m;
             });

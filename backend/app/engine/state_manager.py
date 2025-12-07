@@ -177,7 +177,8 @@ class StateManager:
                 position_y=y,
                 spawn_x=x,
                 spawn_y=y,
-                xp_reward=template["xp_reward"]
+                xp_reward=template["xp_reward"],
+                model_scale=template.get("model_scale", 1.0)
             )
             self.add_monster(new_monster)
 
