@@ -194,7 +194,14 @@ class StateManager:
 
     def remove_player(self, player_id: str):
         if player_id in self.players:
-            del self.players[player_id]
+            # Persistent world: Do not remove player data from memory on disconnect.
+            # Just ensure they stop actions.
+            player = self.players[player_id]
+            # Use string "idle" or Enum if possible, python is flexible here usually, but strictly:
+            from ..models.player import PlayerState
+            player.state = PlayerState.IDLE
+            player.target_position = None
+            # Do NOT delete: self.players[player_id]
 
     def get_player(self, player_id: str) -> Player:
         return self.players.get(player_id)
