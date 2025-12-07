@@ -674,6 +674,16 @@ export default {
                              class="relative bg-black border border-gray-700 shadow-2xl" 
                              style="width: 80vh; height: 80vh;">
                             
+                            <!-- Texture Preview -->
+                            <div v-if="worldData.maps[selectedMapId].texture"
+                                 class="absolute inset-0 pointer-events-none"
+                                 :style="{
+                                     backgroundImage: 'url(http://localhost:8000/maps/' + worldData.maps[selectedMapId].texture + ')',
+                                     backgroundSize: '10% 10%',
+                                     backgroundRepeat: 'repeat'
+                                 }">
+                            </div>
+
                             <!-- Grid Background -->
                             <div class="absolute inset-0 opacity-20 pointer-events-none" 
                                  style="background-image: linear-gradient(#333 1px, transparent 1px), linear-gradient(90deg, #333 1px, transparent 1px); background-size: 10% 10%;"></div>
