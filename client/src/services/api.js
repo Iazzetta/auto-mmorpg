@@ -341,6 +341,7 @@ export const connectWebSocket = (playerId) => {
                             if (!other.position) other.position = { x: 0, y: 0 };
                             other.position.x = entity.x;
                             other.position.y = entity.y;
+                            if (entity.state) other.state = entity.state;
 
                             if (entity.map_id !== player.value.current_map_id) {
                                 mapPlayers.value = mapPlayers.value.filter(p => p.id !== entity.id);
@@ -388,6 +389,11 @@ export const connectWebSocket = (playerId) => {
             mapPlayers.value = mapPlayers.value.filter(p => p.id !== data.player_id);
             if (inspectedPlayer.value && inspectedPlayer.value.id === data.player_id) {
                 inspectedPlayer.value = null;
+            }
+        } else if (data.type === 'player_left_map') {
+            // Remove player if they left OUR current map
+            if (player.value && data.map_id === player.value.current_map_id) {
+                mapPlayers.value = mapPlayers.value.filter(p => p.id !== data.player_id);
             }
         }
     };

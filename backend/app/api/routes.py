@@ -351,12 +351,24 @@ async def move_player(player_id: str, target_map_id: str, x: float, y: float):
             if target_map.type == "castle":
                 player.respawn_map_id = target_map_id
         
+        old_map_id = player.current_map_id
+        
         player.current_map_id = target_map_id
         player.position.x = x
         player.position.y = y
         player.state = PlayerState.IDLE
         player.target_position = None
         player.target_monster_id = None # Clear combat target
+        
+        # Broadcast Leave event to old map so clients remove the ghost mesh
+        if hasattr(state_manager, 'connection_manager'):
+             import asyncio
+             # Fire and forget
+             asyncio.create_task(state_manager.connection_manager.broadcast({
+                 "type": "player_left_map",
+                 "player_id": player.id,
+                 "map_id": old_map_id
+             }))
         
         return {"message": "Map switched", "map_id": target_map_id, "position": player.position}
 
@@ -376,8 +388,7 @@ async def stop_movement(player_id: str):
     player.target_position = None
     return {"message": "Stopped", "position": player.position}
 
-@router.post("/player/{player_id}/stop")
-async def stop_movement(player_id: str):
+
     player = state_manager.get_player(player_id)
     if not player:
         raise HTTPException(status_code=404, detail="Player not found")
