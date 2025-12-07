@@ -386,15 +386,22 @@ async def stop_movement(player_id: str):
         
     player.state = PlayerState.IDLE
     player.target_position = None
-    return {"message": "Stopped", "position": player.position}
-
-
-    player = state_manager.get_player(player_id)
-    if not player:
-        raise HTTPException(status_code=404, detail="Player not found")
+    
+    # Broadcast stop details
+    if hasattr(state_manager, 'connection_manager'):
+        import asyncio
+        asyncio.create_task(state_manager.connection_manager.broadcast({
+            "type": "batch_update",
+            "entities": [{
+                "id": player.id,
+                "type": "player",
+                "x": player.position.x,
+                "y": player.position.y,
+                "state": player.state,
+                "map_id": player.current_map_id
+            }]
+        }))
         
-    player.state = PlayerState.IDLE
-    player.target_position = None
     return {"message": "Stopped", "position": player.position}
 
 @router.post("/player/{player_id}/attack")
