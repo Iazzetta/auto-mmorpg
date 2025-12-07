@@ -257,7 +257,12 @@ export default {
 
                 // Load Run
                 fbxLoader.load(`${path}/running.fbx`, (anim) => {
-                    if (anim.animations.length > 0) anims.run = mixer.clipAction(anim.animations[0]);
+                    if (anim.animations.length > 0) {
+                        const clip = anim.animations[0];
+                        // Remove position tracks to prevent root motion sliding
+                        clip.tracks = clip.tracks.filter(t => !t.name.endsWith('.position'));
+                        anims.run = mixer.clipAction(clip);
+                    }
                 }, undefined, () => { });
 
                 // Load Attack
@@ -650,13 +655,8 @@ export default {
                     let nextAction = anims.idle;
 
                     // Prioritize Attack State
-                    if ((m.state === 'ATTACKING' || m.state === 'CHASING') && isMoving && anims.run) {
-                        if (m.state === 'ATTACKING' && anims.attack) {
-                            nextAction = anims.attack;
-                        } else {
-                            nextAction = anims.run;
-                        }
-                    } else if (m.state === 'ATTACKING' && anims.attack) {
+                    // If attacking, play attack. Even if moving slightly (sliding attack better than running while attacking).
+                    if (m.state === 'ATTACKING' && anims.attack) {
                         nextAction = anims.attack;
                     } else if (isMoving && anims.run) {
                         nextAction = anims.run;
