@@ -517,7 +517,8 @@ export default {
                 const dz = targetZ - mesh.position.z;
                 const dist = Math.sqrt(dx * dx + dz * dz);
 
-                mesh.userData.isMoving = dist > 0.2;
+                mesh.userData.speed = dist;
+                mesh.userData.isMoving = dist > 0.05;
 
                 if (Math.abs(dx) > 0.1 || Math.abs(dz) > 0.1) {
                     const angle = Math.atan2(dx, dz);
@@ -535,6 +536,7 @@ export default {
                     mesh.position.x = targetX;
                     mesh.position.z = targetZ;
                     mesh.userData.isMoving = false;
+                    mesh.userData.speed = 0;
                 }
             });
 
@@ -905,9 +907,11 @@ export default {
                 if (!desired) continue;
 
                 const state = (entity.state || 'IDLE').toUpperCase();
+                const speed = mesh.userData.speed || 0;
 
                 if (state === 'COMBAT' && actions.attack) {
-                    desired = actions.attack;
+                    if (speed > 0.5) desired = actions.run;
+                    else desired = actions.attack;
                 }
                 else if ((state === 'MOVING' || isMoving) && actions.run) {
                     desired = actions.run;
