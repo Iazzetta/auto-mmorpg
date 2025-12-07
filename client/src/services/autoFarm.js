@@ -9,7 +9,7 @@ export const startAutoFarm = () => {
     autoFarmInterval = setInterval(checkAndAct, 1000);
 };
 
-export const stopAutoFarm = () => {
+export const stopAutoFarm = (stopServer = true) => {
     if (autoFarmInterval) {
         clearInterval(autoFarmInterval);
         autoFarmInterval = null;
@@ -18,6 +18,11 @@ export const stopAutoFarm = () => {
     activeMission.value = null; // Clear active mission tracking
     pendingAttackId.value = null;
     destinationMarker.value = null;
+
+    if (stopServer) {
+        api.stopMovement();
+    }
+
     if (player.value) player.value.state = 'idle';
 };
 
@@ -53,6 +58,8 @@ export const toggleFreeFarm = () => {
 
 export const checkAndAct = async () => {
     if (!player.value) return;
+    // Failsafe: Ensure we are allowed to act
+    if (!isFreeFarming.value && !activeMission.value) return;
 
     if (player.value.state === 'combat') {
         if (player.value.current_map_id !== selectedMapId.value) {
@@ -76,6 +83,8 @@ export const checkAndAct = async () => {
                 // Wait a bit for server to process
                 await new Promise(r => setTimeout(r, 500));
                 await api.refreshPlayer();
+
+                if (!isFreeFarming.value && !activeMission.value) return; // Check call after await
 
                 // If map changed successfully, continue to scan immediately
                 if (player.value.current_map_id !== selectedMapId.value) {

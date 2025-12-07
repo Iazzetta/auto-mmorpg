@@ -378,7 +378,7 @@ export default {
                     const m = obj.userData.entity;
                     if (m.hp > 0) {
                         addLog(`Moving to attack ${m.name}...`);
-                        stopAutoFarm();
+                        stopAutoFarm(false);
 
                         // Set current monster for UI
                         currentMonster.value = m;
@@ -408,7 +408,7 @@ export default {
                     const gameX = point.x;
                     const gameY = point.z; // Z is Y in 2D
 
-                    stopAutoFarm();
+                    stopAutoFarm(false);
                     destinationMarker.value = { x: gameX, y: gameY, time: Date.now(), isGameCoords: true };
                     api.movePlayer(player.value.current_map_id, gameX, gameY);
 
@@ -656,7 +656,7 @@ export default {
             if (keys.d) dx += 1;
 
             if (dx !== 0 || dy !== 0) {
-                stopAutoFarm();
+                stopAutoFarm(false);
                 isFreeFarming.value = false;
 
                 // Normalize vector
