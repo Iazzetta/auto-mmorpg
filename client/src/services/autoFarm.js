@@ -18,6 +18,7 @@ export const stopAutoFarm = () => {
     activeMission.value = null; // Clear active mission tracking
     pendingAttackId.value = null;
     destinationMarker.value = null;
+    if (player.value) player.value.state = 'idle';
 };
 
 export const startMission = async (mission) => {

@@ -158,8 +158,8 @@ export default {
                 // Process Model
                 object.traverse(child => {
                     if (child.isMesh) {
-                        child.castShadow = true;
-                        child.receiveShadow = true;
+                        child.castShadow = false;
+                        child.receiveShadow = false;
                     }
                 });
 
@@ -267,7 +267,7 @@ export default {
             // 3. Renderer
             renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
             renderer.setSize(width, height);
-            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.enabled = false;
             renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Softer shadows
             container.value.appendChild(renderer.domElement);
 
@@ -451,22 +451,31 @@ export default {
                 const dx = targetX - mesh.position.x;
                 const dz = targetZ - mesh.position.z;
 
-                // Flag movement for animation
                 const dist = Math.sqrt(dx * dx + dz * dz);
-                mesh.userData.isMoving = dist > 0.1 || (keys.w || keys.a || keys.s || keys.d);
+                const isKeys = (keys.w || keys.a || keys.s || keys.d);
+
+                // Snap to target if close and not pressing keys (stops micro-sliding)
+                if (!isKeys && dist < 0.2) {
+                    mesh.position.x = targetX;
+                    mesh.position.z = targetZ;
+                    mesh.userData.isMoving = false;
+                } else {
+                    mesh.userData.isMoving = dist > 0.1 || isKeys;
+                }
 
                 if (Math.abs(dx) > 0.1 || Math.abs(dz) > 0.1) {
                     const angle = Math.atan2(dx, dz);
                     mesh.rotation.y = angle;
                 }
 
-                if (dist > 10) {
+                if (dist > 10) { // If player teleported, snap camera and player
                     mesh.position.x = targetX;
                     mesh.position.z = targetZ;
                     camera.position.x = targetX + 20;
                     camera.position.z = targetZ + 20;
                     camera.lookAt(targetX, 0, targetZ);
                 } else {
+                    // Smoothly update player position
                     mesh.position.x += (targetX - mesh.position.x) * LERP_FACTOR;
                     mesh.position.z += (targetZ - mesh.position.z) * LERP_FACTOR;
 
@@ -507,21 +516,17 @@ export default {
                 const dx = targetX - mesh.position.x;
                 const dz = targetZ - mesh.position.z;
 
-                // Flag movement
-                const dist = Math.sqrt(dx * dx + dz * dz);
-                mesh.userData.isMoving = dist > 0.1;
-
-                if (Math.abs(dx) > 0.1 || Math.abs(dz) > 0.1) {
-                    const angle = Math.atan2(dx, dz);
-                    mesh.rotation.y = angle;
-                }
-
-                if (Math.abs(targetX - mesh.position.x) > 10 || Math.abs(targetZ - mesh.position.z) > 10) {
+                if (dist > 10) {
                     mesh.position.x = targetX;
                     mesh.position.z = targetZ;
+                    mesh.userData.isMoving = false;
+                } else if (dist > 0.05) {
+                    mesh.position.x += dx * LERP_FACTOR;
+                    mesh.position.z += dz * LERP_FACTOR;
                 } else {
-                    mesh.position.x += (targetX - mesh.position.x) * LERP_FACTOR;
-                    mesh.position.z += (targetZ - mesh.position.z) * LERP_FACTOR;
+                    mesh.position.x = targetX;
+                    mesh.position.z = targetZ;
+                    mesh.userData.isMoving = false;
                 }
             });
 
@@ -657,6 +662,19 @@ export default {
 
                 api.movePlayer(player.value.current_map_id, targetX, targetY);
                 lastMoveTime = now;
+            } else {
+                if (isFreeFarming.value) return;
+
+                // If keys released and we are technically in moving state, send stop
+                // This ensures server knows we stopped intentionally
+                if (player.value.state && player.value.state.toLowerCase() === 'moving') {
+                    player.value.state = 'idle';
+                    const mesh = meshes.get(player.value.id);
+                    if (mesh) mesh.userData.isMoving = false;
+
+                    api.stopMovement();
+                    lastMoveTime = now;
+                }
             }
         };
 
@@ -911,31 +929,37 @@ export default {
                 lastFpsTime = now;
             }
 
-            // Update Labels (Every frame for smoothness)
-            const labels = [];
-            for (const [id, mesh] of meshes) {
-                if (!mesh.visible) continue;
+            // Update Labels (Throttled to ~15 FPS)
+            const nowTime = performance.now();
+            if (nowTime - lastLabelUpdate > 66) { // ~60ms
+                lastLabelUpdate = nowTime;
+                const labels = [];
+                for (const [id, mesh] of meshes) {
+                    if (!mesh.visible) continue;
 
-                const pos = toScreenPosition(mesh);
-                // Check if on screen (simple bounds check could optimize further)
-                if (pos.x < -50 || pos.x > container.value.clientWidth + 50 ||
-                    pos.y < -50 || pos.y > container.value.clientHeight + 50) continue;
+                    // Optimization: Check distance quickly before projection?
+                    // For now, throttle is the biggest win.
 
-                const entity = mesh.userData.entity;
-                if (entity) {
-                    labels.push({
-                        id: id,
-                        x: Math.round(pos.x),
-                        y: Math.round(pos.y),
-                        name: entity.name,
-                        hp: entity.stats ? entity.stats.hp : (entity.hp || 0),
-                        max_hp: entity.stats ? entity.stats.max_hp : (entity.max_hp || 0),
-                        type: mesh.userData.type,
-                        isPlayer: mesh.userData.type === 'player'
-                    });
+                    const pos = toScreenPosition(mesh);
+                    if (pos.x < -50 || pos.x > container.value.clientWidth + 50 ||
+                        pos.y < -50 || pos.y > container.value.clientHeight + 50) continue;
+
+                    const entity = mesh.userData.entity;
+                    if (entity) {
+                        labels.push({
+                            id: id,
+                            x: Math.round(pos.x),
+                            y: Math.round(pos.y),
+                            name: entity.name,
+                            hp: entity.stats ? entity.stats.hp : (entity.hp || 0),
+                            max_hp: entity.stats ? entity.stats.max_hp : (entity.max_hp || 0),
+                            type: mesh.userData.type,
+                            isPlayer: mesh.userData.type === 'player'
+                        });
+                    }
                 }
+                entityLabels.value = labels;
             }
-            entityLabels.value = labels;
         };
 
         watch(() => player.value?.current_map_id, async (newMapId) => {

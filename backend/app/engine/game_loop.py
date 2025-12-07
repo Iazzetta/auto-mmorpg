@@ -52,6 +52,13 @@ class GameLoop:
                     if player.target_monster_id:
                         monster = self.state_manager.monsters.get(player.target_monster_id)
                         if monster:
+                            import math
+                            dist = math.sqrt((player.position.x - monster.position_x)**2 + (player.position.y - monster.position_y)**2)
+                            if dist > 2.5:
+                                player.state = PlayerState.IDLE
+                                player.target_monster_id = None
+                                continue
+
                             log = CombatService.process_combat_round(player, monster)
                             if not log:
                                 player.state = PlayerState.IDLE
@@ -93,6 +100,7 @@ class GameLoop:
                     "type": "player",
                     "x": player.position.x,
                     "y": player.position.y,
+                    "state": player.state,
                     "map_id": player.current_map_id
                 })
                 

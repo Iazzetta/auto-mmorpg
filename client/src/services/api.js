@@ -94,8 +94,15 @@ export const api = {
         }
     },
 
+    async stopMovement() {
+        if (!player.value) return;
+        await fetch(`${API_URL}/player/${player.value.id}/stop`, { method: 'POST' });
+        player.value.state = 'idle';
+    },
+
     async attackMonster(monsterId) {
         if (!player.value) return;
+        player.value.state = 'combat';
         await fetch(`${API_URL}/player/${player.value.id}/attack?monster_id=${monsterId}`, { method: 'POST' });
     },
 
@@ -284,6 +291,7 @@ export const connectWebSocket = (playerId) => {
                         if (!player.value.position) player.value.position = { x: 0, y: 0 };
                         player.value.position.x = entity.x;
                         player.value.position.y = entity.y;
+                        if (entity.state) player.value.state = entity.state;
 
                         if (player.value.current_map_id !== entity.map_id) {
                             player.value.current_map_id = entity.map_id;

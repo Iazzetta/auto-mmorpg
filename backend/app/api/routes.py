@@ -340,6 +340,26 @@ async def move_player(player_id: str, target_map_id: str, x: float, y: float):
     
     return {"message": "Moving", "target": player.target_position}
 
+@router.post("/player/{player_id}/stop")
+async def stop_movement(player_id: str):
+    player = state_manager.get_player(player_id)
+    if not player:
+        raise HTTPException(status_code=404, detail="Player not found")
+        
+    player.state = PlayerState.IDLE
+    player.target_position = None
+    return {"message": "Stopped", "position": player.position}
+
+@router.post("/player/{player_id}/stop")
+async def stop_movement(player_id: str):
+    player = state_manager.get_player(player_id)
+    if not player:
+        raise HTTPException(status_code=404, detail="Player not found")
+        
+    player.state = PlayerState.IDLE
+    player.target_position = None
+    return {"message": "Stopped", "position": player.position}
+
 @router.post("/player/{player_id}/attack")
 async def attack_monster(player_id: str, monster_id: str):
     player = state_manager.get_player(player_id)
