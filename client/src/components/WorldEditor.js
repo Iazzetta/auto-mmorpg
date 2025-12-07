@@ -73,6 +73,7 @@ export default {
                                     <label class="text-[10px] text-gray-500 uppercase">Level Req.</label>
                                     <input v-model.number="worldData.maps[selectedMapId].level_requirement" type="number" class="w-full bg-black border border-gray-700 rounded px-2 py-1 text-xs">
                                 </div>
+                            </div>
                             <div class="grid grid-cols-2 gap-2">
                                 <div class="col-span-1">
                                     <label class="text-[10px] text-gray-500 uppercase">Floor Texture</label>
