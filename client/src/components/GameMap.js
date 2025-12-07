@@ -634,37 +634,52 @@ export default {
                 }
 
                 // Update Monster Animation State
-                if (mesh.userData.mixer && mesh.userData.anims) {
-                    const anims = mesh.userData.anims;
-                    const speed = mesh.userData.speed || 0;
 
-                    // Simple State Machine
-                    let nextAction = anims.idle;
-
-                    // If moving significantly
-                    if (speed > 0.05 && anims.run) {
-                        nextAction = anims.run;
-                    }
-
-                    // Combat override (if we had state)
-                    // if (m.state === 'COMBAT' && anims.attack) nextAction = anims.attack;
-
-                    if (nextAction && mesh.userData.currentAction !== nextAction) {
-                        if (mesh.userData.currentAction) mesh.userData.currentAction.fadeOut(0.2);
-                        nextAction.reset().fadeIn(0.2).play();
-                        mesh.userData.currentAction = nextAction;
-                    }
-                }
-                // Interpolate
-                const targetX = m.position_x;
-                const targetZ = m.position_y;
-
-                // Rotation
+                // 1. Calculate Dist/Rotation first (needed for state)
                 const dx = targetX - mesh.position.x;
                 const dz = targetZ - mesh.position.z;
-                if (Math.abs(dx) > 0.1 || Math.abs(dz) > 0.1) {
+                const dist = Math.sqrt(dx * dx + dz * dz);
+
+                // 2. Determine State
+                // Hysteresis for movement to prevent flickering (0.05 start, 0.01 stop)
+                const isMoving = dist > 0.05 || (mesh.userData.isMoving && dist > 0.01);
+                mesh.userData.isMoving = isMoving;
+                mesh.userData.speed = dist;
+
+                let nextAction = anims.idle;
+
+                // Prioritize Attack State
+                if ((m.state === 'ATTACKING' || m.state === 'CHASING') && isMoving && anims.run) {
+                    // Chasing/Moving Attack? 
+                    // Usually Chasing = Run. Attacking = Attack (stationary?).
+                    // If state is ATTACKING, playing attack animation.
+                    if (m.state === 'ATTACKING' && anims.attack) {
+                        nextAction = anims.attack;
+                    } else {
+                        nextAction = anims.run;
+                    }
+                } else if (m.state === 'ATTACKING' && anims.attack) {
+                    nextAction = anims.attack;
+                } else if (isMoving && anims.run) {
+                    nextAction = anims.run;
+                }
+
+                if (nextAction && mesh.userData.currentAction !== nextAction) {
+                    if (mesh.userData.currentAction) mesh.userData.currentAction.fadeOut(0.2);
+                    nextAction.reset().fadeIn(0.2).play();
+                    mesh.userData.currentAction = nextAction;
+                }
+
+                // 3. Apply Rotation if moving
+                if (isMoving) {
                     const angle = Math.atan2(dx, dz);
-                    mesh.rotation.y = angle;
+                    // Smooth rotation?
+                    // mesh.rotation.y = angle;
+                    // Slerp rotation finding shortest path
+                    let rotDiff = angle - mesh.rotation.y;
+                    while (rotDiff > Math.PI) rotDiff -= Math.PI * 2;
+                    while (rotDiff < -Math.PI) rotDiff += Math.PI * 2;
+                    mesh.rotation.y += rotDiff * 0.2; // Smooth turn
                 }
 
                 if (Math.abs(targetX - mesh.position.x) > 10 || Math.abs(targetZ - mesh.position.z) > 10) {
@@ -676,8 +691,8 @@ export default {
                 }
 
                 // Update speed for animation
-                const dist = Math.sqrt(dx * dx + dz * dz);
-                mesh.userData.speed = dist; // Used in animation logic next frame
+                // Update speed for animation loop (already done above)
+                // mesh.userData.speed = dist;
 
                 mesh.userData.entity = m;
             });
