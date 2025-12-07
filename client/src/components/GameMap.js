@@ -84,6 +84,14 @@ export default {
     setup(props, { emit }) {
         const container = ref(null);
         const fps = ref(0);
+        const cameraZoom = ref(20);
+
+        const handleWheel = (e) => {
+            e.preventDefault();
+            const delta = Math.sign(e.deltaY) * 2;
+            cameraZoom.value = Math.max(5, Math.min(50, cameraZoom.value + delta));
+            onWindowResize();
+        };
         const canEnterPortal = ref(false);
         const pendingPortal = ref(null);
         const canInteractNpc = ref(false);
@@ -249,7 +257,7 @@ export default {
 
             // 2. Camera (Orthographic for Isometric)
             const aspect = width / height;
-            const d = 20; // View size
+            const d = cameraZoom.value;
             camera = new THREE.OrthographicCamera(-d * aspect, d * aspect, d, -d, 1, 1000);
 
             // Isometric Angle: Look from corner
@@ -331,6 +339,7 @@ export default {
             // Event Listeners
             window.addEventListener('resize', onWindowResize);
             container.value.addEventListener('click', onMouseClick);
+            container.value.addEventListener('wheel', handleWheel);
         };
 
         const onWindowResize = () => {
@@ -338,7 +347,7 @@ export default {
             const width = container.value.clientWidth;
             const height = container.value.clientHeight;
             const aspect = width / height;
-            const d = 20;
+            const d = cameraZoom.value;
 
             camera.left = -d * aspect;
             camera.right = d * aspect;
@@ -871,11 +880,11 @@ export default {
 
                 const state = (entity.state || 'IDLE').toUpperCase();
 
-                if (state === 'COMBAT' && actions.attack) {
-                    desired = actions.attack;
-                }
-                else if ((state === 'MOVING' || isMoving) && actions.run) {
+                if ((state === 'MOVING' || isMoving) && actions.run) {
                     desired = actions.run;
+                }
+                else if (state === 'COMBAT' && actions.attack) {
+                    desired = actions.attack;
                 }
 
                 if (desired && desired !== currentAction) {

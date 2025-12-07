@@ -85,5 +85,6 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
             await manager.broadcast({"message": f"Client {client_id} says: {data}"})
             
     except WebSocketDisconnect:
+        state_manager.remove_player(client_id)
         manager.disconnect(websocket)
         await manager.broadcast({"type": "player_left", "player_id": client_id})

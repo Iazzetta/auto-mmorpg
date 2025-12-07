@@ -192,6 +192,10 @@ class StateManager:
     def add_player(self, player: Player):
         self.players[player.id] = player
 
+    def remove_player(self, player_id: str):
+        if player_id in self.players:
+            del self.players[player_id]
+
     def get_player(self, player_id: str) -> Player:
         return self.players.get(player_id)
 
