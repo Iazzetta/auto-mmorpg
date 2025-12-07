@@ -183,3 +183,21 @@ class CombatService:
                     if player.mission_progress >= mission["target_count"]:
                         player.mission_progress = mission["target_count"]
                         # We could send a notification here "Mission Ready to Claim"
+
+    @staticmethod
+    def monster_attack(monster: Monster, player: Player) -> dict:
+        log = {}
+        if str(player.current_map_id) != str(monster.map_id): return log
+        
+        dmg = CombatService.calculate_damage(monster.stats, player.stats)
+        player.stats.hp -= dmg
+        log['monster_dmg'] = dmg
+        
+        if player.stats.hp <= 0:
+            player.stats.hp = 0
+            log['player_died'] = True
+            # Handle Death State
+            player.state = PlayerState.IDLE
+            player.target_monster_id = None
+            
+        return log

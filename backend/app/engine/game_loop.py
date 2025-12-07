@@ -165,6 +165,8 @@ class GameLoop:
     async def process_monsters(self, dt: float):
         import math
         import random
+        import time
+        current_time = time.time()
         
         updates = []
         
@@ -252,7 +254,28 @@ class GameLoop:
                     else:
                         if target.state != PlayerState.COMBAT:
                             target.state = PlayerState.COMBAT
+                        
+                        # Auto-target if none (Self Defense)
+                        if not target.target_monster_id:
                             target.target_monster_id = monster.id
+
+                        # Monster Attack (Damage)
+                        if current_time - monster.last_attack_time >= 2.0:
+                            monster.last_attack_time = current_time
+                            from ..services.combat_service import CombatService
+                            log = CombatService.monster_attack(monster, target)
+                            
+                            if log and hasattr(self, 'connection_manager'):
+                                await self.connection_manager.broadcast({
+                                    "type": "combat_update",
+                                    "player_id": target.id,
+                                    "monster_id": monster.id,
+                                    "log": log,
+                                    "player_hp": target.stats.hp,
+                                    "monster_hp": monster.stats.hp,
+                                    "monster_max_hp": monster.stats.max_hp,
+                                    "monster_name": monster.name
+                                })
                 else:
                     monster.state = "IDLE"
 

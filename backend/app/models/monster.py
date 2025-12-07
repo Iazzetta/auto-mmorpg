@@ -43,3 +43,4 @@ class Monster(BaseModel):
     possible_loot: List[str] = [] 
     xp_reward: int
     model_scale: float = 1.0
+    last_attack_time: float = 0
