@@ -330,10 +330,10 @@
             "stats": {
                 "hp": 300,
                 "max_hp": 300,
-                "atk": 20,
+                "atk": 80,
                 "def_": 15,
                 "speed": 10,
-                "attack_cooldown": 2
+                "attack_cooldown": 0.1
             },
             "xp_reward": 10,
             "drops": [
