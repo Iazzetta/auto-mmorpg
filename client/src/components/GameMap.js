@@ -776,9 +776,11 @@ export default {
                         const mState = (entity.state || '').toUpperCase();
 
                         // Priority: Attack > Run > Idle
+                        const isMovingState = ['CHASING', 'WANDERING', 'RETURNING'].includes(mState);
+
                         if (mState === 'ATTACKING' && anims.attack) {
                             nextAction = anims.attack;
-                        } else if (isMoving && anims.run) {
+                        } else if (isMovingState && anims.run) {
                             nextAction = anims.run;
                         }
 
