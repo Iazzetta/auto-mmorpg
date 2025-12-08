@@ -1104,7 +1104,6 @@ export default {
 
             updateMovement();
             checkInteractions();
-            updateEntities();
 
             renderer.render(scene, camera);
 
