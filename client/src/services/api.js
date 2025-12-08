@@ -1,4 +1,4 @@
-import { player, logs, socket, currentMonster, addLog, showToast, mapMonsters, mapPlayers, mapNpcs, isFreeFarming, selectedTargetId, pendingAttackId, destinationMarker, inspectedPlayer, autoSellInferior, currentMapData, showGameAlert, isUpdating, worldData } from '../state.js';
+import { player, logs, chatMessages, socket, currentMonster, addLog, showToast, mapMonsters, mapPlayers, mapNpcs, isFreeFarming, selectedTargetId, pendingAttackId, destinationMarker, inspectedPlayer, autoSellInferior, currentMapData, showGameAlert, isUpdating, worldData } from '../state.js';
 import { checkAndAct, stopAutoFarm } from './autoFarm.js';
 
 const API_URL = 'http://localhost:8000';
@@ -258,6 +258,11 @@ export const api = {
         }
     },
 
+    async sendMessage(text) {
+        if (!socket.value || socket.value.readyState !== 1) return;
+        socket.value.send(JSON.stringify({ type: 'chat', message: text }));
+    },
+
     async startMission(missionId) {
         if (!player.value) return;
         const res = await fetch(`${API_URL}/player/${player.value.id}/mission/start?mission_id=${missionId}`, { method: 'POST' });
@@ -291,6 +296,15 @@ export const connectWebSocket = (playerId) => {
 
         if (data.type === 'combat_update') {
             handleCombatUpdate(data);
+        } else if (data.type === 'chat') {
+            chatMessages.value.push({
+                id: Date.now(),
+                name: data.name,
+                message: data.message,
+                isPlayer: data.player_id === player.value.id,
+                time: new Date().toLocaleTimeString()
+            });
+            if (chatMessages.value.length > 100) chatMessages.value.shift();
         } else if (data.type === 'monster_respawn') {
             // Add to local list if on same map
             if (data.monster.map_id === player.value.current_map_id) {

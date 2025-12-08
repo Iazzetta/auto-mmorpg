@@ -74,15 +74,27 @@ async def startup_event():
     
     # Data is loaded by StateManager on init
 
+import json
+
 @app.websocket("/ws/{client_id}")
 async def websocket_endpoint(websocket: WebSocket, client_id: str):
     await manager.connect(websocket)
     try:
         while True:
-            # We can receive commands here too, but for now just keep connection open
-            data = await websocket.receive_text()
-            # Simple debug echo
-            await manager.broadcast({"message": f"Client {client_id} says: {data}"})
+            raw = await websocket.receive_text()
+            try:
+                data = json.loads(raw)
+                if data.get("type") == "chat":
+                    player = state_manager.get_player(client_id)
+                    name = player.name if player else "Unknown"
+                    await manager.broadcast({
+                        "type": "chat", 
+                        "player_id": client_id,
+                        "name": name,
+                        "message": data.get("message")
+                    })
+            except Exception:
+                pass
             
     except WebSocketDisconnect:
         state_manager.remove_player(client_id)

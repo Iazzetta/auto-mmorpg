@@ -51,14 +51,7 @@ export default {
                 </div>
             </div>
 
-            <!-- Auto Attack Toggle Button -->
-            <div class="absolute bottom-24 left-4 z-50 pointer-events-auto">
-                <button @click="toggleAutoAttack" 
-                    class="flex items-center gap-2 px-4 py-2 rounded-full font-bold text-white shadow-lg border-2 transition-all text-xs"
-                    :class="isFreeFarming ? 'bg-red-600 border-red-400 hover:bg-red-500' : 'bg-green-600 border-green-400 hover:bg-green-500'">
-                    <span>{{ isFreeFarming ? 'Stop Auto (Space)' : 'Start Auto (Space)' }}</span>
-                </button>
-            </div>
+
             
             <!-- Interaction Button -->
             <div v-if="(canEnterPortal || canInteractNpc || canGather) && !isFreeFarming && !isGathering" class="absolute bottom-24 left-1/2 transform -translate-x-1/2 z-50 flex flex-col gap-2 items-center">

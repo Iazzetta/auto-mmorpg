@@ -1,5 +1,5 @@
 import { ref, onMounted, onUnmounted, nextTick, watch, computed } from 'vue';
-import { player, logs, toasts, missions, inspectedPlayer, worldData, isUpdating } from './state.js';
+import { player, logs, chatMessages, isFreeFarming, toasts, missions, inspectedPlayer, worldData, isUpdating } from './state.js';
 import { api } from './services/api.js';
 import { toggleFreeFarm } from './services/autoFarm.js';
 
@@ -47,19 +47,50 @@ export default {
                     />
                 </div>
 
-                <!-- Middle Section: Logs (Left Bottom) -->
-                <div class="flex-1 relative">
-                    <!-- Log Terminal -->
-                    <div class="absolute bottom-24 left-4 w-96 h-48 bg-black/50 backdrop-blur-sm rounded p-2 overflow-y-auto pointer-events-auto font-mono text-xs space-y-1 border border-gray-700" ref="logContainer">
-                        <div v-for="(log, index) in logs" :key="index" class="break-words">
-                            <span class="text-gray-500">[{{ log.time }}]</span>
-                            <span :class="log.color">{{ log.message }}</span>
+                <!-- Middle Section: Chat/Logs -->
+                <div class="flex-1 relative pointer-events-none">
+                    <div class="absolute bottom-28 left-4 w-96 h-64 bg-black/60 backdrop-blur-md rounded border border-gray-700 pointer-events-auto flex flex-col shadow-xl">
+                        <!-- Tabs -->
+                        <div class="flex border-b border-gray-700 bg-black/40">
+                            <button @click="activeTab = 'chat'" class="flex-1 py-1 text-xs font-bold uppercase transition-colors" :class="activeTab === 'chat' ? 'text-blue-400 bg-white/10' : 'text-gray-500 hover:text-gray-300'">Chat</button>
+                            <button @click="activeTab = 'system'" class="flex-1 py-1 text-xs font-bold uppercase transition-colors" :class="activeTab === 'system' ? 'text-yellow-400 bg-white/10' : 'text-gray-500 hover:text-gray-300'">System</button>
                         </div>
+
+                        <!-- Chat Content -->
+                        <div v-if="activeTab === 'chat'" class="flex-1 flex flex-col min-h-0">
+                             <div class="flex-1 overflow-y-auto p-2 space-y-1 font-mono text-xs" ref="chatContainer">
+                                 <div v-for="msg in chatMessages" :key="msg.id" class="break-words leading-tight">
+                                     <span class="text-gray-500">[{{ msg.time }}]</span>
+                                     <span :class="msg.isPlayer ? 'text-green-400' : 'text-blue-300'" class="font-bold ml-1">{{ msg.name }}:</span>
+                                     <span class="text-gray-200 ml-1">{{ msg.message }}</span>
+                                 </div>
+                             </div>
+                             <input ref="chatInputRef"
+                                    v-model="chatInput" 
+                                    @keydown.enter="handleChatEnter"
+                                    placeholder="Press Enter to chat..." 
+                                    class="bg-black/50 border-t border-gray-700 p-2 text-xs text-white outline-none focus:bg-black/80 transition-colors w-full"
+                             >
+                        </div>
+
+                         <!-- System Logs -->
+                         <div v-show="activeTab === 'system'" class="flex-1 overflow-y-auto p-2 space-y-1 font-mono text-xs" ref="logContainer">
+                            <div v-for="(log, index) in logs" :key="index" class="break-words">
+                                <span class="text-gray-500">[{{ log.time }}]</span>
+                                <span :class="log.color">{{ log.message }}</span>
+                            </div>
+                         </div>
                     </div>
                 </div>
 
                 <!-- Footer / Hotbar -->
-                <div class="pointer-events-auto">
+                <div class="pointer-events-auto flex items-end gap-2 p-4 w-full justify-center">
+                    <button @click="toggleFreeFarm" 
+                            class="w-12 h-12 bg-black/80 border-2 rounded flex items-center justify-center text-2xl hover:bg-gray-800 transition-colors shadow-lg active:scale-95"
+                            :class="isFreeFarming ? 'border-red-500 text-red-500' : 'border-green-500 text-green-500'"
+                            :title="isFreeFarming ? 'Stop Auto Attack' : 'Start Auto Attack'">
+                        {{ isFreeFarming ? '❌' : '⚔️' }}
+                    </button>
                     <Hotbar @open-editor="showEditor = true" />
                 </div>
             </div>
@@ -150,6 +181,26 @@ export default {
         const password = ref('');
         const isLoginMode = ref(true);
 
+        // Chat
+        const activeTab = ref('chat');
+        const chatInput = ref('');
+        const chatInputRef = ref(null);
+        const chatContainer = ref(null);
+
+        watch(chatMessages, () => {
+            nextTick(() => {
+                if (chatContainer.value) chatContainer.value.scrollTop = chatContainer.value.scrollHeight;
+            });
+        }, { deep: true });
+
+        const handleChatEnter = (e) => {
+            if (chatInput.value.trim()) {
+                api.sendMessage(chatInput.value.trim());
+                chatInput.value = '';
+            }
+            chatInputRef.value.blur();
+        };
+
         const handleAuth = async () => {
             if (!playerName.value || !password.value) return;
 
@@ -198,6 +249,15 @@ export default {
                 showAttributes.value = false;
                 showRewards.value = false;
                 inspectedPlayer.value = null;
+                // Also blur chat
+                if (chatInputRef.value) chatInputRef.value.blur();
+            }
+
+            if (e.key === 'Enter') {
+                if (document.activeElement !== chatInputRef.value) {
+                    e.preventDefault();
+                    if (chatInputRef.value) chatInputRef.value.focus();
+                }
             }
         };
 
@@ -300,7 +360,16 @@ export default {
             isDead,
             respawnTimer,
             instantRevive,
-            isUpdating
+            instantRevive,
+            isUpdating,
+            activeTab,
+            chatInput,
+            chatMessages,
+            chatInputRef,
+            chatContainer,
+            handleChatEnter,
+            isFreeFarming,
+            toggleFreeFarm
         };
     }
 };

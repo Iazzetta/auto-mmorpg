@@ -2,6 +2,7 @@ import { ref, reactive, computed } from 'vue';
 
 export const player = ref(null);
 export const logs = ref([]);
+export const chatMessages = ref([]);
 export const socket = ref(null);
 export const currentMonster = ref(null);
 export const mapMonsters = ref([]);
