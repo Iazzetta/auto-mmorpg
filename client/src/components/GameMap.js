@@ -11,8 +11,9 @@ export default {
     template: `
         <div class="absolute top-14 bottom-0 w-full bg-gray-950 overflow-hidden">
             <!-- Map Info -->
-            <div class="absolute top-4 left-4 text-xs text-gray-500 font-mono z-10 bg-black/50 px-2 py-1 rounded pointer-events-none">
-                MAP: {{ formatMapName(player?.current_map_id) }} | {{ Math.round(player?.position?.x || 0) }}, {{ Math.round(player?.position?.y || 0) }}
+            <div class="absolute top-4 left-4 text-xs text-gray-500 font-mono z-10 bg-black/50 px-2 py-1 rounded pointer-events-none flex gap-2">
+                <span>MAP: {{ formatMapName(player?.current_map_id) }} | {{ Math.round(player?.position?.x || 0) }}, {{ Math.round(player?.position?.y || 0) }}</span>
+                <span class="text-green-400 font-bold border-l border-gray-600 pl-2">FPS: {{ fps }}</span>
             </div>
 
             <!-- 3D Container -->
@@ -40,7 +41,7 @@ export default {
 
             <!-- Enemy Status Overlay -->
             <div v-if="currentMonster"
-                class="absolute top-16 right-4 bg-gray-800 p-2 rounded border border-red-900 shadow-xl z-20 w-48 pointer-events-none">
+                class="absolute top-14 left-4 bg-gray-800 p-2 rounded border border-red-900 shadow-xl z-20 w-48 pointer-events-none">
                 <div class="flex justify-between items-center mb-1">
                     <span class="font-bold text-red-400 text-xs truncate">{{ currentMonster.name }}</span>
                     <span class="text-xs text-gray-400">{{ currentMonster.hp }}/{{ currentMonster.max_hp }}</span>
@@ -74,10 +75,7 @@ export default {
                  <span class="text-teal-400 font-bold text-xs mt-1 shadow-black drop-shadow-md">Gathering...</span>
             </div>
             
-            <!-- FPS Counter -->
-            <div class="absolute top-0 right-0 bg-black/50 text-green-400 font-mono text-xs px-2 py-1 pointer-events-none">
-                FPS: {{ fps }}
-            </div>
+
         </div>
     `,
     setup(props, { emit }) {

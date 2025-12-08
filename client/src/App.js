@@ -49,7 +49,7 @@ export default {
 
                 <!-- Middle Section: Chat/Logs -->
                 <div class="flex-1 relative pointer-events-none">
-                    <div class="absolute bottom-24 left-4 w-80 h-48 bg-black/60 backdrop-blur-md rounded border border-gray-700 pointer-events-auto flex flex-col shadow-xl transition-all duration-300"
+                    <div class="absolute bottom-2 left-4 w-80 h-48 bg-black/60 backdrop-blur-md rounded border border-gray-700 pointer-events-auto flex flex-col shadow-xl transition-all duration-300"
                          :class="{'opacity-100': isChatFocused || isHoveringChat, 'opacity-70': !isChatFocused && !isHoveringChat}"
                          @mouseenter="isHoveringChat = true"
                          @mouseleave="isHoveringChat = false">
