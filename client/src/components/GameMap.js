@@ -768,6 +768,26 @@ export default {
                             mesh.rotation.y += rotDiff * 0.1;
                         }
                     }
+
+                    // --- MONSTER ANIMATION LOGIC ---
+                    if (mesh.userData.type === 'monster' && mesh.userData.mixer && mesh.userData.anims) {
+                        const anims = mesh.userData.anims;
+                        let nextAction = anims.idle;
+                        const mState = (entity.state || '').toUpperCase();
+
+                        // Priority: Attack > Run > Idle
+                        if (mState === 'ATTACKING' && anims.attack) {
+                            nextAction = anims.attack;
+                        } else if (isMoving && anims.run) {
+                            nextAction = anims.run;
+                        }
+
+                        if (nextAction && mesh.userData.currentAction !== nextAction) {
+                            if (mesh.userData.currentAction) mesh.userData.currentAction.fadeOut(0.2);
+                            nextAction.reset().fadeIn(0.2).play();
+                            mesh.userData.currentAction = nextAction;
+                        }
+                    }
                 } else if (mesh.userData.type === 'portal') {
                     // Rotate portal effect
                     mesh.rotation.y += 0.02;
@@ -1043,23 +1063,20 @@ export default {
 
             updateEntityPositions();
 
-            // Clear Monster Card if invalid conditions
-            if (currentMonster.value) {
-                // 1. Monster dead or missing
-                const liveM = mapMonsters.value.find(m => m.id === currentMonster.value.id);
-                if (!liveM || (liveM.stats && liveM.stats.hp <= 0)) {
+            // Sync Current Monster with Target Logic
+            if (player.value && player.value.target_id) {
+                const m = mapMonsters.value.find(m => m.id === player.value.target_id);
+                if (m && m.stats && m.stats.hp > 0) {
+                    currentMonster.value = m;
+                } else {
                     currentMonster.value = null;
                 }
-                // 2. Player no longer targeting it OR player no longer in combat
-                else if (player.value) {
-                    // If we switched target, currentMonster usually updates, but if we cleared target:
-                    if (!player.value.target_id) currentMonster.value = null;
-
-                    // If we are IDLE/MOVING (escaped), clear card
-                    const state = (player.value.state || '').toUpperCase();
-                    if (state !== 'COMBAT' && state !== 'ATTACKING') {
-                        currentMonster.value = null;
-                    }
+            } else {
+                if (currentMonster.value && player.value && player.value.state === 'COMBAT') {
+                    // Keep it if we are still strictly in combat (latency buffer),
+                    // but ideally target_id should be truth
+                } else {
+                    currentMonster.value = null;
                 }
             }
 
