@@ -1,6 +1,7 @@
 import { ref, onMounted, onUnmounted, watch } from 'vue';
 import * as THREE from 'three';
 import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
+import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
 import { player, mapMonsters, mapPlayers, destinationMarker, currentMonster, addLog, selectedTargetId, isFreeFarming, pendingAttackId, inspectedPlayer, selectedMapId, currentMapData, mapNpcs, showGameAlert, socket, activeMission } from '../state.js';
 import { api } from '../services/api.js';
 import { stopAutoFarm, checkAndAct } from '../services/autoFarm.js';
@@ -209,6 +210,63 @@ export default {
             return group;
         };
 
+        // Local Cache for Templates (Group + Clips)
+        const modelCache = new Map();
+        const pendingLoads = new Map();
+
+        const loadTemplate = (folderName) => {
+            if (modelCache.has(folderName)) return Promise.resolve(modelCache.get(folderName));
+            if (pendingLoads.has(folderName)) return pendingLoads.get(folderName);
+
+            const promise = new Promise((resolve, reject) => {
+                const path = `/characters/${folderName}`;
+                const data = { group: null, clips: {}, height: 0 };
+
+                fbxLoader.load(`${path}/idle.fbx`, (object) => {
+                    // Normalize
+                    const box = new THREE.Box3().setFromObject(object);
+                    const size = box.getSize(new THREE.Vector3());
+                    data.height = size.y;
+                    data.group = object; // Base Model
+
+                    if (object.animations.length > 0) data.clips.idle = object.animations[0];
+
+                    // Load Run (Parallel)
+                    const p1 = new Promise(r => {
+                        fbxLoader.load(`${path}/running.fbx`, (anim) => {
+                            if (anim.animations.length > 0) {
+                                const clip = anim.animations[0];
+                                clip.tracks = clip.tracks.filter(t => !t.name.endsWith('.position'));
+                                data.clips.run = clip;
+                            }
+                            r();
+                        }, undefined, r);
+                    });
+
+                    // Load Attack
+                    const p2 = new Promise(r => {
+                        fbxLoader.load(`${path}/attack1.fbx`, (anim) => {
+                            if (anim.animations.length > 0) data.clips.attack = anim.animations[0];
+                            r();
+                        }, undefined, r);
+                    });
+
+                    Promise.all([p1, p2]).then(() => resolve(data));
+
+                }, undefined, reject);
+            });
+
+            pendingLoads.set(folderName, promise);
+            return promise.then(data => {
+                modelCache.set(folderName, data);
+                pendingLoads.delete(folderName);
+                return data;
+            }).catch(e => {
+                pendingLoads.delete(folderName);
+                throw e;
+            });
+        };
+
         const loadMonsterModel = (monster, pid) => {
             const group = new THREE.Group();
 
@@ -218,10 +276,15 @@ export default {
             group.add(placeholder);
 
             const folderName = monster.template_id;
-            const path = `/characters/${folderName}`;
 
-            fbxLoader.load(`${path}/idle.fbx`, (object) => {
+            loadTemplate(folderName).then(cached => {
+                // If group removed from scene, abort
+                // But difficult to check here effectively without cleaning up?
+                // Just proceed.
                 group.remove(placeholder);
+
+                // Clone using SkeletonUtils to allow independent animation
+                const object = SkeletonUtils.clone(cached.group);
 
                 object.traverse(child => {
                     if (child.isMesh) {
@@ -231,12 +294,9 @@ export default {
                 });
 
                 // Auto-scale
-                const box = new THREE.Box3().setFromObject(object);
-                const size = box.getSize(new THREE.Vector3());
-                const baseHeight = 3.0; // Standard Monster Height (Match Player)
+                const baseHeight = 3.0;
                 const customScale = monster.model_scale || 1.0;
-
-                const scale = (baseHeight / size.y) * customScale;
+                const scale = (baseHeight / cached.height) * customScale;
                 object.scale.set(scale, scale, scale);
                 object.position.y = 0;
 
@@ -245,41 +305,28 @@ export default {
                 // Animation
                 const mixer = new THREE.AnimationMixer(object);
                 mixers.push(mixer);
+                group.userData.mixer = mixer;
 
                 const anims = { idle: null, run: null, attack: null };
 
-                if (object.animations.length > 0) {
-                    const action = mixer.clipAction(object.animations[0]);
+                if (cached.clips.idle) {
+                    const action = mixer.clipAction(cached.clips.idle);
                     action.play();
                     anims.idle = action;
                     group.userData.currentAction = action;
                 }
-
-                // Load Run
-                fbxLoader.load(`${path}/running.fbx`, (anim) => {
-                    if (anim.animations.length > 0) {
-                        const clip = anim.animations[0];
-                        // Remove position tracks to prevent root motion sliding
-                        clip.tracks = clip.tracks.filter(t => !t.name.endsWith('.position'));
-                        anims.run = mixer.clipAction(clip);
-                    }
-                }, undefined, () => { });
-
-                // Load Attack
-                fbxLoader.load(`${path}/attack1.fbx`, (anim) => {
-                    if (anim.animations.length > 0) {
-                        const act = mixer.clipAction(anim.animations[0]);
-                        act.timeScale = 1.5;
-                        anims.attack = act;
-                    }
-                }, undefined, () => { });
-
-                group.userData.mixer = mixer;
+                if (cached.clips.run) {
+                    anims.run = mixer.clipAction(cached.clips.run);
+                }
+                if (cached.clips.attack) {
+                    const act = mixer.clipAction(cached.clips.attack);
+                    act.timeScale = 1.5;
+                    anims.attack = act;
+                }
                 group.userData.anims = anims;
-
-            }, undefined, (err) => {
-                // 404 or error -> Keep placeholder
-                // console.warn(`No model found for ${folderName}, using placeholder.`);
+            }).catch(err => {
+                // console.warn(`Fallback for ${folderName}`, err);
+                // Keep placeholder
             });
 
             return group;
