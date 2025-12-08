@@ -21,7 +21,7 @@
                 }
             ],
             "spawns": [],
-            "texture": "floor/Brickwall2_Texture.png",
+            "texture": "floor/Brickwall3_Texture.png",
             "resources": [
                 {
                     "id": "res_1765041733109",
@@ -106,6 +106,15 @@
                     "area": {
                         "x": 80,
                         "y": 80,
+                        "radius": 10
+                    }
+                },
+                {
+                    "template_id": "mutant",
+                    "count": 3,
+                    "area": {
+                        "x": 18,
+                        "y": 85,
                         "radius": 10
                     }
                 }
@@ -281,51 +290,35 @@
             ],
             "spawns": [
                 {
-                    "template_id": "rat",
-                    "count": 8,
+                    "template_id": "mutant",
+                    "count": 20,
                     "area": {
-                        "x": 27,
-                        "y": 26,
-                        "radius": 5
+                        "x": 23,
+                        "y": 44,
+                        "radius": 20
                     }
                 },
                 {
-                    "template_id": "giant_rat",
-                    "count": 8,
+                    "template_id": "rat",
+                    "count": 25,
                     "area": {
-                        "x": 85,
+                        "x": 74,
                         "y": 27,
-                        "radius": 5
+                        "radius": 20
                     }
                 },
                 {
-                    "template_id": "king_rat",
-                    "count": 1,
+                    "template_id": "mutant",
+                    "count": 30,
                     "area": {
-                        "x": 50,
-                        "y": 50,
-                        "radius": 1
-                    }
-                },
-                {
-                    "template_id": "rat",
-                    "count": 8,
-                    "area": {
-                        "x": 20,
+                        "x": 62,
                         "y": 75,
-                        "radius": 5
-                    }
-                },
-                {
-                    "template_id": "giant_rat",
-                    "count": 8,
-                    "area": {
-                        "x": 80,
-                        "y": 83,
-                        "radius": 5
+                        "radius": 20
                     }
                 }
-            ]
+            ],
+            "texture": "floor/Brickwall5_Texture.png",
+            "texture_scale": 50
         }
     },
     "monster_templates": {
@@ -494,6 +487,28 @@
                     "chance": 1
                 }
             ]
+        },
+        "mutant": {
+            "name": "Mutant",
+            "m_type": "aggressive",
+            "level": 5,
+            "xp_reward": 10,
+            "respawn_time": 10,
+            "stats": {
+                "hp": 10000,
+                "max_hp": 10000,
+                "atk": 20,
+                "def_": 5,
+                "speed": 5,
+                "attack_cooldown": 2
+            },
+            "drops": [
+                {
+                    "item_id": "item_potion_hp_01",
+                    "chance": 1
+                }
+            ],
+            "model_scale": 1.5
         }
     },
     "resource_templates": {

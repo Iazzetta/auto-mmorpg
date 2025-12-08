@@ -85,7 +85,7 @@ export default {
     setup(props, { emit }) {
         const container = ref(null);
         const fps = ref(0);
-        const cameraZoom = ref(20);
+        const cameraZoom = ref(10);
 
         const handleWheel = (e) => {
             e.preventDefault();
