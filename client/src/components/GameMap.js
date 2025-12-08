@@ -33,6 +33,11 @@ export default {
                 </div>
             </div>
 
+            <!-- Minimap -->
+            <div class="absolute top-4 right-4 w-[120px] h-[120px] bg-black/80 border border-gray-600 rounded z-30 overflow-hidden shadow-lg">
+                <canvas ref="minimapCanvas" width="120" height="120" class="w-full h-full block opacity-90"></canvas>
+            </div>
+
             <!-- Enemy Status Overlay -->
             <div v-if="currentMonster"
                 class="absolute top-16 right-4 bg-gray-800 p-2 rounded border border-red-900 shadow-xl z-20 w-48 pointer-events-none">
@@ -84,6 +89,7 @@ export default {
     `,
     setup(props, { emit }) {
         const container = ref(null);
+        const minimapCanvas = ref(null);
         const fps = ref(0);
         const cameraZoom = ref(10);
 
@@ -1101,6 +1107,9 @@ export default {
         const animate = () => {
             animationId = requestAnimationFrame(animate);
 
+            // Minimap
+            drawMinimap();
+
             // Update Animations
             const delta = clock.getDelta();
             mixers.forEach(m => m.update(delta));
@@ -1191,6 +1200,62 @@ export default {
             }
         };
 
+        const drawMinimap = () => {
+            if (!minimapCanvas.value || !player.value) return;
+            const ctx = minimapCanvas.value.getContext('2d');
+            const w = minimapCanvas.value.width;
+            const h = minimapCanvas.value.height;
+
+            // Background
+            ctx.fillStyle = 'rgba(17, 24, 39, 0.9)';
+            ctx.fillRect(0, 0, w, h);
+
+            const scale = w / 100; // Map Size 100x100
+
+            const drawDot = (x, z, color, size = 2) => {
+                ctx.fillStyle = color;
+                ctx.beginPath();
+                ctx.arc(x * scale, z * scale, size, 0, Math.PI * 2);
+                ctx.fill();
+            };
+
+            // Resources
+            if (currentMapData.value && currentMapData.value.resources) {
+                currentMapData.value.resources.forEach(r => drawDot(r.x, r.y, '#0ea5e9', 1.5));
+            }
+            // Portals
+            if (currentMapData.value && currentMapData.value.portals) {
+                currentMapData.value.portals.forEach(p => drawDot(p.x, p.y, '#d8b4fe', 3));
+            }
+            // Monsters
+            mapMonsters.value.forEach(m => {
+                if (m.stats && m.stats.hp > 0) drawDot(m.position_x, m.position_y, '#ef4444', 2);
+            });
+            // NPCs
+            if (mapNpcs.value) {
+                mapNpcs.value.forEach(n => drawDot(n.x, n.y, '#facc15', 2.5));
+            }
+            // Other Players
+            mapPlayers.value.forEach(p => {
+                if (p.id !== player.value.id) drawDot(p.position.x, p.position.y, '#60a5fa', 2);
+            });
+            // Self
+            if (player.value && player.value.position) {
+                drawDot(player.value.position.x, player.value.position.y, '#4ade80', 3);
+                // Direction Indicator
+                const rot = meshes.get(player.value.id)?.rotation.y || 0;
+                ctx.beginPath();
+                ctx.moveTo(player.value.position.x * scale, player.value.position.y * scale);
+                ctx.lineTo(
+                    (player.value.position.x + Math.sin(rot) * 5) * scale,
+                    (player.value.position.y + Math.cos(rot) * 5) * scale
+                );
+                ctx.strokeStyle = '#4ade80';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            }
+        };
+
         watch(() => player.value?.current_map_id, async (newMapId) => {
             if (newMapId) {
                 // Only stop auto-farm if we moved to a map that wasn't our target
@@ -1252,6 +1317,7 @@ export default {
 
         return {
             container,
+            minimapCanvas,
             player,
             currentMonster,
             formatMapName,
