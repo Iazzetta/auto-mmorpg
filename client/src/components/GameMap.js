@@ -595,6 +595,9 @@ export default {
                 let mesh = meshes.get(m.id);
                 if (!mesh) {
                     mesh = loadMonsterModel(m, m.id);
+                    mesh.castShadow = true;
+                    mesh.userData = { type: 'monster', entity: m };
+                    mesh.position.set(m.position_x, 0, m.position_y);
                     if (!mesh.parent) scene.add(mesh);
                     meshes.set(m.id, mesh);
                 }
