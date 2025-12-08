@@ -545,6 +545,7 @@ export default {
         };
 
         const updateEntities = () => {
+            if (!scene || !geometries.player) return;
             const validIds = new Set();
             const LERP_FACTOR = 0.15; // Smoothness factor
 
@@ -1099,6 +1100,8 @@ export default {
             // Minimap
             drawMinimap();
 
+            updateEntities();
+
             // Clear Monster Card if invalid conditions
             if (currentMonster.value) {
                 // 1. Monster dead or missing
@@ -1323,8 +1326,7 @@ export default {
             }
         });
 
-        watch(mapPlayers, () => updateEntities(), { deep: true });
-        watch(mapMonsters, () => updateEntities(), { deep: true });
+
 
         return {
             container,
