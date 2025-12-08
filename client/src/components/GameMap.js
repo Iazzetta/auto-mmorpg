@@ -1058,9 +1058,7 @@ export default {
                 else if (canInteractNpc.value) interactNpc();
                 else if (canGather.value) startGathering();
             }
-            if (e.key === ' ') {
-                toggleAutoAttack();
-            }
+
         };
 
         const handleKeyUp = (e) => {

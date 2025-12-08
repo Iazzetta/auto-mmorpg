@@ -23,6 +23,9 @@ export default {
                 </div>
                 <div v-else class="text-gray-600 text-xs">Empty</div>
             </div>
+            
+            <!-- Extra Content (Auto Button) -->
+            <slot></slot>
 
             <!-- Admin Button -->
             <button v-if="player && player.is_admin" 

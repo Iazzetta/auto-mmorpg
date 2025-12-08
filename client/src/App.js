@@ -49,7 +49,10 @@ export default {
 
                 <!-- Middle Section: Chat/Logs -->
                 <div class="flex-1 relative pointer-events-none">
-                    <div class="absolute bottom-28 left-4 w-96 h-64 bg-black/60 backdrop-blur-md rounded border border-gray-700 pointer-events-auto flex flex-col shadow-xl">
+                    <div class="absolute bottom-24 left-4 w-80 h-48 bg-black/60 backdrop-blur-md rounded border border-gray-700 pointer-events-auto flex flex-col shadow-xl transition-all duration-300"
+                         :class="{'opacity-100': isChatFocused || isHoveringChat, 'opacity-70': !isChatFocused && !isHoveringChat}"
+                         @mouseenter="isHoveringChat = true"
+                         @mouseleave="isHoveringChat = false">
                         <!-- Tabs -->
                         <div class="flex border-b border-gray-700 bg-black/40">
                             <button @click="activeTab = 'chat'" class="flex-1 py-1 text-xs font-bold uppercase transition-colors" :class="activeTab === 'chat' ? 'text-blue-400 bg-white/10' : 'text-gray-500 hover:text-gray-300'">Chat</button>
@@ -66,8 +69,10 @@ export default {
                                  </div>
                              </div>
                              <input ref="chatInputRef"
-                                    v-model="chatInput" 
-                                    @keydown.enter="handleChatEnter"
+                                    v-model="chatInput"
+                                    @focus="isChatFocused = true"
+                                    @blur="isChatFocused = false" 
+                                    @keydown.enter.stop="handleChatEnter"
                                     placeholder="Press Enter to chat..." 
                                     class="bg-black/50 border-t border-gray-700 p-2 text-xs text-white outline-none focus:bg-black/80 transition-colors w-full"
                              >
@@ -84,14 +89,15 @@ export default {
                 </div>
 
                 <!-- Footer / Hotbar -->
-                <div class="pointer-events-auto flex items-end gap-2 p-4 w-full justify-center">
-                    <button @click="toggleFreeFarm" 
-                            class="w-12 h-12 bg-black/80 border-2 rounded flex items-center justify-center text-2xl hover:bg-gray-800 transition-colors shadow-lg active:scale-95"
-                            :class="isFreeFarming ? 'border-red-500 text-red-500' : 'border-green-500 text-green-500'"
-                            :title="isFreeFarming ? 'Stop Auto Attack' : 'Start Auto Attack'">
-                        {{ isFreeFarming ? '❌' : '⚔️' }}
-                    </button>
-                    <Hotbar @open-editor="showEditor = true" />
+                <div class="pointer-events-auto">
+                    <Hotbar @open-editor="showEditor = true">
+                        <button @click="toggleFreeFarm" 
+                                class="w-12 h-12 bg-black/80 border-2 rounded flex items-center justify-center text-2xl hover:bg-gray-800 transition-colors shadow-lg active:scale-95 ml-2"
+                                :class="isFreeFarming ? 'border-red-500 text-red-500' : 'border-green-500 text-green-500'"
+                                :title="isFreeFarming ? 'Stop Auto Attack' : 'Start Auto Attack'">
+                            {{ isFreeFarming ? '❌' : '⚔️' }}
+                        </button>
+                    </Hotbar>
                 </div>
             </div>
 
@@ -186,6 +192,8 @@ export default {
         const chatInput = ref('');
         const chatInputRef = ref(null);
         const chatContainer = ref(null);
+        const isHoveringChat = ref(false);
+        const isChatFocused = ref(false);
 
         watch(chatMessages, () => {
             nextTick(() => {
@@ -369,7 +377,9 @@ export default {
             chatContainer,
             handleChatEnter,
             isFreeFarming,
-            toggleFreeFarm
+            toggleFreeFarm,
+            isHoveringChat,
+            isChatFocused
         };
     }
 };
