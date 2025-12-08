@@ -5,44 +5,57 @@
     *   **Framework**: FastAPI (Async Web Framework)
     *   **Server**: Uvicorn (ASGI Server)
     *   **State Management**: In-memory singleton (`StateManager`)
-*   **Frontend**: HTML5 / JavaScript
-    *   **Framework**: Vue.js 3 (via CDN, Composition API)
-    *   **Styling**: TailwindCSS (via CDN)
+*   **Frontend**: HTML5 / JavaScript (ES6 Modules)
+    *   **Framework**: Vue.js 3 (Composition API)
+    *   **Styling**: TailwindCSS
     *   **Visualization**: Three.js (WebGL) for 3D Isometric Rendering
+        *   **Models**: FBX Format (Characters, Animations)
+        *   **Animations**: `THREE.AnimationMixer`
 *   **Communication**:
-    *   **REST API**: For transactional actions (Move, Equip, Sell, Attribute Allocation) and Editor actions.
-    *   **WebSockets**: For high-frequency state updates (Combat logs, HP changes, Position updates).
+    *   **REST API**: For transactional actions (Login, Register, Move, Gather, Equip).
+    *   **WebSockets**: For real-time updates (Chat, Combat, Entity Positions, Resource Spawns).
 
-## Backend Structure (`backend/app/`)
-*   **`main.py`**: Entry point. Sets up FastAPI app, CORS, and starts the `GameLoop`.
-*   **`api/`**:
-    *   **`routes.py`**: Defines HTTP endpoints and WebSocket connection handler.
-    *   **`editor.py`**: Endpoints for Map and Mission editors.
-*   **`engine/`**:
-    *   **`game_loop.py`**: The heartbeat of the server. Runs an async loop (`tick`) that processes combat, respawns, and state updates.
-    *   **`state_manager.py`**: Singleton that holds the global state (Players, Monsters, Maps).
+## Backend Structure (`backend/`)
+*   **`main.py`**: Entry point. Sets up FastAPI app, CORS, Static Files (maps), and starts the `GameLoop`. Defines WebSocket endpoint.
+*   **`app/`**:
+    *   **`api/`**:
+        *   **`routes.py`**: HTTP endpoints for Player actions.
+        *   **`editor.py`**: Endpoints for World Editor.
+    *   **`engine/`**:
+        *   **`game_loop.py`**: Async loop (`tick`) processing combat, regeneration, and spawns.
+        *   **`state_manager.py`**: Singleton global state (Players, Maps, Monsters).
+    *   **`services/`**:
+        *   **`combat_service.py`**: Damage formulas, loot tables, death logic.
+        *   **`inventory_service.py`**: Item management.
+    *   **`models/`**: Pydantic models.
+    *   **`data/`**: JSON files for world persistence (`world.json`, `missions.json`).
+
+## Frontend Structure (`client/src/`)
+*   **`App.js`**: Main Vue Component.
+    *   Manages overarching UI (Editor, Modals).
+    *   Handles Login/Register.
+    *   Initializes Global Keybindings.
+*   **`components/`**:
+    *   **`GameMap.js`**: Core 3D Logic.
+        *   **Three.js Setup**: Scene, Camera, Lights, Raycaster.
+        *   **Render Loop**: `animate()` handles Minimap, Entity Positions, and Animations.
+        *   **Entity Management**: `updateEntityLifecycle` (Mesh creation/removal).
+    *   **`Navbar.js`**, **`Hotbar.js`**: UI HUD components.
+    *   **`InventoryModal.js`**, **`AttributesModal.js`**: Game Logic Modals.
+    *   **`WorldEditor.js`**: Admin tools for map editing.
 *   **`services/`**:
-    *   **`combat_service.py`**: Pure logic for damage calculation, loot generation, and death handling.
-    *   **`inventory_service.py`**: Logic for adding/removing items and managing stacks.
-*   **`models/`**: Pydantic models defining data structures (`Player`, `Monster`, `Item`, `Map`).
-*   **`data/`**:
-    *   **`items.py`, `monsters.py`**: Static data definitions (being migrated to JSON).
-    *   **`missions.json`, `world.json`**: Dynamic data storage for Missions and Maps.
+    *   **`api.js`**: HTTP fetch wrappers and WebSocket event handling (`onmessage`).
+    *   **`state.js`**: Global Reactive State (Vue `ref`s) shared across components.
+    *   **`autoFarm.js`**: Logic for automated farming bot.
 
-## Frontend Structure (`client/`)
-*   **`index.html`**: Single Page Application (SPA) containing:
-    *   HTML Layout (Header, Stats, Map, Log, Inventory).
-    *   Vue.js Application Logic (`createApp`).
-    *   **`components/GameMap.js`**: Three.js scene management, rendering loop, and input handling.
-    *   WebSocket handling and event dispatching.
-
-## Data Flow
-1.  **Client Action**: User clicks "Attack".
-2.  **API Call**: Client sends `POST /player/{id}/attack`.
-3.  **State Update**: Backend updates Player state to `COMBAT` and sets target.
-4.  **Game Loop**:
-    *   Detects player in `COMBAT` state.
-    *   Calls `CombatService.process_combat_round()`.
-    *   Updates HP, checks for death/loot.
-5.  **Broadcast**: `GameLoop` pushes a `combat_update` event via WebSocket.
-6.  **Client Render**: Vue app receives event, updates HP bar, and appends log message.
+## Data Flow Example (Combat)
+1.  **Client Action**: User clicks "Auto Attack" (switches `isFreeFarming` to true).
+2.  **Client Loop**: `checkAndAct()` (in `autoFarm.js`) finds nearest monster.
+3.  **API Call**: `POST /player/{id}/move` to get in range.
+4.  **API Call**: `POST /player/{id}/attack` when in range.
+5.  **Backend**: `CombatService` calculates damage.
+6.  **Broadcast**: `GameLoop` sends `combat_update` via WebSocket.
+7.  **Client Update**:
+    *   `api.js` receives message.
+    *   `GameAlerts.js` shows floating damage number.
+    *   `GameMap.js` updates monster HP bar (via reactive state).
