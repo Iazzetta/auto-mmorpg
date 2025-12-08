@@ -1099,6 +1099,25 @@ export default {
             // Minimap
             drawMinimap();
 
+            // Clear Monster Card if invalid conditions
+            if (currentMonster.value) {
+                // 1. Monster dead or missing
+                const liveM = mapMonsters.value.find(m => m.id === currentMonster.value.id);
+                if (!liveM || (liveM.stats && liveM.stats.hp <= 0)) {
+                    currentMonster.value = null;
+                }
+                // 2. Player no longer targeting it OR player no longer in combat
+                else if (player.value) {
+                    // If we switched target, currentMonster usually updates, but if we cleared target:
+                    if (!player.value.target_id) currentMonster.value = null;
+
+                    // If we are IDLE/MOVING (escaped), clear card
+                    if (player.value.state !== 'COMBAT' && player.value.state !== 'ATTACKING') {
+                        currentMonster.value = null;
+                    }
+                }
+            }
+
             // Update Animations
             const delta = clock.getDelta();
             mixers.forEach(m => m.update(delta));
@@ -1303,6 +1322,9 @@ export default {
                 container.value.removeChild(renderer.domElement);
             }
         });
+
+        watch(mapPlayers, () => updateEntities(), { deep: true });
+        watch(mapMonsters, () => updateEntities(), { deep: true });
 
         return {
             container,
