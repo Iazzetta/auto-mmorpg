@@ -544,10 +544,9 @@ export default {
             }
         };
 
-        const updateEntities = () => {
+        const updateEntityLifecycle = () => {
             if (!scene || !geometries.player) return;
             const validIds = new Set();
-            const LERP_FACTOR = 0.15; // Smoothness factor
 
             // 1. Local Player
             if (player.value) {
@@ -566,58 +565,12 @@ export default {
                     if (!mesh.parent) scene.add(mesh);
                     meshes.set(pid, mesh);
                 }
-
-                // Update Entity Data
                 mesh.userData.entity = player.value;
-
-                // Interpolate Position & Rotation
-                const targetX = player.value.position.x;
-                const targetZ = player.value.position.y;
-
-                // Calculate movement direction for rotation
-                const dx = targetX - mesh.position.x;
-                const dz = targetZ - mesh.position.z;
-
-                const dist = Math.sqrt(dx * dx + dz * dz);
-                const isKeys = (keys.w || keys.a || keys.s || keys.d);
-
-                // Snap to target if close and not pressing keys (stops micro-sliding)
-                if (!isKeys && dist < 0.2) {
-                    mesh.position.x = targetX;
-                    mesh.position.z = targetZ;
-                    mesh.userData.isMoving = false;
-                } else {
-                    mesh.userData.isMoving = dist > 0.1 || isKeys;
-                }
-
-                if (Math.abs(dx) > 0.1 || Math.abs(dz) > 0.1) {
-                    const angle = Math.atan2(dx, dz);
-                    mesh.rotation.y = angle;
-                }
-
-                if (dist > 10) { // If player teleported, snap camera and player
-                    mesh.position.x = targetX;
-                    mesh.position.z = targetZ;
-                    camera.position.x = targetX + 20;
-                    camera.position.z = targetZ + 20;
-                    camera.lookAt(targetX, 0, targetZ);
-                } else {
-                    // Smoothly update player position
-                    mesh.position.x += (targetX - mesh.position.x) * LERP_FACTOR;
-                    mesh.position.z += (targetZ - mesh.position.z) * LERP_FACTOR;
-
-                    // Camera Follow (Smooth)
-                    const targetCamX = mesh.position.x + 20;
-                    const targetCamZ = mesh.position.z + 20;
-                    camera.position.x += (targetCamX - camera.position.x) * LERP_FACTOR;
-                    camera.position.z += (targetCamZ - camera.position.z) * LERP_FACTOR;
-                    camera.lookAt(camera.position.x - 20, 0, camera.position.z - 20);
-                }
             }
 
             // 2. Other Players
             mapPlayers.value.forEach(p => {
-                if (p.id === player.value.id) return;
+                if (player.value && p.id === player.value.id) return;
                 validIds.add(p.id);
                 let mesh = meshes.get(p.id);
                 if (!mesh) {
@@ -632,127 +585,19 @@ export default {
                     if (!mesh.parent) scene.add(mesh);
                     meshes.set(p.id, mesh);
                 }
-
                 mesh.userData.entity = p;
-
-                // Interpolate
-                const targetX = p.position.x;
-                const targetZ = p.position.y;
-
-                // Calculate movement direction for rotation
-                const dx = targetX - mesh.position.x;
-                const dz = targetZ - mesh.position.z;
-                const dist = Math.sqrt(dx * dx + dz * dz);
-
-                mesh.userData.speed = dist;
-                mesh.userData.isMoving = dist > 0.05;
-
-                if (mesh.userData.isMoving) {
-                    const angle = Math.atan2(dx, dz);
-                    // Smooth turn
-                    let rotDiff = angle - mesh.rotation.y;
-                    while (rotDiff > Math.PI) rotDiff -= Math.PI * 2;
-                    while (rotDiff < -Math.PI) rotDiff += Math.PI * 2;
-                    mesh.rotation.y += rotDiff * 0.2;
-                } else if ((p.state === 'COMBAT' || p.state === 'ATTACKING') && p.target_id) {
-                    // Look at target
-                    const targetMonster = mapMonsters.value.find(m => m.id === p.target_id);
-                    if (targetMonster) {
-                        const tdx = targetMonster.position_x - mesh.position.x;
-                        const tdz = targetMonster.position_y - mesh.position.z;
-                        const angle = Math.atan2(tdx, tdz);
-
-                        // Smooth turn
-                        let rotDiff = angle - mesh.rotation.y;
-                        while (rotDiff > Math.PI) rotDiff -= Math.PI * 2;
-                        while (rotDiff < -Math.PI) rotDiff += Math.PI * 2;
-                        mesh.rotation.y += rotDiff * 0.1;
-                    }
-                }
-
-                if (dist > 10) {
-                    mesh.position.x = targetX;
-                    mesh.position.z = targetZ;
-                    mesh.userData.isMoving = false;
-                } else if (dist > 0.05) {
-                    mesh.position.x += dx * LERP_FACTOR;
-                    mesh.position.z += dz * LERP_FACTOR;
-                } else {
-                    mesh.position.x = targetX;
-                    mesh.position.z = targetZ;
-                    mesh.userData.isMoving = false;
-                    mesh.userData.speed = 0;
-                }
             });
 
             // 3. Monsters
             mapMonsters.value.forEach(m => {
-                if (!m.stats || m.stats.hp <= 0) return;
+                if (m.stats && m.stats.hp <= 0) return; // Only show living monsters
                 validIds.add(m.id);
                 let mesh = meshes.get(m.id);
                 if (!mesh) {
-                    // Try to load custom model if template_id suggests it
-                    // Heuristic: check if template_id is valid string
                     mesh = loadMonsterModel(m, m.id);
-                    mesh.castShadow = true;
-                    mesh.userData = { type: 'monster', entity: m };
-                    mesh.position.set(m.position_x, 0, m.position_y); // y=0 because model handles offset
-                    scene.add(mesh);
+                    if (!mesh.parent) scene.add(mesh);
                     meshes.set(m.id, mesh);
                 }
-
-                // Update Monster Animation State
-                const targetX = m.position_x;
-                const targetZ = m.position_y;
-                const dx = targetX - mesh.position.x;
-                const dz = targetZ - mesh.position.z;
-                const dist = Math.sqrt(dx * dx + dz * dz);
-
-                // Hysteresis for movement
-                const isMoving = dist > 0.05 || (mesh.userData.isMoving && dist > 0.01);
-                mesh.userData.isMoving = isMoving;
-                mesh.userData.speed = dist;
-
-                if (mesh.userData.mixer && mesh.userData.anims) {
-                    const anims = mesh.userData.anims;
-                    let nextAction = anims.idle;
-
-                    // Prioritize Attack State
-                    // If attacking, play attack. Even if moving slightly (sliding attack better than running while attacking).
-                    if (m.state === 'ATTACKING' && anims.attack) {
-                        nextAction = anims.attack;
-                    } else if (isMoving && anims.run) {
-                        nextAction = anims.run;
-                    }
-
-                    if (nextAction && mesh.userData.currentAction !== nextAction) {
-                        if (mesh.userData.currentAction) mesh.userData.currentAction.fadeOut(0.2);
-                        nextAction.reset().fadeIn(0.2).play();
-                        mesh.userData.currentAction = nextAction;
-                    }
-                }
-
-                // 3. Apply Rotation if moving
-                if (isMoving) {
-                    const angle = Math.atan2(dx, dz);
-                    let rotDiff = angle - mesh.rotation.y;
-                    while (rotDiff > Math.PI) rotDiff -= Math.PI * 2;
-                    while (rotDiff < -Math.PI) rotDiff += Math.PI * 2;
-                    mesh.rotation.y += rotDiff * 0.2;
-                }
-
-                if (Math.abs(targetX - mesh.position.x) > 10 || Math.abs(targetZ - mesh.position.z) > 10) {
-                    mesh.position.x = targetX;
-                    mesh.position.z = targetZ;
-                } else {
-                    mesh.position.x += (targetX - mesh.position.x) * LERP_FACTOR;
-                    mesh.position.z += (targetZ - mesh.position.z) * LERP_FACTOR;
-                }
-
-                // Update speed for animation
-                // Update speed for animation loop (already done above)
-                // mesh.userData.speed = dist;
-
                 mesh.userData.entity = m;
             });
 
@@ -771,8 +616,6 @@ export default {
                         scene.add(mesh);
                         meshes.set(pid, mesh);
                     }
-                    // Rotate portal effect
-                    mesh.rotation.y += 0.02;
                 });
             }
 
@@ -793,14 +636,10 @@ export default {
                 });
             }
 
-            // 7. Resources
+            // 6. Resources
             if (currentMapData.value && currentMapData.value.resources) {
                 currentMapData.value.resources.forEach(res => {
-                    // Check Cooldown
-                    if (resourceCooldowns.value[res.id] && Date.now() < resourceCooldowns.value[res.id]) {
-                        return; // Skip rendering
-                    }
-
+                    if (resourceCooldowns.value[res.id] && Date.now() < resourceCooldowns.value[res.id]) return;
                     const rid = res.id;
                     validIds.add(rid);
                     let mesh = meshes.get(rid);
@@ -822,7 +661,7 @@ export default {
                 });
             }
 
-            // 6. Cleanup
+            // Cleanup
             for (const [id, mesh] of meshes) {
                 if (!validIds.has(id)) {
                     scene.remove(mesh);
@@ -830,6 +669,105 @@ export default {
                         mesh.material.dispose();
                     }
                     meshes.delete(id);
+                }
+            }
+        };
+
+        const updateEntityPositions = () => {
+            if (!scene) return;
+            const LERP_FACTOR = 0.15;
+
+            for (const [id, mesh] of meshes) {
+                const entity = mesh.userData.entity;
+                if (!entity) continue;
+
+                // Player or Monster
+                if (mesh.userData.type === 'player' || mesh.userData.type === 'monster') {
+                    // Target Position
+                    let targetX, targetZ;
+
+                    if (mesh.userData.type === 'player') {
+                        targetX = entity.position.x;
+                        targetZ = entity.position.y;
+                    } else { // Monster
+                        targetX = entity.position_x;
+                        targetZ = entity.position_y;
+                    }
+
+                    // Interpolate
+                    const dx = targetX - mesh.position.x;
+                    const dz = targetZ - mesh.position.z;
+                    const dist = Math.sqrt(dx * dx + dz * dz);
+
+                    // Is Moving?
+                    let isMoving = dist > 0.05;
+
+                    if (mesh.userData.type === 'player' && entity.id === player.value?.id) {
+                        const isKeys = (keys.w || keys.a || keys.s || keys.d);
+                        if (!isKeys && dist < 0.2) {
+                            mesh.position.x = targetX;
+                            mesh.position.z = targetZ;
+                            isMoving = false;
+                        } else {
+                            isMoving = dist > 0.1 || isKeys;
+                        }
+
+                        // Teleport check
+                        if (dist > 10) {
+                            mesh.position.x = targetX;
+                            mesh.position.z = targetZ;
+                            camera.position.x = targetX + 20;
+                            camera.position.z = targetZ + 20;
+                            camera.lookAt(targetX, 0, targetZ);
+                        } else {
+                            mesh.position.x += (targetX - mesh.position.x) * LERP_FACTOR;
+                            mesh.position.z += (targetZ - mesh.position.z) * LERP_FACTOR;
+
+                            // Camera Follow
+                            const targetCamX = mesh.position.x + 20;
+                            const targetCamZ = mesh.position.z + 20;
+                            camera.position.x += (targetCamX - camera.position.x) * LERP_FACTOR;
+                            camera.position.z += (targetCamZ - camera.position.z) * LERP_FACTOR;
+                            camera.lookAt(camera.position.x - 20, 0, camera.position.z - 20);
+                        }
+
+                    } else { // Other Players & Monsters
+                        if (dist > 10) {
+                            mesh.position.x = targetX;
+                            mesh.position.z = targetZ;
+                        } else {
+                            mesh.position.x += (targetX - mesh.position.x) * LERP_FACTOR;
+                            mesh.position.z += (targetZ - mesh.position.z) * LERP_FACTOR;
+                        }
+                    }
+
+                    mesh.userData.speed = dist;
+                    mesh.userData.isMoving = isMoving;
+
+                    // Rotation
+                    if (isMoving) {
+                        const angle = Math.atan2(dx, dz);
+                        let rotDiff = angle - mesh.rotation.y;
+                        while (rotDiff > Math.PI) rotDiff -= Math.PI * 2;
+                        while (rotDiff < -Math.PI) rotDiff += Math.PI * 2;
+                        mesh.rotation.y += rotDiff * 0.2;
+                    } else if (entity.target_id && (entity.state?.toUpperCase() === 'COMBAT' || entity.state?.toUpperCase() === 'ATTACKING')) {
+                        // Look at target
+                        const targetEntity = meshes.get(entity.target_id)?.userData.entity;
+                        if (targetEntity) {
+                            const tdx = (targetEntity.position_x || targetEntity.position.x) - mesh.position.x;
+                            const tdz = (targetEntity.position_y || targetEntity.position.y) - mesh.position.z;
+                            const angle = Math.atan2(tdx, tdz);
+
+                            let rotDiff = angle - mesh.rotation.y;
+                            while (rotDiff > Math.PI) rotDiff -= Math.PI * 2;
+                            while (rotDiff < -Math.PI) rotDiff += Math.PI * 2;
+                            mesh.rotation.y += rotDiff * 0.1;
+                        }
+                    }
+                } else if (mesh.userData.type === 'portal') {
+                    // Rotate portal effect
+                    mesh.rotation.y += 0.02;
                 }
             }
         };
@@ -874,7 +812,7 @@ export default {
             } else {
                 // Combat Rotation
                 const mesh = meshes.get(player.value.id);
-                if (mesh && (player.value.state === 'COMBAT' || player.value.state === 'ATTACKING') && player.value.target_id) {
+                if (mesh && (player.value.state?.toUpperCase() === 'COMBAT' || player.value.state?.toUpperCase() === 'ATTACKING') && player.value.target_id) {
                     const targetMonster = mapMonsters.value.find(m => m.id === player.value.target_id);
                     if (targetMonster) {
                         const tdx = targetMonster.position_x - player.value.position.x;
@@ -1100,7 +1038,7 @@ export default {
             // Minimap
             drawMinimap();
 
-            updateEntities();
+            updateEntityPositions();
 
             // Clear Monster Card if invalid conditions
             if (currentMonster.value) {
@@ -1115,7 +1053,8 @@ export default {
                     if (!player.value.target_id) currentMonster.value = null;
 
                     // If we are IDLE/MOVING (escaped), clear card
-                    if (player.value.state !== 'COMBAT' && player.value.state !== 'ATTACKING') {
+                    const state = (player.value.state || '').toUpperCase();
+                    if (state !== 'COMBAT' && state !== 'ATTACKING') {
                         currentMonster.value = null;
                     }
                 }
@@ -1326,7 +1265,14 @@ export default {
             }
         });
 
+        watch(mapPlayers, () => updateEntityLifecycle(), { deep: true });
+        watch(mapMonsters, () => updateEntityLifecycle(), { deep: true });
+        watch(() => player.value?.current_map_id, () => updateEntityLifecycle()); // Map Change
 
+        onMounted(() => {
+            // Init check
+            setTimeout(updateEntityLifecycle, 500);
+        });
 
         return {
             container,
