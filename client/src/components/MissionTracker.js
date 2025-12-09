@@ -1,4 +1,4 @@
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { player, activeMission, missions, mapNpcs, showToast } from '../state.js';
 import { startMission, stopMission } from '../services/autoFarm.js';
 import { api } from '../services/api.js';
@@ -14,6 +14,7 @@ export default {
             
             <!-- Header -->
             <div class="flex items-center gap-2 mb-1">
+                <span v-if="mission.newlyAdded" class="text-xs bg-yellow-500 text-black px-1 rounded font-bold animate-pulse absolute -left-2 -top-2 z-10 shadow-lg shadow-yellow-500/50">NEW!</span>
                 <span v-if="mission.is_main_quest" class="text-yellow-400 text-sm animate-pulse">★</span>
                 <span v-if="isCompleted(mission)" class="text-[10px] font-bold text-green-500 bg-green-900/50 px-1 rounded border border-green-700/50">Done</span>
                 <span class="text-xs font-bold text-white shadow-black drop-shadow-md truncate flex-1">{{ mission.title }}</span>
@@ -74,10 +75,26 @@ export default {
                 </div>
             </transition>
         </div>
-    </div>
     `,
     setup() {
         const showOverlay = ref(false);
+        const completingId = ref(null);
+        const newMissionId = ref(null); // Track new mission for entrance animation
+
+        // Watch for Active Mission changing to something valid
+        watch(() => player.value?.active_mission_id, (newId, oldId) => {
+            if (newId && newId !== oldId) {
+                newMissionId.value = newId;
+                // Clear animation faster (1.5s)
+                setTimeout(() => {
+                    if (newMissionId.value === newId) {
+                        newMissionId.value = null;
+                    }
+                }, 1500);
+            }
+        }, { immediate: true });
+
+
         const allMissions = computed(() => {
             const completed = player.value?.completed_missions || [];
             const activeId = player.value?.active_mission_id;
@@ -106,11 +123,17 @@ export default {
             }
 
             // Combine
-            return [...visibleMainQuests, ...sideQuests].sort((a, b) => {
+            const list = [...visibleMainQuests, ...sideQuests].sort((a, b) => {
                 if (a.is_main_quest && !b.is_main_quest) return -1;
                 if (!a.is_main_quest && b.is_main_quest) return 1;
                 return a.level_requirement - b.level_requirement;
             });
+
+            // Inject 'newlyAdded' flag for template if matches
+            return list.map(m => ({
+                ...m,
+                newlyAdded: m.id === newMissionId.value
+            }));
         });
 
         const isActive = (mission) => {
@@ -142,19 +165,24 @@ export default {
             const inv = player.value?.inventory || [];
 
             // Debug Log to catch Item ID issues
-            console.log(`[MissionTracker] Checking '${requiredItem}' in Inv:`, inv.map(i => i.id));
+            console.log(`[MissionTracker] Checking '${requiredItem}' in Inv: `, inv.map(i => i.id));
 
             const hasItem = inv.find(i => i.id === requiredItem || i.id.startsWith(requiredItem));
             const currentQty = hasItem ? (hasItem.quantity || 1) : 0;
 
             if (currentQty < requiredQty) {
                 const itemName = requiredItem.replace('item_', '').replace('mat_', '').replace(/_/g, ' ');
-                return { text: `Gather ${itemName}`, count: `${currentQty}/${requiredQty}`, ready: false };
+                return { text: `Gather ${itemName} `, count: `${currentQty}/${requiredQty}`, ready: false };
             }
             return { text: "Deliver", count: null, ready: true };
         };
 
         const getMissionClass = (mission) => {
+            if (mission.id === completingId.value) return 'scale-90 opacity-0 transition-all duration-500 bg-yellow-400/50';
+
+            // Entrance Animation (High Priority)
+            if (mission.newlyAdded) return 'border-4 border-yellow-400 shadow-[0_0_20px_gold] bg-yellow-900/80';
+
             if (isLocked(mission)) return 'border-red-600 bg-red-900/40 opacity-70 grayscale cursor-not-allowed';
 
             if (mission.is_main_quest) return 'border-yellow-500 bg-yellow-900/40 shadow-lg shadow-yellow-900/20'; // Main Quest Style
@@ -241,14 +269,25 @@ export default {
         // ... (existing computed/functions)
 
         const claimReward = async () => {
-            const success = await api.claimMission();
-            if (success) {
-                stopMission();
-                // Trigger Overlay
+            const activeId = player.value?.active_mission_id;
+            if (activeId) {
+                // Animation Start
+                completingId.value = activeId;
+
+                // Trigger Overlay Delay
                 showOverlay.value = true;
                 setTimeout(() => {
                     showOverlay.value = false;
                 }, 3000);
+
+                // Wait for Card Animation (e.g. 500ms)
+                setTimeout(async () => {
+                    const success = await api.claimMission();
+                    if (success) {
+                        stopMission();
+                    }
+                    completingId.value = null; // Reset
+                }, 600);
             }
         };
 
@@ -263,7 +302,8 @@ export default {
             claimReward,
             isTalkOrDelivery,
             getDeliveryStatus,
-            showOverlay
+            showOverlay,
+            completingId
         };
     }
 };

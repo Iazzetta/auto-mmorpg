@@ -162,6 +162,15 @@ export default {
             // UI Alert
             addLog(`Level Up!`, 'text-yellow-400 font-bold text-xl');
             showGameAlert("LEVEL UP!", "success", "✨");
+
+            // Audio Effect
+            try {
+                const audio = new Audio('/public/sounds/levelup.wav');
+                audio.volume = 0.5;
+                audio.play().catch(e => console.warn("Audio play failed (user interaction needed?):", e));
+            } catch (e) {
+                console.error("Audio error:", e);
+            }
         };
 
         // Socket Listener
