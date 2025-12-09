@@ -58,6 +58,8 @@ class Player(BaseModel):
 
     # Inventory and Equipment
     inventory: List[Item] = []
+    # Key: reward_id, Value: timestamp (or 0 for just claimed)
+    claimed_rewards: Dict[str, float] = {}
     equipment: Dict[ItemSlot, Optional[Item]] = {
         ItemSlot.HEAD: None,
         ItemSlot.CHEST: None,

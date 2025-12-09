@@ -158,9 +158,34 @@ export const api = {
 
     async openChest() {
         if (!player.value) return;
-        await fetch(`${API_URL}/player/${player.value.id}/open_chest`, { method: 'POST' });
-        addLog('Opened Starter Chest!', 'text-purple-400');
-        await this.refreshPlayer();
+        await this.claimReward('starter_chest');
+    },
+
+    async getRewards() {
+        const res = await fetch(`${API_URL}/rewards`);
+        if (res.ok) {
+            return await res.json();
+        }
+        return [];
+    },
+
+    async claimReward(rewardId) {
+        if (!player.value) return;
+        const res = await fetch(`${API_URL}/player/${player.value.id}/reward/claim?reward_id=${rewardId}`, { method: 'POST' });
+        if (res.ok) {
+            const data = await res.json();
+            player.value.inventory = data.inventory;
+            player.value.gold = data.gold;
+            player.value.diamonds = data.diamonds;
+            player.value.claimed_rewards = data.claimed_rewards;
+
+            showToast('🎁', 'Reward Claimed!', 'Check your inventory.', 'text-green-400');
+            return true;
+        } else {
+            const err = await res.json();
+            showGameAlert(err.detail || "Failed to claim", 'error');
+            return false;
+        }
     },
 
     async refreshPlayer() {

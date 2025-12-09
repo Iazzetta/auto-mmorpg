@@ -105,46 +105,102 @@ async def get_player(player_id: str):
 
 @router.post("/player/{player_id}/open_chest")
 async def open_starter_chest(player_id: str):
+     # Deprecated or redirected to claim_reward('starter_chest')
+     return await claim_reward(player_id, "starter_chest")
+
+def load_rewards_data():
+    import json
+    try:
+        with open("backend/app/data/rewards.json", "r") as f:
+            data = json.load(f)
+            return data.get("rewards", [])
+    except FileNotFoundError:
+        return []
+
+@router.get("/rewards")
+async def get_rewards():
+    return load_rewards_data()
+
+@router.post("/player/{player_id}/reward/claim")
+async def claim_reward(player_id: str, reward_id: str):
     player = state_manager.get_player(player_id)
     if not player:
         raise HTTPException(status_code=404, detail="Player not found")
-    
-    from ..data.items import ITEMS
-    import json
-    
-    try:
-        with open("backend/app/data/rewards.json", "r") as f:
-            rewards_config = json.load(f)
-    except FileNotFoundError:
-        rewards_config = {"starter_chest": []}
 
-    chest_items = rewards_config.get("starter_chest", [])
+    import time
+    from ..data.items import ITEMS
+    import uuid
     
-    for entry in chest_items:
-        template_id = entry["item_id"]
+    rewards_list = load_rewards_data()
+    reward_config = next((r for r in rewards_list if r["id"] == reward_id), None)
+    
+    if not reward_config:
+        raise HTTPException(status_code=404, detail="Reward not found")
+        
+    # Check Level Requirement
+    req_level = reward_config.get("requirements", {}).get("level", 0)
+    if player.level < req_level:
+         raise HTTPException(status_code=400, detail=f"Level {req_level} required")
+
+    # Check Cooldown / Claim Status
+    now = time.time()
+    last_claim = player.claimed_rewards.get(reward_id, 0)
+    
+    r_type = reward_config.get("type", "one_time")
+    
+    if r_type == "one_time" or r_type == "level":
+        if last_claim > 0:
+            raise HTTPException(status_code=400, detail="Already claimed")
+    elif r_type == "daily":
+        # 24 hours = 86400 seconds
+        if now - last_claim < 86400:
+             raise HTTPException(status_code=400, detail="Daily reward on cooldown")
+    elif r_type == "weekly":
+        # 7 days = 604800 seconds
+        if now - last_claim < 604800:
+             raise HTTPException(status_code=400, detail="Weekly reward on cooldown")
+
+    # Grant Rewards
+    granted_items = []
+    
+    for entry in reward_config.get("rewards", []):
+        item_id = entry["item_id"]
         qty = entry["quantity"]
         
-        template = ITEMS.get(template_id)
-        if template:
-            # Create new item instance
-            new_stats = template["stats"].model_copy()
-            
-            new_item = Item(
-                id=f"{template_id}_{uuid.uuid4().hex[:8]}",
-                name=template["name"],
-                type=template["type"],
-                slot=template["slot"],
-                rarity=template["rarity"],
-                stats=new_stats,
-                power_score=template["power_score"],
-                icon=template["icon"],
-                stackable=template["stackable"],
-                quantity=qty
-            )
-            
-            InventoryService.add_item(player, new_item)
-            
-    return {"message": "Chest opened", "inventory": player.inventory, "equipment": player.equipment}
+        if item_id == "gold":
+            player.gold += qty
+        elif item_id == "diamonds":
+            player.diamonds += qty
+        else:
+            # Item
+            template = ITEMS.get(item_id)
+            if template:
+                new_stats = template["stats"].model_copy()
+                new_item = Item(
+                    id=f"{item_id}_{uuid.uuid4().hex[:8]}",
+                    name=template["name"],
+                    type=template["type"],
+                    slot=template["slot"],
+                    rarity=template["rarity"],
+                    stats=new_stats,
+                    power_score=template["power_score"],
+                    icon=template["icon"],
+                    stackable=template["stackable"],
+                    quantity=qty
+                )
+                InventoryService.add_item(player, new_item)
+                granted_items.append(new_item)
+
+    # Update Claim Timestamp
+    player.claimed_rewards[reward_id] = now
+    
+    return {
+        "message": "Reward claimed",
+        "inventory": player.inventory,
+        "gold": player.gold,
+        "diamonds": player.diamonds,
+        "claimed_rewards": player.claimed_rewards
+    }
 
 # ... (existing code)
 
@@ -826,6 +882,22 @@ async def save_editor_npcs(npcs: dict):
         await state_manager.connection_manager.broadcast({"type": "server_update"})
     
     return {"message": "NPCs saved"}
+
+@router.get("/editor/rewards")
+async def get_editor_rewards():
+    import json
+    try:
+        with open("backend/app/data/rewards.json", "r") as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return {"rewards": []}
+
+@router.post("/editor/rewards")
+async def save_editor_rewards(data: dict):
+    import json
+    with open("backend/app/data/rewards.json", "w") as f:
+        json.dump(data, f, indent=4)
+    return {"message": "Rewards saved"}
 
 @router.get("/editor/textures/floors")
 async def get_floor_textures():

@@ -659,18 +659,78 @@ export default {
                         </div>
                     </div>
 
-                    <!-- REWARDS SIDEBAR -->
+                    <!-- REWARDS SIDEBAR (2.0) -->
                     <div v-if="activeTab === 'rewards'" class="flex-1 flex flex-col p-4 overflow-y-auto gap-4">
-                        <h3 class="font-bold text-pink-400 uppercase text-sm border-b border-gray-700 pb-2">Starter Chest</h3>
-                        <div class="space-y-2">
-                            <div v-for="(item, idx) in rewardsData.starter_chest" :key="idx" class="bg-black p-2 rounded border border-gray-700 text-xs flex items-center gap-2">
-                                <select v-model="item.item_id" class="flex-1 bg-gray-800 rounded px-1 py-1">
-                                    <option v-for="(i, iid) in availableItems" :key="iid" :value="iid">{{ i.name }}</option>
-                                </select>
-                                <input v-model.number="item.quantity" type="number" class="w-12 bg-gray-800 rounded px-1 py-1 text-center" placeholder="Qty">
-                                <button @click="removeRewardItem(idx)" class="text-red-500 hover:text-red-400 px-1 font-bold">✕</button>
+                        <button @click="addReward" class="w-full bg-pink-700 hover:bg-pink-600 p-2 rounded text-sm font-bold">+ New Reward</button>
+                        
+                        <!-- REWARD LIST -->
+                        <div class="flex flex-col gap-1 max-h-60 min-h-[200px] shrink-0 overflow-y-auto border border-gray-700 rounded p-1 bg-black/50">
+                            <div v-for="(reward, idx) in rewardsData.rewards" :key="idx" 
+                                @click="selectReward(idx)"
+                                class="cursor-pointer p-2 rounded hover:bg-gray-800 text-xs flex justify-between items-center"
+                                :class="{'bg-gray-800 border-l-2 border-pink-500': selectedRewardId === idx}">
+                                <div class="flex items-center gap-2">
+                                    <span>{{ reward.icon }}</span>
+                                    <span>{{ reward.name }}</span>
+                                </div>
+                                <span class="text-gray-500 text-[10px]">{{ reward.type }}</span>
                             </div>
-                            <button @click="addRewardItem" class="w-full bg-gray-800 hover:bg-gray-700 py-2 rounded text-xs border border-gray-600">+ Add Item</button>
+                        </div>
+
+                        <!-- REWARD DETAILS -->
+                        <div v-if="selectedRewardId !== null && rewardsData.rewards[selectedRewardId]" class="flex flex-col gap-2 border-t border-gray-700 pt-4">
+                            <h3 class="font-bold text-gray-400 text-xs uppercase">Reward Settings</h3>
+                            <div>
+                                <label class="text-[10px] text-gray-500 uppercase">ID</label>
+                                <input v-model="rewardsData.rewards[selectedRewardId].id" disabled class="w-full bg-black border border-gray-700 rounded px-2 py-1 text-gray-500 text-xs">
+                            </div>
+                            <div>
+                                <label class="text-[10px] text-gray-500 uppercase">Name</label>
+                                <input v-model="rewardsData.rewards[selectedRewardId].name" class="w-full bg-black border border-gray-700 rounded px-2 py-1 text-xs">
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="text-[10px] text-gray-500 uppercase">Type</label>
+                                    <select v-model="rewardsData.rewards[selectedRewardId].type" class="w-full bg-black border border-gray-700 rounded px-2 py-1 text-xs">
+                                        <option value="one_time">One Time</option>
+                                        <option value="daily">Daily</option>
+                                        <option value="weekly">Weekly</option>
+                                        <option value="level">Level Up</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="text-[10px] text-gray-500 uppercase">Icon</label>
+                                    <input v-model="rewardsData.rewards[selectedRewardId].icon" class="w-full bg-black border border-gray-700 rounded px-2 py-1 text-xs text-center">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="text-[10px] text-gray-500 uppercase">Description</label>
+                                <textarea v-model="rewardsData.rewards[selectedRewardId].description" class="w-full bg-black border border-gray-700 rounded px-2 py-1 text-xs h-12"></textarea>
+                            </div>
+
+                            <!-- REQUIREMENTS -->
+                            <h3 class="font-bold text-gray-400 text-xs uppercase mt-2">Requirements</h3>
+                             <div>
+                                <label class="text-[10px] text-gray-500 uppercase">Level Required</label>
+                                <input v-model.number="rewardsData.rewards[selectedRewardId].requirements.level" type="number" class="w-full bg-black border border-gray-700 rounded px-2 py-1 text-xs">
+                            </div>
+
+                            <!-- CONTENTS -->
+                            <h3 class="font-bold text-gray-400 text-xs uppercase mt-2">Contents</h3>
+                            <div class="space-y-1">
+                                <div v-for="(item, idx) in rewardsData.rewards[selectedRewardId].rewards" :key="idx" class="flex gap-1 items-center bg-black p-1 rounded border border-gray-700">
+                                    <select v-model="item.item_id" class="flex-1 bg-gray-800 rounded px-1 py-0.5 text-xs w-20">
+                                         <option value="gold">💰 Gold</option>
+                                         <option value="diamonds">💎 Diamonds</option>
+                                        <option v-for="(i, iid) in availableItems" :key="iid" :value="iid">{{ i.name }}</option>
+                                    </select>
+                                    <input v-model.number="item.quantity" type="number" class="w-12 bg-gray-800 rounded px-1 py-0.5 text-xs text-center">
+                                    <button @click="removeRewardItem(idx)" class="text-red-500 text-xs px-1">x</button>
+                                </div>
+                                <button @click="addRewardItem" class="w-full bg-gray-800 hover:bg-gray-700 py-1 rounded text-xs border border-gray-600">+ Add Content</button>
+                            </div>
+
+                            <button @click="deleteReward" class="mt-4 bg-red-900/50 hover:bg-red-900 text-red-200 py-2 rounded text-xs border border-red-800">Delete Reward</button>
                         </div>
                     </div>
 
@@ -811,8 +871,8 @@ export default {
                     <div v-if="activeTab === 'rewards'" class="flex items-center justify-center text-gray-500">
                         <div class="text-center">
                             <span class="text-6xl block mb-4">🎁</span>
-                            <p>Configure Starter Rewards</p>
-                            <p class="text-sm opacity-50">Items players receive when opening the Starter Chest</p>
+                            <p>Configure Rewards System</p>
+                            <p class="text-sm opacity-50">Manage Daily, Weekly, Level, and One-Time Rewards</p>
                         </div>
                     </div>
 
@@ -831,10 +891,14 @@ export default {
         const selectedItemId = ref(null);
         const cursorX = ref(0);
         const cursorY = ref(0);
-        const rewardsData = ref({ starter_chest: [] });
+
+        // Rewards Data Structure: { rewards: [] }
+        const rewardsData = ref({ rewards: [] });
+        const selectedRewardId = ref(null);
+
         const npcs = ref({});
         const selectedNpcId = ref(null);
-        const selectedResourceId = ref(null); // Added
+        const selectedResourceId = ref(null);
         const floorTextures = ref([]);
 
         const monsterPreviewContainer = ref(null);
@@ -964,7 +1028,10 @@ export default {
                 }
                 const rewardsRes = await fetch('http://localhost:8000/editor/rewards');
                 if (rewardsRes.ok) {
-                    rewardsData.value = await rewardsRes.json();
+                    const data = await rewardsRes.json();
+                    // Migration / Default
+                    if (!data.rewards) rewardsData.value = { rewards: [] };
+                    else rewardsData.value = data;
                 }
                 // Fetch NPCs
                 const npcsRes = await fetch('http://localhost:8000/editor/npcs');
@@ -1147,13 +1214,43 @@ export default {
             selectMission(id, newMission);
         };
 
-        // --- REWARDS LOGIC ---
+        // --- REWARDS LOGIC (2.0) ---
+        const selectReward = (idx) => selectedRewardId.value = idx;
+        const addReward = () => {
+            const id = prompt("Enter Reward ID (e.g., weekend_bonus):");
+            if (id) {
+                // Check dupes
+                if (rewardsData.value.rewards.find(r => r.id === id)) {
+                    alert('ID already exists');
+                    return;
+                }
+                rewardsData.value.rewards.push({
+                    id: id,
+                    name: "New Reward",
+                    type: "one_time",
+                    description: "Description",
+                    requirements: { level: 1 },
+                    rewards: [],
+                    icon: "🎁"
+                });
+                selectedRewardId.value = rewardsData.value.rewards.length - 1;
+            }
+        };
+        const deleteReward = () => {
+            if (selectedRewardId.value === null) return;
+            if (confirm("Delete reward?")) {
+                rewardsData.value.rewards.splice(selectedRewardId.value, 1);
+                selectedRewardId.value = null;
+            }
+        };
         const addRewardItem = () => {
-            const firstItem = Object.keys(availableItems.value)[0] || "";
-            rewardsData.value.starter_chest.push({ item_id: firstItem, quantity: 1 });
+            if (selectedRewardId.value === null) return;
+            const reward = rewardsData.value.rewards[selectedRewardId.value];
+            reward.rewards.push({ item_id: "gold", quantity: 100 });
         };
         const removeRewardItem = (idx) => {
-            rewardsData.value.starter_chest.splice(idx, 1);
+            if (selectedRewardId.value === null) return;
+            rewardsData.value.rewards[selectedRewardId.value].rewards.splice(idx, 1);
         };
 
         // --- NPC LOGIC ---
@@ -1310,7 +1407,10 @@ export default {
             selectMonster, addMonster, deleteMonster, addDrop, removeDrop,
             selectMission, createNewMission,
             selectItem, addItem, deleteItem,
-            addRewardItem, removeRewardItem,
+
+            // Rewards 2.0
+            addReward, deleteReward, selectReward, selectedRewardId, addRewardItem, removeRewardItem,
+
             selectNpc, addNpc, deleteNpc, selectedResourceId, selectResource, addResource, deleteResource,
             selectedTemplateId, addResourceTemplate, instantiateTemplate,
             addTemplateDrop,

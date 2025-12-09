@@ -1,20 +1,56 @@
 {
-    "starter_chest": [
+    "rewards": [
         {
-            "item_id": "item_sword_01",
-            "quantity": 1
+            "id": "daily_bonus",
+            "name": "Daily Bonus",
+            "type": "daily",
+            "description": "um bonus legal pra vc",
+            "requirements": {
+                "level": 1
+            },
+            "rewards": [
+                {
+                    "item_id": "gold",
+                    "quantity": 100
+                },
+                {
+                    "item_id": "Beta",
+                    "quantity": 100
+                }
+            ],
+            "icon": "\ud83c\udf81"
         },
         {
-            "item_id": "item_armor_01",
-            "quantity": 1
+            "id": "week_bonus",
+            "name": "New Reward",
+            "type": "weekly",
+            "description": "semanaaal",
+            "requirements": {
+                "level": 1
+            },
+            "rewards": [
+                {
+                    "item_id": "Beta",
+                    "quantity": 100
+                }
+            ],
+            "icon": "\ud83c\udf81"
         },
         {
-            "item_id": "item_potion_hp_01",
-            "quantity": 5
-        },
-        {
-            "item_id": "Beta",
-            "quantity": 1
+            "id": "level_20",
+            "name": "lvl 20",
+            "type": "level",
+            "description": "level 20 amigao",
+            "requirements": {
+                "level": 20
+            },
+            "rewards": [
+                {
+                    "item_id": "Beta",
+                    "quantity": 100
+                }
+            ],
+            "icon": "\ud83c\udf81"
         }
     ]
 }
