@@ -11,10 +11,18 @@ Base URL: `http://localhost:8000`
     *   Params: `monster_id`.
 *   `POST /player/{player_id}/equip`: Equip an item.
     *   Params: `item_id`.
+*   `POST /player/{player_id}/unequip`: Unequip an item.
+    *   Params: `slot` (e.g., 'hand_main', 'chest').
 *   `POST /player/{player_id}/use_item`: Use a consumable.
     *   Params: `item_id`.
 *   `POST /player/{player_id}/sell_item`: Sell an item for gold.
     *   Params: `item_id`.
+*   `POST /player/{player_id}/action/start_gather`: secure gathering initiation.
+    *   Params: `resource_id`. Returns `duration_ms`.
+*   `POST /player/{player_id}/gather`: Complete gathering action.
+    *   Params: `resource_id`.
+*   `POST /player/{player_id}/reward/claim`: Claim a reward.
+    *   Params: `reward_id`.
 *   `POST /player/{player_id}/allocate_attributes`: Spend attribute points.
     *   Body: JSON `{ "str": 1, "agi": 0, ... }` (diff values).
 
