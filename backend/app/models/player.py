@@ -85,7 +85,7 @@ class Player(BaseModel):
         # Base stats from attributes
         # STR: +2 Atk
         # AGI: +1 Atk, +1 Def
-        # VIT: +10 HP, +1 Def
+        # VIT: +5 HP, +1 Def (Reduced from 10 to standardise starts at ~100)
         # INI: +0.1 Speed, -0.05 Cooldown
         
         str_val = self.attributes.get("str", 10)
@@ -93,7 +93,8 @@ class Player(BaseModel):
         vit_val = self.attributes.get("vit", 10)
         ini_val = self.attributes.get("ini", 10)
 
-        base_hp = 100 + (vit_val * 10)
+        # Formula Adjusted: 50 base + 5 per VIT. If VIT=10 => 50+50 = 100 HP.
+        base_hp = 50 + (vit_val * 5)
         base_atk = 5 + (str_val * 2) + (agi_val * 1)
         base_def = 0 + (vit_val * 1) + (agi_val * 1)
         base_speed = 20.0 + (ini_val * 0.1)
@@ -105,6 +106,7 @@ class Player(BaseModel):
         # Add Equipment Bonuses
         for slot, item in self.equipment.items():
             if item:
+                # print(f"[Stats] Slot {slot} Item {item.name}: +{item.stats.hp} HP")
                 base_hp += item.stats.hp
                 base_atk += item.stats.atk
                 base_def += item.stats.def_

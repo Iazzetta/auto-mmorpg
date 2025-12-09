@@ -54,6 +54,10 @@ async def register(name: str, password: str, p_class: PlayerClass):
         is_admin=(name.lower() == "admin")
     )
     
+    # Ensure stats are calculated correctly from the start (fixes 100->200 jump)
+    player.calculate_stats()
+    player.stats.hp = player.stats.max_hp # Ensure full HP
+
     state_manager.add_player(player)
     
     # Force immediate persistence
@@ -200,7 +204,8 @@ async def claim_reward(player_id: str, reward_id: str):
         "equipment": player.equipment,
         "gold": player.gold,
         "diamonds": player.diamonds,
-        "claimed_rewards": player.claimed_rewards
+        "claimed_rewards": player.claimed_rewards,
+        "stats": player.stats
     }
 
 # ... (existing code)
@@ -742,7 +747,7 @@ async def equip_item_endpoint(player_id: str, item_id: str):
     player.inventory.remove(item_to_equip)
     InventoryService.equip_item(player, item_to_equip)
     
-    return {"message": "Item equipped", "equipment": player.equipment}
+    return {"message": "Item equipped", "equipment": player.equipment, "stats": player.stats, "inventory": player.inventory}
 
 @router.post("/player/{player_id}/unequip")
 async def unequip_item_endpoint(player_id: str, slot: str):
@@ -758,7 +763,7 @@ async def unequip_item_endpoint(player_id: str, slot: str):
 
     InventoryService.unequip_item(player, slot)
     
-    return {"message": "Item unequipped", "equipment": player.equipment, "inventory": player.inventory}
+    return {"message": "Item unequipped", "equipment": player.equipment, "stats": player.stats, "inventory": player.inventory}
 
 @router.get("/map/{map_id}/monsters")
 async def get_map_monsters(map_id: str):

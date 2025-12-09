@@ -155,6 +155,7 @@ export const api = {
             const data = await res.json();
             player.value.equipment = data.equipment;
             if (data.inventory) player.value.inventory = data.inventory;
+            if (data.stats) player.value.stats = data.stats;
         } else {
             await this.refreshPlayer();
         }
@@ -167,6 +168,7 @@ export const api = {
             const data = await res.json();
             player.value.equipment = data.equipment;
             if (data.inventory) player.value.inventory = data.inventory;
+            if (data.stats) player.value.stats = data.stats;
         }
     },
 
@@ -193,6 +195,7 @@ export const api = {
             player.value.gold = data.gold;
             player.value.diamonds = data.diamonds;
             player.value.claimed_rewards = data.claimed_rewards;
+            if (data.stats) player.value.stats = data.stats;
 
             showToast('🎁', 'Reward Claimed!', 'Check your inventory.', 'text-green-400');
             return true;
