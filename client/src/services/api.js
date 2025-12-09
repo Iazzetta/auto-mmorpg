@@ -11,6 +11,7 @@ export const api = {
             if (res.ok) {
                 player.value = await res.json();
                 this.fetchMapDetails(player.value.current_map_id);
+                this.fetchMapNpcs(player.value.current_map_id);
                 connectWebSocket(id);
                 return true;
             }
@@ -63,6 +64,7 @@ export const api = {
         localStorage.setItem('rpg_player_id', data.id);
         localStorage.setItem('rpg_player_token', data.token);
         this.fetchMapDetails(data.current_map_id);
+        this.fetchMapNpcs(data.current_map_id);
         connectWebSocket(data.id);
         addLog(`Welcome, ${data.name}!`, 'text-yellow-400');
     },
@@ -98,6 +100,17 @@ export const api = {
         }
     },
 
+    async fetchMapNpcs(mapId) {
+        try {
+            const res = await fetch(`${API_URL}/map/${mapId}/npcs`);
+            if (res.ok) {
+                mapNpcs.value = await res.json();
+            }
+        } catch (e) {
+            console.error("Error fetching NPCs:", e);
+        }
+    },
+
     async movePlayer(mapId, x, y) {
         if (!player.value) return;
         const res = await fetch(`${API_URL}/player/${player.value.id}/move?target_map_id=${mapId}&x=${x}&y=${y}`, { method: 'POST' });
@@ -112,6 +125,7 @@ export const api = {
                 player.value.state = 'idle';
                 api.fetchMapDetails(data.map_id);
                 api.fetchMapMonsters(data.map_id);
+                api.fetchMapNpcs(data.map_id);
             }
         }
     },

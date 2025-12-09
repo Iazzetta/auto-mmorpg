@@ -40,7 +40,10 @@ export const startMission = async (mission) => {
     selectedMapId.value = mission.map_id;
     selectedTargetId.value = mission.target_template_id;
 
-    startAutoFarm();
+    // Only start Auto-Farm loop for combat/gathering missions
+    if (mission.type !== 'talk' && mission.type !== 'delivery') {
+        startAutoFarm();
+    }
 };
 
 export const stopMission = (reason = "") => {

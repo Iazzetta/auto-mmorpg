@@ -6,7 +6,7 @@
             "level_requirement": 0,
             "width": 100,
             "height": 100,
-            "respawn_x": 50,
+            "respawn_x": 49,
             "respawn_y": 50,
             "portals": [
                 {
@@ -544,6 +544,12 @@
             "drops": [
                 {
                     "item_id": "mat_wood",
+                    "min_qty": 1,
+                    "max_qty": 1,
+                    "chance": 1
+                },
+                {
+                    "item_id": "mat_flower",
                     "min_qty": 1,
                     "max_qty": 1,
                     "chance": 1

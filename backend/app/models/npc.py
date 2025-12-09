@@ -5,6 +5,7 @@ from typing import List, Dict, Optional
 class NPCType(str, Enum):
     QUEST_GIVER = "quest_giver"
     MERCHANT = "merchant"
+    DIALOGUE = "dialogue"
 
 class NPC(BaseModel):
     id: str

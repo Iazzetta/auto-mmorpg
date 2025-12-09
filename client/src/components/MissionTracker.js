@@ -1,5 +1,5 @@
 import { ref, computed } from 'vue';
-import { player, activeMission, missions } from '../state.js';
+import { player, activeMission, missions, mapNpcs, showToast } from '../state.js';
 import { startMission, stopMission } from '../services/autoFarm.js';
 import { api } from '../services/api.js';
 
@@ -14,6 +14,7 @@ export default {
             
             <!-- Header -->
             <div class="flex items-center gap-2 mb-1">
+                <span v-if="mission.is_main_quest" class="text-yellow-400 text-sm animate-pulse">★</span>
                 <span v-if="isCompleted(mission)" class="text-[10px] font-bold text-green-500 bg-green-900/50 px-1 rounded border border-green-700/50">Done</span>
                 <span class="text-xs font-bold text-white shadow-black drop-shadow-md truncate flex-1">{{ mission.title }}</span>
             </div>
@@ -27,8 +28,21 @@ export default {
             <div class="flex justify-between items-center mt-2">
                  <span class="text-[10px] text-gray-400">Lv. {{ mission.level_requirement }}</span>
                  <div class="text-[11px] font-mono font-bold" :class="isCompleted(mission) ? 'text-green-400' : 'text-yellow-400'">
-                    <span v-if="isActive(mission) || isCompleted(mission)">
+                    <span v-if="isTalkOrDelivery(mission) && isActive(mission)">
+                        <span v-if="isCompleted(mission)">Talk to Complete</span>
+                        <span v-else-if="mission.type === 'delivery'">
+                            <template v-if="getDeliveryStatus(mission)">
+                                <span v-if="getDeliveryStatus(mission).ready" class="text-green-400 font-bold">Deliver to NPC</span>
+                                <span v-else class="text-yellow-400">{{ getDeliveryStatus(mission).text }} ({{ getDeliveryStatus(mission).count }})</span>
+                            </template>
+                        </span>
+                        <span v-else>Go to NPC</span>
+                    </span>
+                    <span v-else-if="isActive(mission) || isCompleted(mission)">
                         ({{ getProgress(mission) }}/{{ mission.target_count }})
+                    </span>
+                    <span v-else-if="isTalkOrDelivery(mission)">
+                        (Talk to Start)
                     </span>
                     <span v-else>
                         (0/{{ mission.target_count }})
@@ -52,10 +66,37 @@ export default {
     setup() {
         const allMissions = computed(() => {
             const completed = player.value?.completed_missions || [];
-            return Object.values(missions.value)
-                .filter(m => !completed.includes(m.id))
-                .filter(m => m.source !== 'npc' || isActive(m))
-                .sort((a, b) => a.level_requirement - b.level_requirement);
+            const activeId = player.value?.active_mission_id;
+            const activeMission = activeId ? missions.value[activeId] : null;
+            const hasActiveMainQuest = activeMission?.is_main_quest;
+
+            let available = Object.values(missions.value)
+                .filter(m => !completed.includes(m.id));
+
+            // Separate Main and Side
+            const mainQuests = available.filter(m => m.is_main_quest);
+            const sideQuests = available.filter(m => !m.is_main_quest && (m.source !== 'npc' || isActive(m)));
+
+            // Main Quest Logic: Show Active OR First Available
+            let visibleMainQuests = [];
+            if (hasActiveMainQuest) {
+                // If active, show ONLY the active one (even if others are available on board)
+                visibleMainQuests = mainQuests.filter(m => m.id === activeId);
+            } else {
+                // If none active, show the first available (lowest level/ID)
+                // Assuming sequential progression, show only one.
+                if (mainQuests.length > 0) {
+                    mainQuests.sort((a, b) => a.level_requirement - b.level_requirement);
+                    visibleMainQuests = [mainQuests[0]];
+                }
+            }
+
+            // Combine
+            return [...visibleMainQuests, ...sideQuests].sort((a, b) => {
+                if (a.is_main_quest && !b.is_main_quest) return -1;
+                if (!a.is_main_quest && b.is_main_quest) return 1;
+                return a.level_requirement - b.level_requirement;
+            });
         });
 
         const isActive = (mission) => {
@@ -76,18 +117,108 @@ export default {
             return 0;
         };
 
+        const isTalkOrDelivery = (mission) => {
+            return mission.type === 'talk' || mission.type === 'delivery';
+        };
+
+        const getDeliveryStatus = (mission) => {
+            if (mission.type !== 'delivery') return null;
+            const requiredItem = mission.target_item_id;
+            const requiredQty = mission.target_count || 1;
+            const inv = player.value?.inventory || [];
+
+            // Debug Log to catch Item ID issues
+            console.log(`[MissionTracker] Checking '${requiredItem}' in Inv:`, inv.map(i => i.id));
+
+            const hasItem = inv.find(i => i.id === requiredItem || i.id.startsWith(requiredItem));
+            const currentQty = hasItem ? (hasItem.quantity || 1) : 0;
+
+            if (currentQty < requiredQty) {
+                const itemName = requiredItem.replace('item_', '').replace('mat_', '').replace(/_/g, ' ');
+                return { text: `Gather ${itemName}`, count: `${currentQty}/${requiredQty}`, ready: false };
+            }
+            return { text: "Deliver", count: null, ready: true };
+        };
+
         const getMissionClass = (mission) => {
-            if (isLocked(mission)) return 'border-red-600 bg-red-900/20 opacity-80 cursor-not-allowed';
+            if (isLocked(mission)) return 'border-red-600 bg-red-900/40 opacity-70 grayscale cursor-not-allowed';
+
+            if (mission.is_main_quest) return 'border-yellow-500 bg-yellow-900/40 shadow-lg shadow-yellow-900/20'; // Main Quest Style
+
             if (isCompleted(mission)) return 'border-green-500 bg-green-900/20';
-            if (isActive(mission)) return 'border-yellow-500 bg-yellow-900/20';
+            if (isActive(mission)) return 'border-blue-500 bg-blue-900/20';
             return 'border-gray-600 hover:border-gray-400';
         };
+
 
         const handleMissionClick = (mission) => {
             if (isLocked(mission)) return;
             if (isCompleted(mission)) return;
 
-            // Always start mission (force restart behavior)
+            // Auto-Walk for NPC Missions
+            if (isTalkOrDelivery(mission)) {
+                // Set as active first (this stops previous actions/movement via stopAutoFarm)
+                if (!isActive(mission) && mission.source === 'board') {
+                    startMission(mission);
+                }
+
+                // Delivery Logic Check
+                if (mission.type === 'delivery') {
+                    const requiredItem = mission.target_item_id;
+                    const requiredQty = mission.target_count || 1;
+
+                    // Check Inventory
+                    const inv = player.value.inventory || [];
+                    const hasItem = inv.find(i => i.id === requiredItem || i.id.startsWith(requiredItem));
+                    const currentQty = hasItem ? (hasItem.quantity || 1) : 0;
+
+                    if (currentQty < requiredQty) {
+                        // Phase 1: Go Gather
+                        // Check if we are on the source map
+                        if (mission.map_id && mission.map_id !== player.value.current_map_id) {
+                            showToast('🌲', 'Go Gather', `Go to ${mission.map_id} to find items.`, 'text-blue-400');
+                            // Move to Portal/Map logic? Or just tell user?
+                            // Ideally, auto-walk to portal if possible, for now just Toast + Move if user has map coords?
+                            // Actually, just telling them to go there is better than trying to pathfind across maps safely without complex logic.
+                            // BUT user asked for "perfect auto walk".
+                            // If we have map portals data, we could find portal to target map. 
+                            // For now, let's at least NOT try to walk to the NPC who is in another map.
+                            return;
+                        } else {
+                            // On source map: Tell them to farm
+                            showToast('🪓', 'Gather Time', `Find ${requiredItem} here!`, 'text-green-400');
+                            // Maybe verify if we can target a resource?
+                            return;
+                        }
+                    }
+                }
+
+                // Phase 2: Go to NPC (Talk or Delivery Ready)
+                if (!mission.target_npc_id) {
+                    showToast('❌', 'Error', 'Mission has no target NPC.', 'text-red-400');
+                    return;
+                }
+
+                // Find NPC
+                // First check current map NPCs
+                const targetNpc = mapNpcs.value.find(n => n.id === mission.target_npc_id);
+
+                if (targetNpc) {
+                    // Slight delay to ensure stopMovement passed
+                    setTimeout(() => {
+                        api.movePlayer(player.value.current_map_id, targetNpc.x, targetNpc.y);
+                        showToast('🚶', 'Moving', `Walking to ${targetNpc.name}...`, 'text-blue-400');
+                    }, 100);
+                } else {
+                    // Check if NPC is on another map (Destination Map usually Castle for quests)
+                    // Config might not have target_map_id for NPC, usually standard is Castle for guides.
+                    // If we can't find NPC, warn user.
+                    showToast('❓', 'Where is he?', `Cannot find NPC ${mission.target_npc_id} here.`, 'text-red-400');
+                }
+                return;
+            }
+
+            // Kill/Collect -> Auto Farm
             startMission(mission);
         };
 
@@ -104,7 +235,10 @@ export default {
             getProgress,
             getMissionClass,
             handleMissionClick,
-            claimReward
+            claimReward,
+            claimReward,
+            isTalkOrDelivery,
+            getDeliveryStatus
         };
     }
 };

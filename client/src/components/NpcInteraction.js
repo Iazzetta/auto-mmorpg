@@ -1,6 +1,6 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { api } from '../services/api.js';
-import { player, showToast } from '../state.js';
+import { player, showToast, missions } from '../state.js';
 
 export default {
     props: ['npc'],
@@ -28,6 +28,11 @@ export default {
                             <button v-if="hasNextLine || isTyping" @click="nextDialog" class="bg-blue-600 hover:bg-blue-500 px-6 py-2 rounded font-bold animate-pulse">
                                 {{ isTyping ? 'Skip' : 'Next' }} (F)
                             </button>
+                            <button v-else-if="completeLabel" @click="completeMission" :disabled="!canComplete"
+                                class="px-6 py-2 rounded font-bold transition-all"
+                                :class="canComplete ? 'bg-green-600 hover:bg-green-500 animate-pulse text-white' : 'bg-gray-600 text-gray-400 cursor-not-allowed'">
+                                {{ completeLabel }} (F)
+                            </button>
                             <button v-else-if="npc.type === 'quest_giver' && npc.quest_id" @click="offerQuest" class="bg-yellow-600 hover:bg-yellow-500 px-6 py-2 rounded font-bold animate-pulse">
                                 Discuss Quest (F)
                             </button>
@@ -38,7 +43,7 @@ export default {
                                 Goodbye (F)
                             </button>
                         </div>
-                    </div>
+                        </div>
 
                     <!-- Quest Offer Mode -->
                     <div v-if="mode === 'quest_offer'" class="flex flex-col gap-4">
@@ -193,6 +198,65 @@ export default {
             } catch (e) { console.error(e); }
         };
 
+        const myActiveMission = computed(() => {
+            if (!player.value?.active_mission_id) return null;
+            return missions.value[player.value.active_mission_id];
+        });
+
+        const completeLabel = computed(() => {
+            const m = myActiveMission.value;
+            if (!m) return null;
+
+            // Check Delivery Requirements
+            if (m.type === 'delivery' && m.target_npc_id === props.npc.id) {
+                const requiredItem = m.target_item_id;
+                const requiredQty = m.target_count || 1;
+                const inv = player.value.inventory || [];
+                // Use startsWith to match unique IDs (e.g. mat_flower_1234)
+                const hasItem = inv.find(i => i.id === requiredItem || i.id.startsWith(requiredItem));
+                const currentQty = hasItem ? (hasItem.quantity || 1) : 0;
+
+                if (currentQty < requiredQty) {
+                    const itemName = m.target_item_id.replace('item_', '').replace('mat_', '').replace(/_/g, ' ');
+                    return `Need: ${itemName} (${currentQty}/${requiredQty})`;
+                }
+                return "Complete Mission";
+            }
+
+            if (m.type === 'talk' && m.target_npc_id === props.npc.id) return "Complete Mission";
+
+            return null;
+        });
+
+        const canComplete = computed(() => {
+            const label = completeLabel.value;
+            return label && label.startsWith("Complete");
+        });
+
+        const completeMission = async () => {
+            try {
+                // 1. Mark as talked
+                const res = await fetch(`http://localhost:8000/player/${player.value.id}/npc/${props.npc.id}/action?action=talk`, { method: 'POST' });
+                if (!res.ok) {
+                    const err = await res.json();
+                    showToast('❌', 'Talk Failed', err.detail || 'Could not talk to NPC', 'text-red-400');
+                    return;
+                }
+                const data = await res.json();
+                console.log("Talk Action Result:", data);
+
+                // 2. Claim Mission
+                const start = Date.now();
+                // Wait a tiny bit to ensure backend writes persist if async (though it shouldn't be needed)
+
+                await api.claimMission();
+                emit('close');
+            } catch (e) {
+                console.error("Complete Mission Error:", e);
+                showToast('❌', 'Error', 'Failed to complete mission.', 'text-red-400');
+            }
+        };
+
         const handleKey = (e) => {
             if (e.key === 'Escape') emit('close');
             if (e.key === 'f' || e.key === 'F') {
@@ -200,7 +264,8 @@ export default {
                     if (isTyping.value) finishTyping();
                     else if (hasNextLine.value) nextDialog();
                     else {
-                        if (props.npc.type === 'quest_giver' && props.npc.quest_id) offerQuest();
+                        if (canComplete.value) completeMission();
+                        else if (props.npc.type === 'quest_giver' && props.npc.quest_id) offerQuest();
                         else if (props.npc.type === 'merchant') openShop();
                         else emit('close');
                     }
@@ -235,7 +300,12 @@ export default {
             player,
             getItemName,
             getItemIcon,
-            getItemPrice
+            getItemIcon,
+            getItemPrice,
+            getItemPrice,
+            completeLabel,
+            canComplete,
+            completeMission
         };
     }
 };

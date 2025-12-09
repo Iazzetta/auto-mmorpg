@@ -4,14 +4,23 @@
         "title": "Welcome",
         "description": "Welcome! Lets kill some wolfs",
         "level_requirement": 1,
-        "map_id": "map_forest_1",
+        "map_id": "map_castle_1",
         "target_template_id": "wolf",
         "target_count": 10,
         "reward_xp": 1000,
         "reward_gold": 500,
-        "type": "kill",
+        "reward_items": [
+            {
+                "item_id": "item_sword_03",
+                "quantity": 1
+            }
+        ],
+        "type": "talk",
         "source": "board",
-        "target_monster_id": "wolf"
+        "target_monster_id": "wolf",
+        "is_main_quest": true,
+        "next_mission_id": "mission_1765283038309",
+        "target_npc_id": "npc_guide_01"
     },
     "mission_1764949964937": {
         "id": "mission_1764949964937",
@@ -52,5 +61,21 @@
         "type": "collect",
         "source": "board",
         "target_item_id": "item_wolf_tooth"
+    },
+    "mission_1765283038309": {
+        "id": "mission_1765283038309",
+        "title": "Second Mission",
+        "description": "essa \u00e9 a segudna hein",
+        "level_requirement": 1,
+        "map_id": "map_forest_1",
+        "target_count": 1,
+        "reward_xp": 100,
+        "reward_gold": 50,
+        "type": "delivery",
+        "source": "board",
+        "is_main_quest": true,
+        "next_mission_id": "mission_collect_wolf_tooth",
+        "target_npc_id": "npc_guide_01",
+        "target_item_id": "mat_flower"
     }
 }

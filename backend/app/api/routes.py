@@ -243,31 +243,7 @@ async def interact_npc(player_id: str, npc_id: str):
         
     return npc
 
-@router.post("/player/{player_id}/npc/{npc_id}/action")
-async def npc_action(player_id: str, npc_id: str, action: str, data: dict = {}):
-    player = state_manager.get_player(player_id)
-    npc = state_manager.npcs.get(npc_id)
-    
-    if not player or not npc:
-        raise HTTPException(status_code=404, detail="Not found")
-        
-    if action == "accept_quest":
-        quest_id = npc.quest_id
-        if not quest_id:
-            raise HTTPException(status_code=400, detail="NPC has no quest")
-            
-        # Check if already active or completed
-        if player.active_mission_id == quest_id:
-             return {"message": "Quest already active"}
-        if quest_id in player.completed_missions:
-             return {"message": "Quest already completed"}
-             
-        # Assign Quest
-        player.active_mission_id = quest_id
-        player.mission_progress = 0
-        return {"message": "Quest accepted", "quest_id": quest_id}
-        
-    return {"message": "Unknown action"}
+
 
 @router.post("/player/{player_id}/shop/buy")
 async def buy_item(player_id: str, npc_id: str, item_id: str):
@@ -586,20 +562,130 @@ async def claim_mission(player_id: str):
     missions = load_missions()
     mission = missions.get(player.active_mission_id)
     
-    if player.mission_progress < mission["target_count"]:
-        raise HTTPException(status_code=400, detail="Mission not completed")
+    if not mission:
+        player.active_mission_id = None
+        raise HTTPException(status_code=404, detail="Mission data missing")
+
+    # 1. Validation based on Type
+    m_type = mission.get("type", "kill")
+    target_count = mission.get("target_count", 0)
+
+    if m_type == "delivery":
+        # Check if player has the items
+        target_item_id = mission.get("target_item_id")
+        required_qty = target_count
         
-    # Grant Rewards
-    xp_gained = mission["reward_xp"]
-    gold_gained = mission["reward_gold"]
+        print(f"[DEBUG] Validation Delivery: Target={target_item_id} Qty={required_qty}")
+        for i in player.inventory:
+            print(f" - Inv Item: {i.id} ({i.quantity})")
+
+        found_item = next((i for i in player.inventory if i.id.startswith(target_item_id) or i.id == target_item_id), None)
+        
+        if not found_item:
+            print(f"[DEBUG] Item {target_item_id} NOT FOUND during validation.")
+            raise HTTPException(status_code=400, detail=f"Required item {target_item_id} not found.")
+        
+        if found_item.stackable:
+            if found_item.quantity < required_qty:
+                print(f"[DEBUG] Qty mismatch: Need {required_qty}, Have {found_item.quantity}")
+                raise HTTPException(status_code=400, detail=f"Need {required_qty} {found_item.name}.")
+        else:
+            pass 
+
+    elif m_type == "talk":
+        if player.mission_progress < 1:
+             raise HTTPException(status_code=400, detail="Talk to the NPC first.")
+
+    else:
+        # Kill / Collect
+        if player.mission_progress < target_count:
+            raise HTTPException(status_code=400, detail="Mission not completed")
+        
+    # 2. Deduct Items (Delivery)
+    if m_type == "delivery":
+        target_item_id = mission.get("target_item_id")
+        required_qty = target_count
+        found_item = next((i for i in player.inventory if i.id.startswith(target_item_id) or i.id == target_item_id), None)
+        if found_item:
+            if found_item.stackable:
+                found_item.quantity -= required_qty
+                if found_item.quantity <= 0:
+                    player.inventory.remove(found_item)
+            else:
+                 player.inventory.remove(found_item)
+
+    # 3. Grant Rewards
+    xp_gained = mission.get("reward_xp", 0)
+    gold_gained = mission.get("reward_gold", 0)
     
     player.gold += gold_gained
     result = player.gain_xp(xp_gained)
     
-    # Archive
+    # Item Rewards
+    reward_items = mission.get("reward_items", [])
+    granted_items = []
+    
+    if reward_items:
+        try:
+            with open("backend/app/data/items.json", "r") as f:
+                item_templates = json.load(f)
+                
+            for reward in reward_items:
+                r_item_id = reward["item_id"]
+                qty = reward.get("quantity", 1)
+                
+                if r_item_id in item_templates:
+                    tpl = item_templates[r_item_id]
+                    # Create item instance
+                    stats_data = tpl["stats"]
+                    if hasattr(stats_data, "model_copy"):
+                         stats_val = stats_data.model_copy()
+                    else:
+                         stats_val = ItemStats(**stats_data)
+
+                    new_item = Item(
+                        id=f"{r_item_id}_{uuid.uuid4().hex[:8]}",
+                        name=tpl["name"],
+                        type=tpl["type"],
+                        slot=tpl["slot"],
+                        rarity=tpl["rarity"],
+                        stats=stats_val,
+                        power_score=tpl.get("power_score", 0),
+                        icon=tpl.get("icon", "📦"),
+                        stackable=tpl.get("stackable", False),
+                        quantity=qty
+                    )
+                    InventoryService.add_item(player, new_item)
+                    granted_items.append(f"{qty}x {tpl['name']}")
+        except Exception as e:
+            print(f"Error processing matching rewards: {e}")
+
+    # 4. Archive & Chain
     player.completed_missions.append(player.active_mission_id)
-    player.active_mission_id = None
-    player.mission_progress = 0
+    
+    next_mission = None
+    if mission.get("is_main_quest") and mission.get("next_mission_id"):
+        next_id = mission["next_mission_id"]
+        if next_id in missions:
+            # Check Level Requirement for Next Mission
+            next_m = missions[next_id]
+            req_level = next_m.get("level_requirement", 1)
+            
+            if player.level >= req_level:
+                player.active_mission_id = next_id
+                player.mission_progress = 0
+                next_mission = next_m
+            else:
+                # Locked: Do not assign active mission
+                player.active_mission_id = None
+                player.mission_progress = 0
+                # We could send a notification "Next mission locked (Lv {req_level})"
+        else:
+            player.active_mission_id = None
+            player.mission_progress = 0
+    else:
+        player.active_mission_id = None
+        player.mission_progress = 0
     
     return {
         "message": "Mission claimed", 
@@ -809,7 +895,7 @@ async def gather_resource(player_id: str, resource_id: str):
         # Create Item Instance
         try:
             new_item = Item(
-                id=str(uuid.uuid4()),
+                id=f"{item_id}_{uuid.uuid4().hex[:8]}",
                 name=item_def['name'],
                 type=item_def['type'],
                 slot=item_def.get('slot', 'none'),
@@ -915,3 +1001,51 @@ async def get_floor_textures():
     except Exception as e:
         print(f"Error listing textures: {e}")
         return []
+
+@router.post("/player/{player_id}/npc/{npc_id}/action")
+async def npc_action(player_id: str, npc_id: str, action: str):
+    player = state_manager.get_player(player_id)
+    if not player:
+        raise HTTPException(status_code=404, detail="Player not found")
+        
+    if action == "accept_quest":
+        all_npcs = {}
+        try:
+             with open("backend/app/data/npcs.json", "r") as f:
+                 all_npcs = json.load(f)
+        except: pass
+        
+        npc_data = all_npcs.get(npc_id)
+        if not npc_data:
+             raise HTTPException(status_code=404, detail="NPC not found")
+             
+        quest_id = npc_data.get("quest_id")
+        if not quest_id:
+             raise HTTPException(status_code=400, detail="This NPC has no quest.")
+             
+        missions = load_missions()
+        mission = missions.get(quest_id)
+        if not mission:
+             raise HTTPException(status_code=404, detail="Mission not found")
+             
+        if player.level < mission.get("level_requirement", 1):
+             raise HTTPException(status_code=400, detail="Level too low")
+             
+        player.active_mission_id = quest_id
+        player.mission_progress = 0
+        return {"message": "Quest accepted!"}
+
+    elif action == "talk":
+        if not player.active_mission_id:
+             return {"message": "No active mission."}
+             
+        missions = load_missions()
+        mission = missions.get(player.active_mission_id)
+        if not mission:
+             return {"message": "Invalid mission."}
+             
+        if mission.get("type") == "talk" and mission.get("target_npc_id") == npc_id:
+             player.mission_progress = mission.get("target_count", 1)
+             return {"message": "Mission Updated: Talk complete!"}
+             
+    return {"message": "Action ignored"}

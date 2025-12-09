@@ -1,1 +1,37 @@
-{}
+{
+    "npc_guide_01": {
+        "id": "npc_guide_01",
+        "name": "Clay",
+        "map_id": "map_castle_1",
+        "x": 65,
+        "y": 51,
+        "type": "dialogue",
+        "icon": "\ud83d\udc64",
+        "dialogue": [
+            "Hello"
+        ],
+        "quest_id": "",
+        "shop_items": [],
+        "dialog_start": [
+            "Eae, suave? bem vindo!",
+            "Cara, pega esse bau ai"
+        ]
+    },
+    "npc_guide_02": {
+        "id": "npc_guide_02",
+        "name": "Clay2",
+        "map_id": "map_forest_1",
+        "x": 4,
+        "y": 41,
+        "type": "dialogue",
+        "icon": "\ud83d\udc64",
+        "dialogue": [
+            "Hello"
+        ],
+        "quest_id": "",
+        "shop_items": [],
+        "dialog_start": [
+            "me da o dente"
+        ]
+    }
+}

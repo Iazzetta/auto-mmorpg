@@ -1291,6 +1291,14 @@ export default {
         watch(mapMonsters, () => updateEntityLifecycle(), { deep: true });
         watch(() => player.value?.current_map_id, () => updateEntityLifecycle()); // Map Change
 
+        // Critical: Update local player reference in mesh if player object is replaced (e.g. after fetchPlayer)
+        watch(player, (newP) => {
+            if (newP && meshes.has(newP.id)) {
+                const mesh = meshes.get(newP.id);
+                if (mesh) mesh.userData.entity = newP;
+            }
+        });
+
         onMounted(() => {
             // Wait for next tick/timeout to ensure container has dimensions
             setTimeout(() => {

@@ -397,13 +397,32 @@ export default {
                                  @click="selectMission(id, mission)"
                                  :class="{'bg-gray-800 border-l-2 border-green-500': selectedMissionId === id}"
                                  class="cursor-pointer p-2 rounded hover:bg-gray-800 text-xs flex justify-between items-center">
-                                <span>{{ mission.title }}</span>
+                                <div class="flex flex-col">
+                                    <span class="font-bold flex items-center gap-1">
+                                        <span v-if="mission.is_main_quest" class="text-yellow-400" title="Main Quest">★</span>
+                                        {{ mission.title }}
+                                    </span>
+                                    <span class="text-gray-500 text-[10px]">{{ mission.type }}</span>
+                                </div>
                                 <span class="text-gray-500 text-[10px]">Lv. {{ mission.level_requirement }}</span>
                             </div>
                         </div>
 
                         <div v-if="selectedMission" class="flex flex-col gap-2 border-t border-gray-700 pt-4">
                             <h3 class="font-bold text-gray-400 text-xs uppercase">Mission Details</h3>
+                            
+                            <!-- Main Quest Toggle -->
+                            <div class="flex items-center gap-2 bg-gray-800 p-2 rounded border border-gray-700">
+                                <input v-model="selectedMission.is_main_quest" type="checkbox" class="w-4 h-4 rounded bg-black border-gray-600">
+                                <label class="text-xs font-bold text-yellow-400 uppercase">Is Main Quest</label>
+                            </div>
+                            <div v-if="selectedMission.is_main_quest">
+                                <label class="text-[10px] text-gray-500 uppercase">Next Mission ID (Auto-Trigger)</label>
+                                <select v-model="selectedMission.next_mission_id" class="w-full bg-black border border-gray-700 rounded px-2 py-1 text-xs">
+                                    <option :value="null">-- None (End of Chain) --</option>
+                                    <option v-for="(m, mid) in missions" :key="mid" :value="mid" :disabled="mid === selectedMissionId">{{ m.title }} ({{ mid }})</option>
+                                </select>
+                            </div>
                             <div>
                                 <label class="text-[10px] text-gray-500 uppercase">ID</label>
                                 <input v-model="selectedMissionId" disabled class="w-full bg-black border border-gray-700 rounded px-2 py-1 text-gray-500 text-xs">
@@ -436,6 +455,8 @@ export default {
                                     <select v-model="selectedMission.type" class="w-full bg-black border border-gray-700 rounded px-2 py-1 text-xs">
                                         <option value="kill">Kill Monsters</option>
                                         <option value="collect">Collect Items</option>
+                                        <option value="talk">Talk to NPC</option>
+                                        <option value="delivery">Deliver Item to NPC</option>
                                     </select>
                                 </div>
                                 <div>
@@ -472,6 +493,26 @@ export default {
                                     <input v-model.number="selectedMission.target_count" type="number" class="w-full bg-black border border-gray-700 rounded px-2 py-1 text-xs">
                                 </div>
                             </div>
+                            <div v-else-if="selectedMission.type === 'talk' || selectedMission.type === 'delivery'" class="flex flex-col gap-2">
+                                <div>
+                                    <label class="text-[10px] text-gray-500 uppercase">Target NPC</label>
+                                    <select v-model="selectedMission.target_npc_id" class="w-full bg-black border border-gray-700 rounded px-2 py-1 text-xs">
+                                        <option v-for="(n, nid) in npcs" :key="nid" :value="nid">{{ n.name }} ({{ n.map_id }})</option>
+                                    </select>
+                                </div>
+                                <div v-if="selectedMission.type === 'delivery'" class="grid grid-cols-2 gap-2">
+                                     <div>
+                                        <label class="text-[10px] text-gray-500 uppercase">Item to Deliver</label>
+                                        <select v-model="selectedMission.target_item_id" class="w-full bg-black border border-gray-700 rounded px-2 py-1 text-xs">
+                                            <option v-for="(i, iid) in availableItems" :key="iid" :value="iid">{{ i.name }}</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="text-[10px] text-gray-500 uppercase">Count</label>
+                                        <input v-model.number="selectedMission.target_count" type="number" class="w-full bg-black border border-gray-700 rounded px-2 py-1 text-xs">
+                                    </div>
+                                </div>
+                            </div>
 
                              <div class="grid grid-cols-2 gap-2">
                                  <div>
@@ -481,6 +522,24 @@ export default {
                                 <div>
                                     <label class="text-[10px] text-gray-500 uppercase">Gold</label>
                                     <input v-model.number="selectedMission.reward_gold" type="number" class="w-full bg-black border border-gray-700 rounded px-2 py-1 text-xs">
+                                </div>
+                            </div>
+
+                            <!-- ITEM REWARDS -->
+                            <div class="bg-gray-800 p-2 rounded border border-gray-700 mt-2">
+                                <label class="text-[10px] text-gray-400 uppercase font-bold block mb-1">Item Rewards</label>
+                                <div class="space-y-1">
+                                    <div v-for="(rew, idx) in (selectedMission.reward_items || [])" :key="idx" class="flex items-center gap-1">
+                                        <select v-model="rew.item_id" class="flex-1 bg-black border border-gray-600 rounded px-1 py-1 text-xs">
+                                             <option v-for="(i, iid) in availableItems" :key="iid" :value="iid">{{ i.name }}</option>
+                                        </select>
+                                        <input v-model.number="rew.quantity" type="number" class="w-12 bg-black border border-gray-600 rounded px-1 py-1 text-xs text-center" placeholder="Qty">
+                                        <button @click="selectedMission.reward_items.splice(idx, 1)" class="text-red-500 hover:text-red-400 font-bold px-1">✕</button>
+                                    </div>
+                                    <button @click="if(!selectedMission.reward_items) selectedMission.reward_items = []; selectedMission.reward_items.push({item_id: Object.keys(availableItems)[0], quantity: 1})" 
+                                            class="w-full bg-black hover:bg-gray-700 border border-gray-600 rounded py-1 text-xs text-gray-300">
+                                        + Add Item Reward
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -1213,6 +1272,12 @@ export default {
             missions.value[id] = newMission;
             selectMission(id, newMission);
         };
+
+        watch(() => selectedMission.value?.type, (newType) => {
+            if (newType === 'talk' || newType === 'delivery') {
+                if (selectedMission.value) selectedMission.value.target_count = 1;
+            }
+        });
 
         // --- REWARDS LOGIC (2.0) ---
         const selectReward = (idx) => selectedRewardId.value = idx;
