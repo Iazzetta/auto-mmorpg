@@ -170,11 +170,9 @@ const findAndAttackTarget = async () => {
 
         if (dist > 1.5) {
             // addLog(`Moving to ${target.name}...`, 'text-blue-300');
-            const angle = Math.atan2(my - py, mx - px);
-
-            if (valid === 0) {
-                addLog(`Searching for ${huntId}...`, "text-gray-400");
-            }
+            api.movePlayer(player.value.current_map_id, target.position_x, target.position_y);
+        } else {
+            api.attackMonster(target.id);
         }
     }
 };
