@@ -1,4 +1,4 @@
-import { player, isFreeFarming, selectedMapId, selectedTargetId, mapMonsters, addLog, pendingAttackId, destinationMarker, currentMapData, activeMission, missions, worldData, currentMonster } from '../state.js';
+import { player, isFreeFarming, selectedMapId, selectedTargetId, selectedTargetType, mapMonsters, addLog, pendingAttackId, destinationMarker, currentMapData, activeMission, missions, worldData, currentMonster } from '../state.js';
 import { api } from './api.js';
 
 let autoFarmInterval = null;
@@ -59,6 +59,7 @@ export const toggleFreeFarm = () => {
         isFreeFarming.value = true;
         activeMission.value = null;
         selectedTargetId.value = null; // Clear target to attack anything
+        selectedTargetType.value = 'monster'; // Default to monster for free farm
         // Sync map preference to current location
         if (player.value) {
             selectedMapId.value = player.value.current_map_id;
@@ -67,71 +68,153 @@ export const toggleFreeFarm = () => {
     }
 };
 
+let isProcessing = false;
+
 export const checkAndAct = async () => {
     // console.log("checkAndAct Tick");
+    if (isProcessing) return;
     if (!player.value) return;
-    // Failsafe: Ensure we are allowed to act
-    if (!isFreeFarming.value && !activeMission.value) {
-        return;
-    }
 
-    if (player.value.state === 'combat') {
-        // console.log("checkAndAct: Player in combat stay.");
-        if (player.value.current_map_id !== selectedMapId.value) {
-            addLog("Waiting for combat to end before teleporting...", "text-yellow-500");
+    isProcessing = true;
+    try {
+        // Failsafe: Ensure we are allowed to act
+        if (!isFreeFarming.value && !activeMission.value) {
+            return;
         }
-        return;
-    }
 
-    // 1. Check Map
-    if (player.value.current_map_id !== selectedMapId.value) {
+        if (player.value.state === 'combat') {
+            // console.log("checkAndAct: Player in combat stay.");
+            if (player.value.current_map_id !== selectedMapId.value) {
+                addLog("Waiting for combat to end before teleporting...", "text-yellow-500");
+            }
+            return;
+        }
 
-        const targetMap = worldData.value?.maps?.[selectedMapId.value];
+        // 1. Check Map
+        let requiredMapId = selectedMapId.value;
 
-        if (targetMap) {
-            // Check Level Requirement
-            if (player.value.level >= (targetMap.level_requirement || 0)) {
-                addLog(`Teleporting to ${formatMapName(selectedMapId.value)}...`, "text-blue-400");
+        // BUG FIX: If we have an active mission with a target map, FORCE that map
+        // This fixes the issue where resource gathering on another map wouldn't trigger teleport
+        if (activeMission.value && activeMission.value.map_id) {
+            requiredMapId = activeMission.value.map_id;
+            // Also update the global preference so UI reflects it
+            if (selectedMapId.value !== requiredMapId) {
+                selectedMapId.value = requiredMapId;
+            }
+        }
 
-                await api.movePlayer(selectedMapId.value, targetMap.respawn_x || 50, targetMap.respawn_y || 50);
+        if (player.value.current_map_id !== requiredMapId) {
 
-                // Wait a bit for server to process
-                await new Promise(r => setTimeout(r, 500));
-                await api.refreshPlayer();
+            const targetMap = worldData.value?.maps?.[requiredMapId];
 
-                if (!isFreeFarming.value && !activeMission.value) return; // Check call after await
+            if (targetMap) {
+                // Check Level Requirement
+                if (player.value.level >= (targetMap.level_requirement || 0)) {
+                    addLog(`Teleporting to ${formatMapName(selectedMapId.value)}...`, "text-blue-400");
 
-                // If map changed successfully, continue to scan immediately
-                if (player.value.current_map_id !== selectedMapId.value) {
-                    addLog("Waiting for map transition...", "text-yellow-400");
+                    await api.movePlayer(selectedMapId.value, targetMap.respawn_x || 50, targetMap.respawn_y || 50);
+
+                    // Wait a bit for server to process
+                    await new Promise(r => setTimeout(r, 500));
+                    await api.refreshPlayer();
+
+                    if (!isFreeFarming.value && !activeMission.value) return; // Check call after await
+
+                    // If map changed successfully, continue to scan immediately
+                    if (player.value.current_map_id !== selectedMapId.value) {
+                        addLog("Waiting for map transition...", "text-yellow-400");
+                        return;
+                    }
+                    addLog("Arrived. Scanning targets...", "text-green-400");
+
+                } else {
+                    addLog(`Cannot enter ${targetMap.name}. Level ${targetMap.level_requirement} required.`, "text-red-500");
+                    stopMission();
                     return;
                 }
-                addLog("Arrived. Scanning targets...", "text-green-400");
-
             } else {
-                addLog(`Cannot enter ${targetMap.name}. Level ${targetMap.level_requirement} required.`, "text-red-500");
+                // Try to fetch world data if missing map
+                try {
+                    const res = await fetch('http://localhost:8000/editor/world');
+                    if (res.ok) {
+                        worldData.value = await res.json();
+                        // Retry next tick
+                        return;
+                    }
+                } catch (e) { }
+
+                addLog(`Unknown map: ${selectedMapId.value}`, "text-red-400");
                 stopMission();
                 return;
             }
-        } else {
-            // Try to fetch world data if missing map
-            try {
-                const res = await fetch('http://localhost:8000/editor/world');
-                if (res.ok) {
-                    worldData.value = await res.json();
-                    // Retry next tick
-                    return;
-                }
-            } catch (e) { }
+        }
 
-            addLog(`Unknown map: ${selectedMapId.value}`, "text-red-400");
-            stopMission();
-            return;
+        // 2. Scan for Targets
+        if (selectedTargetType.value === 'resource') {
+            findAndGatherResource();
+        } else {
+            findAndAttackTarget();
+        }
+    } finally {
+        isProcessing = false;
+    }
+};
+
+const findAndGatherResource = async () => {
+    // console.log("Scanning for resources...");
+    if (!player.value) return;
+    if (player.value.state === 'combat') return;
+
+    // Check resources in current map data
+    const resources = currentMapData.value?.resources || [];
+    if (resources.length === 0) return;
+
+    const px = player.value.position.x;
+    const py = player.value.position.y;
+    const huntId = selectedTargetId.value;
+
+    // Find nearest matching resource
+    // Filter active cooldowns
+    const activeCooldowns = currentMapData.value?.active_cooldowns || {};
+
+    const target = resources
+        .filter(r => {
+            // Must match ID if specified
+            if (huntId && r.template_id !== huntId) return false;
+            // Must not be on cooldown
+            if (activeCooldowns[r.id]) return false;
+            return true;
+        })
+        .sort((a, b) => {
+            const distA = (a.x - px) ** 2 + (a.y - py) ** 2;
+            const distB = (b.x - px) ** 2 + (b.y - py) ** 2;
+            return distA - distB;
+        })[0];
+
+    if (target) {
+        const dist = Math.sqrt((px - target.x) ** 2 + (py - target.y) ** 2);
+
+        if (dist > 1.5) {
+            // addLog(`Moving to ${target.name}...`, 'text-blue-300');
+            api.movePlayer(player.value.current_map_id, target.x, target.y);
+        } else {
+            // Secure Gathering Flow
+            // 1. Start Gathering (Server validation & determines duration)
+            const duration = await api.startGathering(target.id);
+
+            if (duration) {
+                // console.log(`Gathering for ${duration}ms...`);
+                // Wait for the duration (plus small buffer)
+                await new Promise(r => setTimeout(r, duration));
+
+                // 2. Complete Gathering
+                await api.gatherResource(target.id);
+            }
+
+            // Allow cooldown refresh
+            await new Promise(r => setTimeout(r, 500));
         }
     }
-
-    // 2. Scan for Targets
-    findAndAttackTarget();
 };
 
 const findAndAttackTarget = async () => {

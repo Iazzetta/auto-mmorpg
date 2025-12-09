@@ -1050,7 +1050,17 @@ export default {
             if (!closestResource.value || isGathering.value) return;
             isGathering.value = true;
             gatherProgress.value = 0;
-            const totalTime = 2000;
+
+            // 1. Start Gathering (Server)
+            const duration = await api.startGathering(closestResource.value.id);
+
+            if (!duration) {
+                isGathering.value = false;
+                return;
+            }
+
+            const totalTime = duration;
+            // Update interval for smoother progress bar (e.g. 50ms steps)
             const interval = 50;
             const step = (interval / totalTime) * 100;
 
@@ -1059,32 +1069,9 @@ export default {
                 if (gatherProgress.value >= 100) {
                     clearInterval(timer);
                     isGathering.value = false;
-                    try {
-                        const res = await fetch(`http://localhost:8000/player/${player.value.id}/gather?resource_id=${closestResource.value.id}`, { method: 'POST' });
-                        if (res.ok) {
-                            const data = await res.json();
-                            if (data.loot) {
-                                let lootMsg = [];
-                                data.loot.forEach(l => {
-                                    // Assuming item name is basically available or raw ID
-                                    showGameAlert(`+${l.qty} ${l.item_id}`, 'drop', '🌿');
-                                    lootMsg.push(`${l.qty}x ${l.item_id}`);
-                                });
-                                addLog(`Gathered: ${lootMsg.join(', ')}`, 'text-green-400');
-                            }
-                            // Sync Inventory
-                            if (data.inventory) {
-                                player.value.inventory = data.inventory;
-                            }
-                        } else {
-                            const err = await res.json();
-                            showGameAlert(err.detail || "Gather failed", 'error', '❌');
-                            addLog(err.detail || "Gather failed", "error");
-                        }
-                    } catch (e) {
-                        showGameAlert("Error gathering", 'error');
-                        addLog("Error gathering", "error");
-                    }
+
+                    // 2. Complete Gathering
+                    await api.gatherResource(closestResource.value.id);
                 }
             }, interval);
         };

@@ -330,6 +330,42 @@ export const api = {
             showToast('🎁', 'Mission Complete!', `XP: ${data.rewards.xp}, Gold: ${data.rewards.gold}`, 'text-yellow-400');
             await this.refreshPlayer();
         }
+    },
+
+    async startGathering(resourceId) {
+        if (!player.value) return false;
+        try {
+            const res = await fetch(`${API_URL}/player/${player.value.id}/action/start_gather?resource_id=${resourceId}`, { method: 'POST' });
+            if (res.ok) {
+                const data = await res.json();
+                return data.duration_ms || 2000;
+            } else {
+                const err = await res.json();
+                showToast('❌', 'Start Failed', err.detail, 'text-red-500');
+                return false;
+            }
+        } catch (e) { console.error(e); return false; }
+    },
+
+    async gatherResource(resourceId) {
+        if (!player.value) return;
+        const res = await fetch(`${API_URL}/player/${player.value.id}/gather?resource_id=${resourceId}`, { method: 'POST' });
+        if (res.ok) {
+            const data = await res.json();
+            let msg = data.message || 'Gathered!';
+            if (data.items && data.items.length > 0) {
+                msg = `Got ${data.items.map(i => i.name).join(', ')}`;
+            }
+            showToast('Wood', 'Gathered!', msg, 'text-green-400');
+            await this.refreshPlayer();
+            // Trigger refresh of map details to update cooldowns
+            this.fetchMapDetails(player.value.current_map_id);
+            return true;
+        } else {
+            const err = await res.json();
+            showToast('❌', 'Failed', err.detail, 'text-red-500');
+            return false;
+        }
     }
 };
 

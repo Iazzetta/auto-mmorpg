@@ -12,6 +12,7 @@ export const inspectedPlayer = ref(null);
 export const availableMissions = ref({});
 export const isFreeFarming = ref(false);
 export const selectedTargetId = ref('');
+export const selectedTargetType = ref('monster'); // 'monster' | 'resource'
 export const selectedMapId = ref('map_forest_1');
 export const autoSellInferior = ref(localStorage.getItem('rpg_auto_sell') !== 'false');
 export const pendingAttackId = ref(null);

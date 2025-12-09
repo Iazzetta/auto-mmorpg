@@ -868,8 +868,8 @@ async def save_editor_items(items: dict):
     
     load_items()
     
-@router.post("/player/{player_id}/gather")
-async def gather_resource(player_id: str, resource_id: str):
+@router.post("/player/{player_id}/action/start_gather")
+async def start_gather(player_id: str, resource_id: str):
     player = state_manager.players.get(player_id)
     if not player:
         raise HTTPException(status_code=404, detail="Player not found")
@@ -892,6 +892,44 @@ async def gather_resource(player_id: str, resource_id: str):
     if dist > 3.0:
         raise HTTPException(status_code=400, detail="Too far away")
         
+    # Start Gathering
+    import time
+    player.gathering_start_time = time.time()
+    player.gathering_resource_id = resource_id
+    
+    return {"duration_ms": 2000, "message": "Gathering started"}
+
+@router.post("/player/{player_id}/gather")
+async def gather_resource(player_id: str, resource_id: str):
+    player = state_manager.players.get(player_id)
+    if not player:
+        raise HTTPException(status_code=404, detail="Player not found")
+        
+    # Security Check: Did they start gathering?
+    import time
+    if player.gathering_resource_id != resource_id:
+        raise HTTPException(status_code=400, detail="Must start gathering first")
+        
+    elapsed = (time.time() - player.gathering_start_time) * 1000
+    if elapsed < 1900: # 100ms grace period
+        raise HTTPException(status_code=400, detail="Gathering too fast (Exploit detected)")
+        
+    player.gathering_resource_id = None
+    player.gathering_start_time = 0.0
+
+    game_map = state_manager.maps.get(player.current_map_id)
+    if not game_map:
+        raise HTTPException(status_code=404, detail="Map not found")
+        
+    # Find resource
+    resource = next((r for r in game_map.resources if r.id == resource_id), None)
+    if not resource:
+        raise HTTPException(status_code=404, detail="Resource not found")
+        
+    # Check Cooldown again
+    if not state_manager.is_resource_ready(resource_id):
+        raise HTTPException(status_code=400, detail="Resource is regenerating")
+
     # Process Drops
     loot = []
     import random
