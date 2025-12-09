@@ -2,9 +2,9 @@ import { ref, onMounted, onUnmounted, watch } from 'vue';
 import * as THREE from 'three';
 import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
 import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
-import { player, mapMonsters, mapPlayers, destinationMarker, currentMonster, addLog, selectedTargetId, isFreeFarming, pendingAttackId, inspectedPlayer, selectedMapId, currentMapData, mapNpcs, showGameAlert, socket, activeMission } from '../state.js';
+import { player, mapMonsters, mapPlayers, destinationMarker, currentMonster, addLog, selectedTargetId, isFreeFarming, pendingAttackId, inspectedPlayer, selectedMapId, currentMapData, mapNpcs, showGameAlert, socket, activeMission, isManuallyMoving } from '../state.js';
 import { api } from '../services/api.js';
-import { stopAutoFarm, checkAndAct } from '../services/autoFarm.js';
+import { stopAutoFarm, startAutoFarm, checkAndAct } from '../services/autoFarm.js';
 
 export default {
     emits: ['interact-npc'],
@@ -220,13 +220,34 @@ export default {
                 const data = { group: null, clips: {}, height: 0 };
 
                 fbxLoader.load(`${path}/idle.fbx`, (object) => {
+                    // Success with idle.fbx
+                    processModel(object);
+                }, undefined, (err) => {
+                    // Fallback to idle2.fbx
+                    console.warn(`Failed to load idle.fbx for ${folderName}, trying idle2.fbx...`);
+                    fbxLoader.load(`${path}/idle2.fbx`, (object) => {
+                        processModel(object);
+                    }, undefined, (err2) => {
+                        // Fallback to running.fbx (last resort)
+                        console.warn(`Failed to load idle2.fbx for ${folderName}, trying running.fbx...`);
+                        fbxLoader.load(`${path}/running.fbx`, (object) => {
+                            processModel(object);
+                        }, undefined, (err3) => {
+                            console.warn(`All models failed for ${folderName}, using placeholder.`);
+                            const dummy = new THREE.Mesh(new THREE.BoxGeometry(1, 2, 1), new THREE.MeshStandardMaterial({ color: 0xff0000 }));
+                            processModel(dummy);
+                        });
+                    });
+                });
+
+                function processModel(object) {
                     // Normalize
                     const box = new THREE.Box3().setFromObject(object);
                     const size = box.getSize(new THREE.Vector3());
                     data.height = size.y;
                     data.group = object; // Base Model
 
-                    if (object.animations.length > 0) data.clips.idle = object.animations[0];
+                    if (object.animations && object.animations.length > 0) data.clips.idle = object.animations[0];
 
                     // Load Run (Parallel)
                     const p1 = new Promise(r => {
@@ -249,8 +270,7 @@ export default {
                     });
 
                     Promise.all([p1, p2]).then(() => resolve(data));
-
-                }, undefined, reject);
+                }
             });
 
             pendingLoads.set(folderName, promise);
@@ -282,6 +302,7 @@ export default {
 
                 // Clone using SkeletonUtils to allow independent animation
                 const object = SkeletonUtils.clone(cached.group);
+
 
                 object.traverse(child => {
                     if (child.isMesh) {
@@ -505,9 +526,14 @@ export default {
                     if (m.hp > 0) {
                         addLog(`Moving to attack ${m.name}...`);
                         stopAutoFarm(false);
-
                         // Set current monster for UI
-                        currentMonster.value = m;
+                        currentMonster.value = {
+                            id: m.id,
+                            name: m.name,
+                            hp: m.stats.hp,
+                            max_hp: m.stats.max_hp,
+                            level: m.level
+                        };
                         selectedTargetId.value = m.template_id;
                         selectedMapId.value = player.value.current_map_id;
 
@@ -535,6 +561,7 @@ export default {
                     const gameY = point.z; // Z is Y in 2D
 
                     stopAutoFarm(false);
+                    currentMonster.value = null; // Clear UI
                     destinationMarker.value = { x: gameX, y: gameY, time: Date.now(), isGameCoords: true };
                     api.movePlayer(player.value.current_map_id, gameX, gameY);
 
@@ -812,6 +839,10 @@ export default {
             if (dx !== 0 || dy !== 0) {
                 stopAutoFarm(false);
                 isFreeFarming.value = false;
+                currentMonster.value = null; // Clear UI on manual move
+
+                // Track manual movement state for API guards
+                isManuallyMoving.value = true;
 
                 // Normalize vector
                 const len = Math.sqrt(dx * dx + dy * dy);
@@ -835,6 +866,9 @@ export default {
                 api.movePlayer(player.value.current_map_id, targetX, targetY);
                 lastMoveTime = now;
             } else {
+                // Reset manual move state if stopped
+                if (isManuallyMoving.value) isManuallyMoving.value = false;
+
                 // Combat Rotation
                 const mesh = meshes.get(player.value.id);
                 if (mesh && (player.value.state?.toUpperCase() === 'COMBAT' || player.value.state?.toUpperCase() === 'ATTACKING') && player.value.target_id) {
@@ -993,20 +1027,24 @@ export default {
         };
 
         const toggleAutoAttack = () => {
+            console.log("Toggle Auto Attack Clicked. Current State:", isFreeFarming.value);
             if (isFreeFarming.value) {
+                console.log("Stopping Auto Farm...");
                 stopAutoFarm();
                 addLog("Auto Attack Disabled", "text-red-400");
             } else {
+                console.log("Starting Auto Farm...");
                 // Sync selected map to current map so we farm HERE
                 if (player.value) {
                     selectedMapId.value = player.value.current_map_id;
+                    console.log("Set selected map to:", selectedMapId.value);
                 }
                 // Clear specific target so we attack anything nearby
                 selectedTargetId.value = null;
 
                 isFreeFarming.value = true;
-                checkAndAct();
                 addLog("Auto Attack Enabled", "text-green-400");
+                startAutoFarm();
             }
         };
 
@@ -1065,22 +1103,6 @@ export default {
 
             updateEntityPositions();
 
-            // Sync Current Monster with Target Logic
-            if (player.value && player.value.target_id) {
-                const m = mapMonsters.value.find(m => m.id === player.value.target_id);
-                if (m && m.stats && m.stats.hp > 0) {
-                    currentMonster.value = m;
-                } else {
-                    currentMonster.value = null;
-                }
-            } else {
-                if (currentMonster.value && player.value && player.value.state === 'COMBAT') {
-                    // Keep it if we are still strictly in combat (latency buffer),
-                    // but ideally target_id should be truth
-                } else {
-                    currentMonster.value = null;
-                }
-            }
 
             // Update Animations
             const delta = clock.getDelta();
@@ -1227,6 +1249,10 @@ export default {
             }
         };
 
+        watch(isFreeFarming, (val) => {
+            console.warn(`[DEBUG] isFreeFarming changed to: ${val}`, new Error().stack);
+        });
+
         watch(() => player.value?.current_map_id, async (newMapId) => {
             if (newMapId) {
                 // Only stop auto-farm if we moved to a map that wasn't our target
@@ -1260,11 +1286,17 @@ export default {
             }
         }, { immediate: true });
 
+        watch(mapPlayers, () => updateEntityLifecycle(), { deep: true });
+        watch(mapMonsters, () => updateEntityLifecycle(), { deep: true });
+        watch(() => player.value?.current_map_id, () => updateEntityLifecycle()); // Map Change
+
         onMounted(() => {
             // Wait for next tick/timeout to ensure container has dimensions
             setTimeout(() => {
                 initThree();
                 animate();
+                // Initial entity load
+                updateEntityLifecycle();
             }, 100);
 
             window.addEventListener('keydown', handleKeyDown);
@@ -1280,19 +1312,10 @@ export default {
             window.removeEventListener('resize', onWindowResize);
             window.removeEventListener('keydown', handleKeyDown);
             window.removeEventListener('keyup', handleKeyUp);
-            if (renderer) {
+            if (renderer && container.value) {
                 renderer.dispose();
                 container.value.removeChild(renderer.domElement);
             }
-        });
-
-        watch(mapPlayers, () => updateEntityLifecycle(), { deep: true });
-        watch(mapMonsters, () => updateEntityLifecycle(), { deep: true });
-        watch(() => player.value?.current_map_id, () => updateEntityLifecycle()); // Map Change
-
-        onMounted(() => {
-            // Init check
-            setTimeout(updateEntityLifecycle, 500);
         });
 
         return {

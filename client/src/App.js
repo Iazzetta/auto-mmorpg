@@ -91,7 +91,7 @@ export default {
                 <!-- Footer / Hotbar -->
                 <div class="pointer-events-auto">
                     <Hotbar @open-editor="showEditor = true">
-                        <button @click="toggleFreeFarm" 
+                        <button @click="(e) => { toggleFreeFarm(); e.target.blur(); }" 
                                 class="w-12 h-12 bg-black/80 border-2 rounded flex items-center justify-center text-2xl hover:bg-gray-800 transition-colors shadow-lg active:scale-95 ml-2"
                                 :class="isFreeFarming ? 'border-red-500 text-red-500' : 'border-green-500 text-green-500'"
                                 :title="isFreeFarming ? 'Stop Auto Attack' : 'Start Auto Attack'">

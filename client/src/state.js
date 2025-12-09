@@ -22,6 +22,7 @@ export const activeMission = ref(null);
 export const missions = ref({});
 export const worldData = ref(null);
 export const isUpdating = ref(false);
+export const isManuallyMoving = ref(false);
 // Computed
 export const nextLevelXp = computed(() => player.value?.next_level_xp || 100);
 

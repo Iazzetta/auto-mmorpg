@@ -1,20 +1,28 @@
-import { player, isFreeFarming, selectedMapId, selectedTargetId, mapMonsters, addLog, pendingAttackId, destinationMarker, currentMapData, activeMission, missions, worldData } from '../state.js';
+import { player, isFreeFarming, selectedMapId, selectedTargetId, mapMonsters, addLog, pendingAttackId, destinationMarker, currentMapData, activeMission, missions, worldData, currentMonster } from '../state.js';
 import { api } from './api.js';
 
 let autoFarmInterval = null;
 
 export const startAutoFarm = () => {
-    if (autoFarmInterval) clearInterval(autoFarmInterval);
+    if (autoFarmInterval) {
+        console.warn("Clearing existing interval before start", autoFarmInterval);
+        clearInterval(autoFarmInterval);
+    }
     checkAndAct();
     autoFarmInterval = setInterval(checkAndAct, 1000);
+    console.log("Started Auto Farm Interval:", autoFarmInterval);
 };
 
 export const stopAutoFarm = (stopServer = true) => {
     if (autoFarmInterval) {
+        console.log("Stopping Auto Farm Interval:", autoFarmInterval);
         clearInterval(autoFarmInterval);
         autoFarmInterval = null;
+    } else {
+        console.warn("stopAutoFarm called but no interval active");
     }
     isFreeFarming.value = false;
+    currentMonster.value = null; // Clear UI
     activeMission.value = null; // Clear active mission tracking
     pendingAttackId.value = null;
     destinationMarker.value = null;
@@ -57,11 +65,16 @@ export const toggleFreeFarm = () => {
 };
 
 export const checkAndAct = async () => {
+    // console.log("checkAndAct Tick");
     if (!player.value) return;
     // Failsafe: Ensure we are allowed to act
-    if (!isFreeFarming.value && !activeMission.value) return;
+    if (!isFreeFarming.value && !activeMission.value) {
+        console.log("checkAndAct Abort: Not farming/mission");
+        return;
+    }
 
     if (player.value.state === 'combat') {
+        // console.log("checkAndAct: Player in combat stay.");
         if (player.value.current_map_id !== selectedMapId.value) {
             addLog("Waiting for combat to end before teleporting...", "text-yellow-500");
         }
@@ -120,11 +133,13 @@ export const checkAndAct = async () => {
 };
 
 const findAndAttackTarget = async () => {
+    console.log("Scanning for targets...");
     if (!player.value) return;
     if (player.value.state === 'combat') return;
 
     await api.fetchMapMonsters(player.value.current_map_id);
     const monsters = mapMonsters.value;
+    console.log(`Found ${monsters.length} monsters on map.`);
 
     const px = player.value.position.x;
     const py = player.value.position.y;
@@ -156,12 +171,13 @@ const findAndAttackTarget = async () => {
     }
 
     if (target) {
+        console.log("Target Selected:", target.name, target.id);
         const mx = target.position_x;
         const my = target.position_y;
         const dist = Math.sqrt((px - mx) ** 2 + (py - my) ** 2);
 
         if (dist > 1.5) {
-            addLog(`Moving to ${target.name}...`, 'text-blue-300');
+            // addLog(`Moving to ${target.name}...`, 'text-blue-300');
             const angle = Math.atan2(my - py, mx - px);
             const tx = mx - Math.cos(angle) * 0.5;
             const ty = my - Math.sin(angle) * 0.5;
@@ -169,11 +185,17 @@ const findAndAttackTarget = async () => {
             destinationMarker.value = { x: tx, y: ty, time: Date.now(), isGameCoords: true };
             pendingAttackId.value = target.id;
 
+            console.log("Moving to target...");
             await api.movePlayer(player.value.current_map_id, tx, ty);
         } else {
+            console.log("Engaging target!");
             addLog(`Found ${target.name}! Engaging...`, 'text-red-400');
             // Optimistic update to prevent move spam
             if (player.value) player.value.state = 'combat';
+
+            // Sync UI immediately
+            currentMonster.value = target;
+
             api.attackMonster(target.id);
         }
     } else {

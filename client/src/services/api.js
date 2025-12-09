@@ -1,4 +1,4 @@
-import { player, logs, chatMessages, socket, currentMonster, addLog, showToast, mapMonsters, mapPlayers, mapNpcs, isFreeFarming, selectedTargetId, pendingAttackId, destinationMarker, inspectedPlayer, autoSellInferior, currentMapData, showGameAlert, isUpdating, worldData } from '../state.js';
+import { player, logs, chatMessages, socket, currentMonster, addLog, showToast, mapMonsters, mapPlayers, mapNpcs, isFreeFarming, selectedTargetId, pendingAttackId, destinationMarker, inspectedPlayer, autoSellInferior, currentMapData, showGameAlert, isUpdating, worldData, isManuallyMoving } from '../state.js';
 import { checkAndAct, stopAutoFarm } from './autoFarm.js';
 
 const API_URL = 'http://localhost:8000';
@@ -431,12 +431,32 @@ const handleCombatUpdate = async (data) => {
     }
 
     if (data.monster_hp > 0) {
+        // Prevent opening/updating card if we are moving/running away
+        // Check case-insensitive state AND local input authority
+        const pState = (player.value.state || '').toUpperCase();
+
+        // FORCE CLOSE if manually moving, regardless of previous state
+        if (isManuallyMoving.value) {
+            currentMonster.value = null;
+            return;
+        }
+
+        // Only auto-open card if we are strictly in combat state
+        if (!currentMonster.value && pState !== 'COMBAT' && pState !== 'ATTACKING') return;
+
         if (!currentMonster.value) {
+            // Try to find full details
+            let fullMonster = null;
+            if (data.monster_id) {
+                fullMonster = mapMonsters.value.find(m => m.id === data.monster_id);
+            }
+
             currentMonster.value = {
-                name: data.monster_name || "Enemy",
+                name: data.monster_name || (fullMonster ? fullMonster.name : "Enemy"),
                 hp: data.monster_hp,
-                max_hp: data.monster_max_hp || 50,
-                level: 1
+                max_hp: data.monster_max_hp || (fullMonster ? fullMonster.stats.max_hp : 50),
+                level: fullMonster ? fullMonster.level : 1,
+                id: data.monster_id // Store ID to track
             };
         } else {
             if (data.monster_name) currentMonster.value.name = data.monster_name;
