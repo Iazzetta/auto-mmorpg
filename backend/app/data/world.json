@@ -271,7 +271,7 @@
         "map_dungeon_1": {
             "name": "Dungeon Lv. 1",
             "type": "dungeon",
-            "level_requirement": 20,
+            "level_requirement": 10,
             "width": 100,
             "height": 100,
             "respawn_x": 10,
