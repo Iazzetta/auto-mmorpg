@@ -241,7 +241,11 @@ export default {
         // Key Bindings
         const handleKeydown = (e) => {
             if (!player.value) return;
-            if (showEditor.value || showNpcInteraction.value) return; // Disable game keys in editor/dialog
+            if (showEditor.value || showNpcInteraction.value) return;
+
+            // Ignore shortcuts if typing in input/textarea
+            const tag = document.activeElement ? document.activeElement.tagName.toUpperCase() : '';
+            if (tag === 'INPUT' || tag === 'TEXTAREA') return;
 
             if (e.key === 'b' || e.key === 'B') {
                 showInventory.value = !showInventory.value;
