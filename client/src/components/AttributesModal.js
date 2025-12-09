@@ -6,81 +6,142 @@ export default {
     props: ['isOpen'],
     emits: ['close'],
     template: `
-        <div v-if="isOpen" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50" @click.self="$emit('close')">
-            <div class="bg-gray-800 p-6 rounded-lg border border-gray-600 shadow-2xl max-w-sm w-full relative">
-                <button @click="$emit('close')" class="absolute top-2 right-2 text-gray-400 hover:text-white">✕</button>
-                <h3 class="text-xl font-bold mb-4 text-center">Attributes</h3>
-
-                <div class="text-center mb-4">
-                    <span class="text-gray-400">Points Available:</span>
-                    <span class="text-yellow-400 font-bold text-xl ml-2">{{ availablePoints }}</span>
+        <div v-if="isOpen" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 transition-opacity" @click.self="$emit('close')">
+            <div class="bg-gray-900/95 p-6 rounded-2xl border border-gray-700 shadow-2xl max-w-3xl w-full relative text-gray-100 flex flex-col gap-4">
+                
+                <!-- Header -->
+                <div class="flex justify-between items-center border-b border-gray-700 pb-2">
+                    <div>
+                        <h3 class="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-amber-600">CHARACTER GROWTH</h3>
+                        <p class="text-gray-400 text-xs mt-0.5">Allocate points to shape your destiny.</p>
+                    </div>
+                    <button @click="$emit('close')" class="text-gray-500 hover:text-white transition-colors text-xl">✕</button>
                 </div>
 
-                <div class="space-y-4 mb-6">
-                    <div v-for="(val, attr) in tempAttributes" :key="attr"
-                        class="bg-gray-700 p-3 rounded">
-                        <div class="flex justify-between items-center mb-2">
-                            <span class="uppercase font-bold w-12">{{ attr }}</span>
-                            <span class="font-bold text-lg">{{ val }}</span>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    
+                    <!-- Left: Allocation -->
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center bg-gray-800/50 p-3 rounded-xl border border-gray-700">
+                            <span class="text-gray-300 font-medium tracking-wide text-sm">AVAILABLE POINTS</span>
+                            <span class="text-2xl font-black text-yellow-400 drop-shadow-lg">{{ availablePoints }}</span>
                         </div>
-                        <div class="flex items-center gap-2">
-                            <button @click="adjustAttribute(attr, -1)"
-                                class="w-8 h-8 bg-gray-600 rounded hover:bg-gray-500 font-bold text-xl leading-none pb-1">-</button>
-                            
-                            <input type="range" 
-                                :min="player.attributes[attr]" 
-                                :max="val + availablePoints" 
-                                v-model.number="tempAttributes[attr]"
-                                class="flex-1 h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-yellow-500">
-                                
-                            <button @click="adjustAttribute(attr, 1)"
-                                class="w-8 h-8 bg-green-600 rounded hover:bg-green-500 font-bold text-xl leading-none pb-1"
-                                :disabled="availablePoints <= 0">+</button>
+
+                        <div class="space-y-2">
+                            <div v-for="(val, attr) in tempAttributes" :key="attr" class="bg-gray-800/40 p-2.5 rounded-lg border border-gray-700 hover:border-gray-600 transition-colors">
+                                <div class="flex justify-between items-center mb-1.5">
+                                    <div class="flex flex-col">
+                                        <span class="uppercase font-bold text-sm text-gray-200 tracking-wider">{{ attr }}</span>
+                                        <span class="text-[10px] text-gray-500 font-mono">
+                                            {{ attr === 'str' ? '+2 Atk' : 
+                                               attr === 'agi' ? '+1 Atk, +1 Def' : 
+                                               attr === 'vit' ? '+10 HP, +1 Def' : 
+                                               '+0.1 Spd, -CDR' }}
+                                        </span>
+                                    </div>
+                                    <span class="font-bold text-lg text-white">{{ val }}</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <button @click="adjustAttribute(attr, -1)" class="w-7 h-7 rounded bg-gray-700 hover:bg-gray-600 flex items-center justify-center font-bold text-lg transition-colors active:scale-95 text-red-300">-</button>
+                                    
+                                    <div class="flex-1 px-2 relative h-4 flex items-center">
+                                         <!-- Custom Slider Track -->
+                                        <div class="absolute w-full h-1.5 bg-gray-700 rounded-full overflow-hidden">
+                                            <div class="h-full bg-gradient-to-r from-yellow-600 to-yellow-400" 
+                                                 :style="{ width: ((tempAttributes[attr] / (val + availablePoints + 20)) * 100) + '%' }"></div>
+                                        </div>
+                                        <input type="range" 
+                                            :min="player.attributes[attr]" 
+                                            :max="val + availablePoints" 
+                                            v-model.number="tempAttributes[attr]"
+                                            class="absolute w-full h-full opacity-0 cursor-pointer">
+                                    </div>
+
+                                    <button @click="adjustAttribute(attr, 1)" 
+                                        class="w-7 h-7 rounded flex items-center justify-center font-bold text-lg transition-all active:scale-95 shadow-lg"
+                                        :class="availablePoints > 0 ? 'bg-green-600 hover:bg-green-500 text-white' : 'bg-gray-700 text-gray-500 cursor-not-allowed'"
+                                        :disabled="availablePoints <= 0">+</button>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <div class="flex gap-2">
-                    <button @click="confirmAttributes"
-                        class="w-full bg-blue-600 hover:bg-blue-500 py-2 rounded font-bold text-white"
-                        :disabled="!hasChanges">
-                        Confirm
-                    </button>
-                </div>
+                    <!-- Right: Projections -->
+                    <div class="bg-gray-800/30 rounded-xl p-4 border border-gray-700 flex flex-col h-full">
+                        <h4 class="text-sm font-bold text-gray-200 mb-3 flex items-center gap-2">
+                            <span class="text-blue-400">📊</span> Live Projections
+                        </h4>
 
-                <!-- Projected Stats -->
-                <div class="mt-4 border-t border-gray-600 pt-4" v-if="projectedStats && projectedStats.hp !== undefined">
-                    <h4 class="font-bold text-gray-400 text-sm mb-2">Projected Stats</h4>
-                    <div class="grid grid-cols-2 gap-2 text-xs">
-                        <div class="flex justify-between">
-                            <span>HP:</span>
-                            <span :class="projectedStats.hp > player.stats.max_hp ? 'text-green-400' : 'text-gray-300'">
-                                {{ player.stats.max_hp }} <span v-if="projectedStats.hp > player.stats.max_hp">-> {{ projectedStats.hp }}</span>
-                            </span>
+                        <div class="space-y-3 flex-1" v-if="projectedStats && projectedStats.hp !== undefined">
+                            
+                            <!-- Combat Stats Group -->
+                            <div class="space-y-1">
+                                <div class="text-[10px] font-bold text-gray-500 uppercase tracking-widest pl-1 mb-0.5">Combat Ability</div>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div class="bg-gray-900/60 p-2 rounded border border-gray-700/50">
+                                        <div class="text-gray-400 text-[10px] uppercase">HP</div>
+                                        <div class="flex items-end gap-1.5">
+                                            <span class="text-sm font-mono font-bold text-white">{{ player.stats.max_hp }}</span>
+                                            <span v-if="projectedStats.hp > player.stats.max_hp" class="text-green-400 font-bold text-xs mb-0.5">
+                                                ➜ {{ projectedStats.hp }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="bg-gray-900/60 p-2 rounded border border-gray-700/50">
+                                        <div class="text-gray-400 text-[10px] uppercase">Atk</div>
+                                        <div class="flex items-end gap-1.5">
+                                            <span class="text-sm font-mono font-bold text-white">{{ player.stats.atk }}</span>
+                                            <span v-if="projectedStats.atk > player.stats.atk" class="text-green-400 font-bold text-xs mb-0.5">
+                                                ➜ {{ projectedStats.atk }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="bg-gray-900/60 p-2 rounded border border-gray-700/50 col-span-2">
+                                        <div class="text-gray-400 text-[10px] uppercase">Def</div>
+                                        <div class="flex items-end gap-1.5">
+                                            <span class="text-sm font-mono font-bold text-white">{{ player.stats.def_ }}</span>
+                                            <span v-if="projectedStats.def > player.stats.def_" class="text-green-400 font-bold text-xs mb-0.5">
+                                                ➜ {{ projectedStats.def }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Utility Stats Group -->
+                            <div class="space-y-1 mt-2">
+                                <div class="text-[10px] font-bold text-gray-500 uppercase tracking-widest pl-1 mb-0.5">Mobility & Technique</div>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div class="bg-gray-900/60 p-2 rounded border border-gray-700/50">
+                                        <div class="text-gray-400 text-[10px] uppercase">Spd</div>
+                                        <div class="flex items-end gap-1.5">
+                                            <span class="text-sm font-mono font-bold text-white">{{ player.stats.speed }}</span>
+                                            <span v-if="projectedStats.speed > player.stats.speed" class="text-green-400 font-bold text-xs mb-0.5">
+                                                ➜ {{ projectedStats.speed }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="bg-gray-900/60 p-2 rounded border border-gray-700/50">
+                                        <div class="text-gray-400 text-[10px] uppercase">Cd</div>
+                                        <div class="flex items-end gap-1.5">
+                                            <span class="text-sm font-mono font-bold text-white">{{ player.stats.attack_cooldown }}s</span>
+                                            <span v-if="projectedStats.cooldown < player.stats.attack_cooldown" class="text-green-400 font-bold text-xs mb-0.5">
+                                                ➜ {{ projectedStats.cooldown }}s
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="flex justify-between">
-                            <span>Atk:</span>
-                            <span :class="projectedStats.atk > player.stats.atk ? 'text-green-400' : 'text-gray-300'">
-                                {{ player.stats.atk }} <span v-if="projectedStats.atk > player.stats.atk">-> {{ projectedStats.atk }}</span>
-                            </span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span>Def:</span>
-                            <span :class="projectedStats.def > player.stats.def_ ? 'text-green-400' : 'text-gray-300'">
-                                {{ player.stats.def_ }} <span v-if="projectedStats.def > player.stats.def_">-> {{ projectedStats.def }}</span>
-                            </span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span>Speed:</span>
-                            <span :class="projectedStats.speed > player.stats.speed ? 'text-green-400' : 'text-gray-300'">
-                                {{ player.stats.speed }} <span v-if="projectedStats.speed > player.stats.speed">-> {{ projectedStats.speed }}</span>
-                            </span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span>Cooldown:</span>
-                            <span :class="projectedStats.cooldown < player.stats.attack_cooldown ? 'text-green-400' : 'text-gray-300'">
-                                {{ player.stats.attack_cooldown }}s <span v-if="projectedStats.cooldown < player.stats.attack_cooldown">-> {{ projectedStats.cooldown }}s</span>
-                            </span>
+
+                        <!-- Action -->
+                        <div class="mt-4 pt-3 border-t border-gray-700">
+                             <button @click="confirmAttributes"
+                                class="w-full py-2.5 rounded-lg font-bold text-sm shadow-lg transform transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed hover:brightness-110"
+                                :class="hasChanges ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-blue-900/50' : 'bg-gray-700 text-gray-400 cursor-not-allowed'"
+                                :disabled="!hasChanges">
+                                {{ hasChanges ? 'CONFIRM CHANGES' : 'NO CHANGES' }}
+                            </button>
                         </div>
                     </div>
                 </div>
