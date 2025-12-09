@@ -1049,6 +1049,9 @@ export default {
         };
 
         const handleKeyDown = (e) => {
+            const tag = document.activeElement ? document.activeElement.tagName.toUpperCase() : '';
+            if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+
             if (e.key === 'w' || e.key === 'W') keys.w = true;
             if (e.key === 'a' || e.key === 'A') keys.a = true;
             if (e.key === 's' || e.key === 'S') keys.s = true;

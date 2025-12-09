@@ -1,1 +1,1 @@
-uvicorn backend.main:app --port 8000
+./venv/Scripts/activate.bat && uvicorn backend.main:app --port 8000
