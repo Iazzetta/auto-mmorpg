@@ -58,6 +58,7 @@ export const toggleFreeFarm = () => {
         addLog("Starting Free Farm...", "text-green-400");
         isFreeFarming.value = true;
         activeMission.value = null;
+        selectedTargetId.value = null; // Clear target to attack anything
         // Sync map preference to current location
         if (player.value) {
             selectedMapId.value = player.value.current_map_id;

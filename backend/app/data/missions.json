@@ -76,6 +76,8 @@
         "is_main_quest": true,
         "next_mission_id": "mission_collect_wolf_tooth",
         "target_npc_id": "npc_guide_01",
-        "target_item_id": "mat_flower"
+        "target_item_id": "mat_flower",
+        "target_source_type": "resource",
+        "target_source_id": "res_tpl_1765053472053"
     }
 }

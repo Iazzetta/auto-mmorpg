@@ -500,9 +500,11 @@ export default {
                                         <option v-for="(n, nid) in npcs" :key="nid" :value="nid">{{ n.name }} ({{ n.map_id }})</option>
                                     </select>
                                 </div>
-                                <div v-if="selectedMission.type === 'delivery'" class="grid grid-cols-2 gap-2">
+
+                                <div v-if="selectedMission.type === 'delivery'" class="grid grid-cols-2 gap-2 border-t border-gray-700 pt-2 mt-2">
+                                     <div class="col-span-2 text-[10px] text-gray-400 font-bold uppercase mb-1">Item Requirement</div>
                                      <div>
-                                        <label class="text-[10px] text-gray-500 uppercase">Item to Deliver</label>
+                                        <label class="text-[10px] text-gray-500 uppercase">Item</label>
                                         <select v-model="selectedMission.target_item_id" class="w-full bg-black border border-gray-700 rounded px-2 py-1 text-xs">
                                             <option v-for="(i, iid) in availableItems" :key="iid" :value="iid">{{ i.name }}</option>
                                         </select>
@@ -510,6 +512,29 @@ export default {
                                     <div>
                                         <label class="text-[10px] text-gray-500 uppercase">Count</label>
                                         <input v-model.number="selectedMission.target_count" type="number" class="w-full bg-black border border-gray-700 rounded px-2 py-1 text-xs">
+                                    </div>
+
+                                    <!-- Source Definition for Auto-Play -->
+                                    <div>
+                                        <label class="text-[10px] text-gray-500 uppercase">Source Type</label>
+                                        <select v-model="selectedMission.target_source_type" class="w-full bg-black border border-gray-700 rounded px-2 py-1 text-xs">
+                                            <option value="">-- Manual/None --</option>
+                                            <option value="monster">Monster Drop</option>
+                                            <option value="resource">Resource Gather</option>
+                                        </select>
+                                    </div>
+                                    <div v-if="selectedMission.target_source_type === 'monster'">
+                                         <label class="text-[10px] text-gray-500 uppercase">Source Monster</label>
+                                         <select v-model="selectedMission.target_source_id" class="w-full bg-black border border-gray-700 rounded px-2 py-1 text-xs">
+                                            <option v-for="(m, mid) in worldData.monster_templates" :key="mid" :value="mid">{{ m.name }}</option>
+                                        </select>
+                                    </div>
+                                    <div v-else-if="selectedMission.target_source_type === 'resource'">
+                                         <label class="text-[10px] text-gray-500 uppercase">Source Resource</label>
+                                         <select v-model="selectedMission.target_source_id" class="w-full bg-black border border-gray-700 rounded px-2 py-1 text-xs">
+                                            <option :value="selectedMission.target_item_id">Same as Item (Default)</option>
+                                            <option v-for="(r, rid) in (worldData.resource_templates || {})" :key="rid" :value="rid">{{ r.name }}</option>
+                                        </select>
                                     </div>
                                 </div>
                             </div>

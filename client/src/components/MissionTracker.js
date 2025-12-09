@@ -1,6 +1,6 @@
 import { ref, computed, watch } from 'vue';
-import { player, activeMission, missions, mapNpcs, showToast } from '../state.js';
-import { startMission, stopMission } from '../services/autoFarm.js';
+import { player, activeMission, missions, mapNpcs, showToast, selectedTargetId } from '../state.js';
+import { startMission, stopMission, startAutoFarm } from '../services/autoFarm.js';
 import { api } from '../services/api.js';
 
 export default {
@@ -228,6 +228,19 @@ export default {
                             return;
                         } else {
                             // On source map: Tell them to farm
+
+                            // AUTO-FARM LOGIC FOR DELIVERY
+                            if (mission.target_source_type === 'monster' && mission.target_source_id) {
+                                selectedTargetId.value = mission.target_source_id;
+                                startAutoFarm();
+                                showToast('⚔️', 'Auto Hunt', `Hunting for ${requiredItem}...`, 'text-red-400');
+                                return;
+                            } else if (mission.target_source_type === 'resource') {
+                                // Placeholder for resource auto-gather
+                                showToast('🪓', 'Gather Time', `Find ${requiredItem} from resources!`, 'text-green-400');
+                                return;
+                            }
+
                             showToast('🪓', 'Gather Time', `Find ${requiredItem} here!`, 'text-green-400');
                             // Maybe verify if we can target a resource?
                             return;
