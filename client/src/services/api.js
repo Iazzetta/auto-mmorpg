@@ -189,6 +189,7 @@ export const api = {
         if (res.ok) {
             const data = await res.json();
             player.value.inventory = data.inventory;
+            player.value.equipment = data.equipment || player.value.equipment; // New Field 
             player.value.gold = data.gold;
             player.value.diamonds = data.diamonds;
             player.value.claimed_rewards = data.claimed_rewards;

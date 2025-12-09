@@ -51,6 +51,22 @@
                 }
             ],
             "icon": "\ud83c\udf81"
+        },
+        {
+            "id": "unique_items_start",
+            "name": "Get your items",
+            "type": "one_time",
+            "description": "pegue seus items unicos",
+            "requirements": {
+                "level": 1
+            },
+            "rewards": [
+                {
+                    "item_id": "item_armor_01",
+                    "quantity": 1
+                }
+            ],
+            "icon": "\ud83c\udf81"
         }
     ]
 }

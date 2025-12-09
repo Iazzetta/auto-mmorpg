@@ -197,6 +197,7 @@ async def claim_reward(player_id: str, reward_id: str):
     return {
         "message": "Reward claimed",
         "inventory": player.inventory,
+        "equipment": player.equipment,
         "gold": player.gold,
         "diamonds": player.diamonds,
         "claimed_rewards": player.claimed_rewards
