@@ -83,6 +83,19 @@ class InventoryService:
         player.equipment[slot] = item
         
         # Add stats from new item
-        player.stats.atk += item.stats.atk
-        player.stats.def_ += item.stats.def_
-        # Recalculate other derived stats if necessary
+        player.equipment[slot] = item
+        
+        # Recalculate stats cleanly
+        player.calculate_stats()
+
+    @staticmethod
+    def unequip_item(player: Player, slot: str):
+        """
+        Unequips an item from the given slot, moving it to inventory.
+        """
+        item = player.equipment.get(slot)
+        if item:
+            player.equipment[slot] = None
+            player.inventory.append(item)
+            player.calculate_stats()
+

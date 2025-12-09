@@ -136,12 +136,24 @@ export const api = {
 
     async equipItem(itemId) {
         if (!player.value) return;
-        await fetch(`${API_URL}/player/${player.value.id}/equip_item?item_id=${itemId}`, { method: 'POST' });
-        await this.refreshPlayer();
+        const res = await fetch(`${API_URL}/player/${player.value.id}/equip?item_id=${itemId}`, { method: 'POST' });
+        if (res.ok) {
+            const data = await res.json();
+            player.value.equipment = data.equipment;
+            if (data.inventory) player.value.inventory = data.inventory;
+        } else {
+            await this.refreshPlayer();
+        }
     },
 
     async unequipItem(slot) {
-        // Not implemented in UI yet, but good to have
+        if (!player.value) return;
+        const res = await fetch(`${API_URL}/player/${player.value.id}/unequip?slot=${slot}`, { method: 'POST' });
+        if (res.ok) {
+            const data = await res.json();
+            player.value.equipment = data.equipment;
+            if (data.inventory) player.value.inventory = data.inventory;
+        }
     },
 
     async openChest() {

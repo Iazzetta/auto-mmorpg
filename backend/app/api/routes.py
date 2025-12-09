@@ -581,6 +581,22 @@ async def equip_item_endpoint(player_id: str, item_id: str):
     
     return {"message": "Item equipped", "equipment": player.equipment}
 
+@router.post("/player/{player_id}/unequip")
+async def unequip_item_endpoint(player_id: str, slot: str):
+    player = state_manager.get_player(player_id)
+    if not player:
+        raise HTTPException(status_code=404, detail="Player not found")
+    
+    if player.stats.hp <= 0:
+        raise HTTPException(status_code=400, detail="Cannot unequip items while dead")
+        
+    if slot not in player.equipment or not player.equipment[slot]:
+        raise HTTPException(status_code=400, detail="Nothing equipped in this slot")
+
+    InventoryService.unequip_item(player, slot)
+    
+    return {"message": "Item unequipped", "equipment": player.equipment, "inventory": player.inventory}
+
 @router.get("/map/{map_id}/monsters")
 async def get_map_monsters(map_id: str):
     # Get monster IDs in map

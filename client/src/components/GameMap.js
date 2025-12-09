@@ -993,6 +993,10 @@ export default {
                                 });
                                 addLog(`Gathered: ${lootMsg.join(', ')}`, 'text-green-400');
                             }
+                            // Sync Inventory
+                            if (data.inventory) {
+                                player.value.inventory = data.inventory;
+                            }
                         } else {
                             const err = await res.json();
                             showGameAlert(err.detail || "Gather failed", 'error', '❌');
