@@ -82,7 +82,7 @@ async def get_map_players(map_id: str):
     # Return list of players in the map (basic info only)
     players = []
     for p in state_manager.players.values():
-        if p.current_map_id == map_id:
+        if p.current_map_id == map_id and p.is_online:
             # Return subset of info to avoid leaking tokens/state
             players.append({
                 "id": p.id,

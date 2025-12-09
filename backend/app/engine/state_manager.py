@@ -1,5 +1,5 @@
 from typing import Dict, List
-from ..models.player import Player
+from ..models.player import Player, PlayerState
 from ..models.map import GameMap
 from ..models.monster import Monster
 
@@ -193,16 +193,25 @@ class StateManager:
     def add_player(self, player: Player):
         self.players[player.id] = player
 
-    def remove_player(self, player_id: str):
+    async def remove_player(self, player_id: str):
         if player_id in self.players:
             # Persistent world: Do not remove player data from memory on disconnect.
             # Just ensure they stop actions.
             player = self.players[player_id]
-            # Use string "idle" or Enum if possible, python is flexible here usually, but strictly:
-            from ..models.player import PlayerState
             player.state = PlayerState.IDLE
+            player.is_online = False
             player.target_position = None
-            # Do NOT delete: self.players[player_id]
+            
+            # Broadcast Disconnect so clients remove the entity
+            if hasattr(self, 'connection_manager'):
+                await self.connection_manager.broadcast({
+                    "type": "player_left",
+                    "player_id": player_id
+                })
+
+    def mark_player_online(self, player_id: str):
+        if player_id in self.players:
+            self.players[player_id].is_online = True
 
     def get_player(self, player_id: str) -> Player:
         return self.players.get(player_id)

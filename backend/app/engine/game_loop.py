@@ -42,6 +42,8 @@ class GameLoop:
 
         # Iterate over all players
         for player_id, player in self.state_manager.players.items():
+            if not player.is_online: continue
+            
             if player.state == PlayerState.COMBAT:
                 # Combat Logic (Keep immediate broadcast for responsiveness)
                 attack_cooldown = getattr(player.stats, 'attack_cooldown', 1.0)

@@ -74,6 +74,7 @@ class Player(BaseModel):
     last_attack_time: float = 0.0
     last_movement_broadcast: float = 0.0
     death_time: Optional[float] = None
+    is_online: bool = True
 
     def calculate_stats(self):
         # Base stats from attributes

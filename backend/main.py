@@ -79,6 +79,7 @@ import json
 @app.websocket("/ws/{client_id}")
 async def websocket_endpoint(websocket: WebSocket, client_id: str):
     await manager.connect(websocket)
+    state_manager.mark_player_online(client_id)
     try:
         while True:
             raw = await websocket.receive_text()
@@ -97,6 +98,5 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
                 pass
             
     except WebSocketDisconnect:
-        state_manager.remove_player(client_id)
+        await state_manager.remove_player(client_id)
         manager.disconnect(websocket)
-        await manager.broadcast({"type": "player_left", "player_id": client_id})
