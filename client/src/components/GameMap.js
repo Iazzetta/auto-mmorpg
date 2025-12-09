@@ -1027,17 +1027,13 @@ export default {
         };
 
         const toggleAutoAttack = () => {
-            console.log("Toggle Auto Attack Clicked. Current State:", isFreeFarming.value);
             if (isFreeFarming.value) {
-                console.log("Stopping Auto Farm...");
                 stopAutoFarm();
                 addLog("Auto Attack Disabled", "text-red-400");
             } else {
-                console.log("Starting Auto Farm...");
                 // Sync selected map to current map so we farm HERE
                 if (player.value) {
                     selectedMapId.value = player.value.current_map_id;
-                    console.log("Set selected map to:", selectedMapId.value);
                 }
                 // Clear specific target so we attack anything nearby
                 selectedTargetId.value = null;
@@ -1249,9 +1245,7 @@ export default {
             }
         };
 
-        watch(isFreeFarming, (val) => {
-            console.warn(`[DEBUG] isFreeFarming changed to: ${val}`, new Error().stack);
-        });
+
 
         watch(() => player.value?.current_map_id, async (newMapId) => {
             if (newMapId) {
