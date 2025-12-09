@@ -101,6 +101,69 @@ export default {
         const resourceCooldowns = ref({}); // Added
         const entityLabels = ref([]);
 
+        // FX System: Level Up
+        const createLevelUpEffect = (targetId) => {
+            const mesh = meshes.get(targetId);
+            if (!mesh) return;
+
+            // 1. Golden Aura (Torus)
+            const geometry = new THREE.TorusGeometry(1, 0.1, 16, 100);
+            const material = new THREE.MeshBasicMaterial({ color: 0xffd700, transparent: true, opacity: 0.8 });
+            const aura = new THREE.Mesh(geometry, material);
+            aura.position.copy(mesh.position);
+            aura.position.y += 0.5;
+            aura.rotation.x = Math.PI / 2;
+            scene.add(aura);
+
+            // 2. Rising Particles
+            const particleCount = 20;
+            const particles = [];
+            const pGeo = new THREE.BoxGeometry(0.1, 0.1, 0.1);
+            const pMat = new THREE.MeshBasicMaterial({ color: 0xffff00 });
+
+            for (let i = 0; i < particleCount; i++) {
+                const p = new THREE.Mesh(pGeo, pMat);
+                p.position.copy(mesh.position);
+                p.position.x += (Math.random() - 0.5) * 1.5;
+                p.position.z += (Math.random() - 0.5) * 1.5;
+                p.position.y += Math.random();
+                scene.add(p);
+                particles.push({ mesh: p, speed: 0.05 + Math.random() * 0.05 });
+            }
+
+            // Animate
+            let scale = 1;
+            let opacity = 0.8;
+
+            const animateFx = () => {
+                scale += 0.05;
+                opacity -= 0.02;
+
+                // Aura Expansion
+                aura.scale.set(scale, scale, 1);
+                aura.material.opacity = opacity;
+
+                // Particles Rising
+                particles.forEach(pObj => {
+                    pObj.mesh.position.y += pObj.speed;
+                    pObj.mesh.rotation.x += 0.1;
+                    pObj.mesh.rotation.y += 0.1;
+                });
+
+                if (opacity > 0) {
+                    requestAnimationFrame(animateFx);
+                } else {
+                    scene.remove(aura);
+                    particles.forEach(p => scene.remove(p.mesh));
+                }
+            };
+            requestAnimationFrame(animateFx);
+
+            // UI Alert
+            addLog(`Level Up!`, 'text-yellow-400 font-bold text-xl');
+            showGameAlert("LEVEL UP!", "success", "✨");
+        };
+
         // Socket Listener
         const handleWsMessage = (event) => {
             try {
@@ -112,6 +175,13 @@ export default {
                     if (mesh) {
                         scene.remove(mesh);
                         meshes.delete(data.resource_id);
+                    }
+                } else if (data.type === 'level_up') {
+                    // Trigger Effect
+                    createLevelUpEffect(data.player_id);
+                    if (data.player_id === player.value.id) {
+                        // Double check local sync if needed, but fetchPlayer usually handles it eventually
+                        player.value.level = data.new_level;
                     }
                 }
             } catch (e) { }

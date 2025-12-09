@@ -58,7 +58,7 @@ class CombatService:
             log['monster_died'] = True
             log['xp_gained'] = monster.xp_reward
             
-            # Award XP
+            # Award XP (Refactored to use gain_xp check or inline logic with event)
             player.xp += monster.xp_reward
             
             # Level Up Check
@@ -70,6 +70,17 @@ class CombatService:
                 player.stats.hp = player.stats.max_hp # Heal on level up
                 log['level_up'] = True
                 log['new_level'] = player.level
+                
+                # Broadcast Level Up Event
+                try:
+                    import asyncio
+                    asyncio.create_task(state_manager.connection_manager.broadcast({
+                        "type": "level_up",
+                        "player_id": player.id,
+                        "new_level": player.level
+                    }))
+                except Exception as e:
+                    print(f"Error broadcasting level up: {e}")
             
             log['next_level_xp'] = player.next_level_xp # Send next level XP for UI update
             

@@ -61,9 +61,23 @@ export default {
                 </button>
             </div>
         </div>
+            <!-- Mission Complete Overlay -->
+            <transition name="fade">
+                <div v-if="showOverlay" class="fixed inset-0 flex items-center justify-center z-50 pointer-events-none">
+                    <div class="bg-black/80 backdrop-blur-md border-4 border-yellow-500 rounded-lg p-8 transform scale-100 animate-bounce-in text-center shadow-[0_0_50px_rgba(234,179,8,0.5)]">
+                        <div class="text-6xl mb-4">🏆</div>
+                        <h2 class="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-yellow-100 to-yellow-300 drop-shadow-sm uppercase tracking-wider">
+                            Mission Complete!
+                        </h2>
+                        <div class="text-yellow-200 mt-2 font-mono text-lg font-bold">Rewards Claimed</div>
+                    </div>
+                </div>
+            </transition>
+        </div>
     </div>
     `,
     setup() {
+        const showOverlay = ref(false);
         const allMissions = computed(() => {
             const completed = player.value?.completed_missions || [];
             const activeId = player.value?.active_mission_id;
@@ -222,9 +236,20 @@ export default {
             startMission(mission);
         };
 
+
+
+        // ... (existing computed/functions)
+
         const claimReward = async () => {
-            await api.claimMission();
-            stopMission();
+            const success = await api.claimMission();
+            if (success) {
+                stopMission();
+                // Trigger Overlay
+                showOverlay.value = true;
+                setTimeout(() => {
+                    showOverlay.value = false;
+                }, 3000);
+            }
         };
 
         return {
@@ -236,9 +261,9 @@ export default {
             getMissionClass,
             handleMissionClick,
             claimReward,
-            claimReward,
             isTalkOrDelivery,
-            getDeliveryStatus
+            getDeliveryStatus,
+            showOverlay
         };
     }
 };

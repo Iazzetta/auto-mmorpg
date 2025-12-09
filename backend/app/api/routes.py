@@ -341,6 +341,15 @@ async def use_item(player_id: str, item_id: str):
         effects.append(f"Gained {item_to_use.stats.xp} XP")
         if res['leveled_up']:
             effects.append(f"Leveled Up to {res['new_level']}!")
+            try:
+                 import asyncio
+                 asyncio.create_task(state_manager.connection_manager.broadcast({
+                     "type": "level_up",
+                     "player_id": player.id,
+                     "new_level": res["new_level"]
+                 }))
+            except Exception as e:
+                print(f"Error broadcasting level up: {e}")
             
     if item_to_use.stats.gold > 0:
         player.gold += item_to_use.stats.gold
@@ -620,6 +629,17 @@ async def claim_mission(player_id: str):
     
     player.gold += gold_gained
     result = player.gain_xp(xp_gained)
+    
+    if result["leveled_up"]:
+        try:
+             import asyncio
+             asyncio.create_task(state_manager.connection_manager.broadcast({
+                 "type": "level_up",
+                 "player_id": player.id,
+                 "new_level": result["new_level"]
+             }))
+        except Exception as e:
+            print(f"Error broadcasting level up: {e}")
     
     # Item Rewards
     reward_items = mission.get("reward_items", [])
