@@ -267,12 +267,12 @@ export const api = {
             if (res.ok && data.success) {
                 // Success
                 await this.refreshPlayer();
-                showToast('✨', 'Upgrade Successful!', data.message, 'text-yellow-400');
+                addAlert(data.message || 'Upgrade Successful!', 'success', '✨', `+${data.new_level || 1}`);
                 return data; // Return full data so caller can use it
             } else {
                 // Failure (Network ok, but logic failed)
                 await this.refreshPlayer(); // Even on failure, catalysts might be consumed
-                showGameAlert(data.message || 'Upgrade Failed', 'error');
+                addAlert(data.message || 'Upgrade Failed', 'error', '🔨', 'Broken?');
                 return data;
             }
         } catch (e) {
