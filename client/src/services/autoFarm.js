@@ -164,7 +164,34 @@ export const checkAndAct = async () => {
 
         // 3. Execute Mission on Target Map
         if (activeMission.value) {
-            if (activeMission.value.type === 'talk' || activeMission.value.type === 'delivery') {
+            if (activeMission.value.type === 'delivery') {
+                // Dynamic Delivery Logic: Check if we have the item
+                const m = activeMission.value;
+                const requiredItem = m.target_item_id;
+                const requiredQty = m.target_count || 1;
+
+                // Check Inventory
+                const inv = player.value.inventory || [];
+                const hasItem = inv.find(i => i.id === requiredItem || i.id.startsWith(requiredItem));
+                const currentQty = hasItem ? (hasItem.quantity || 1) : 0;
+
+                if (currentQty >= requiredQty) {
+                    addLog("Delivery Ready. Finding NPC...", "text-green-400");
+                    await findAndInteractWithNPC();
+                } else {
+                    // Need to acquire item
+                    // console.log(`[AutoFarm] Delivery: Missing ${requiredItem} (${currentQty}/${requiredQty}). Switching to Acquisition.`);
+                    if (m.target_source_type === 'resource') {
+                        await findAndGatherResource(m.target_source_id);
+                    } else if (m.target_source_type === 'monster') {
+                        await findAndAttackTarget(m.target_source_id || m.target_monster_id);
+                    } else {
+                        // Default to NPC if no source info (maybe user buys it?)
+                        await findAndInteractWithNPC();
+                    }
+                }
+
+            } else if (activeMission.value.type === 'talk') {
                 await findAndInteractWithNPC();
             } else if (activeMission.value.target_source_type === 'resource') {
                 await findAndGatherResource();
@@ -240,7 +267,7 @@ const findAndInteractWithNPC = async () => {
     }
 };
 
-const findAndGatherResource = async () => {
+const findAndGatherResource = async (overrideTargetId = null) => {
     // console.log("Scanning for resources...");
     if (!player.value) return;
     if (player.value.state === 'combat') return;
@@ -251,7 +278,8 @@ const findAndGatherResource = async () => {
 
     const px = player.value.position.x;
     const py = player.value.position.y;
-    const huntId = selectedTargetId.value;
+    // Use override if provided, otherwise selectedTargetId
+    const huntId = overrideTargetId || selectedTargetId.value;
 
     // Find nearest matching resource
     // Filter active cooldowns
@@ -260,6 +288,7 @@ const findAndGatherResource = async () => {
     const target = resources
         .filter(r => {
             // Must match ID if specified
+            // Check template_id vs huntId (resource templates usually match)
             if (huntId && r.template_id !== huntId && r.id !== huntId) return false;
             // Must not be on cooldown
             if (activeCooldowns[r.id]) return false;
@@ -301,7 +330,7 @@ const findAndGatherResource = async () => {
     }
 };
 
-const findAndAttackTarget = async () => {
+const findAndAttackTarget = async (overrideTargetId = null) => {
     // console.log("Scanning for targets...");
     if (!player.value) return;
     if (player.value.state === 'combat') return;
@@ -313,9 +342,9 @@ const findAndAttackTarget = async () => {
     const py = player.value.position.y;
 
     // Determine what we are hunting
-    let huntId = selectedTargetId.value;
+    let huntId = overrideTargetId || selectedTargetId.value;
 
-    if (activeMission.value && activeMission.value.target_monster_id) {
+    if (!huntId && activeMission.value && activeMission.value.target_monster_id) {
         huntId = activeMission.value.target_monster_id;
     }
 
