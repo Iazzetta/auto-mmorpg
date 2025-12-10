@@ -42,6 +42,15 @@ class CombatService:
         if str(player.current_map_id) != str(monster.map_id):
             return log # No combat if different maps
         
+        # Base Log Details for FCT
+        log['map_id'] = player.current_map_id
+        log['player_id'] = player.id
+        log['monster_id'] = monster.id
+        log['player_x'] = player.position.x
+        log['player_y'] = player.position.y
+        log['monster_x'] = monster.position_x
+        log['monster_y'] = monster.position_y
+        
         # Player hits Monster
         dmg_to_monster, is_crit = CombatService.calculate_damage(player.stats, monster.stats)
         monster.stats.hp -= dmg_to_monster
@@ -51,11 +60,23 @@ class CombatService:
             
         # Lifesteal Logic
         lifesteal = player.stats.lifesteal if hasattr(player.stats, 'lifesteal') else 0.0
+        
+        # DEBUG LOG
+        print(f"[COMBAT DEBUG] Player: {player.name} | Atk: {player.stats.atk} | Dmg: {dmg_to_monster} | Lifesteal %: {lifesteal}")
+        
         if lifesteal > 0 and dmg_to_monster > 0:
             heal_amount = int(dmg_to_monster * lifesteal)
+            print(f"[COMBAT DEBUG] Heal Calc: {dmg_to_monster} * {lifesteal} = {dmg_to_monster * lifesteal} -> Int: {heal_amount}")
+            
             if heal_amount > 0:
+                old_hp = player.stats.hp
                 player.stats.hp = min(player.stats.max_hp, player.stats.hp + heal_amount)
                 log['player_heal'] = heal_amount
+                print(f"[COMBAT DEBUG] HP Updated: {old_hp} -> {player.stats.hp} (Max: {player.stats.max_hp})")
+            else:
+                print(f"[COMBAT DEBUG] Heal amount was 0 after rounding.")
+        else:
+            print(f"[COMBAT DEBUG] No lifesteal triggered. (LS: {lifesteal}, Dmg: {dmg_to_monster})")
         
         # Aggro Logic: If monster was passive/idle, it now fights back
         if monster.stats.hp > 0 and not monster.target_id:

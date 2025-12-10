@@ -162,7 +162,7 @@ class Player(BaseModel):
         # For now, let's attach them effectively.
         self.stats.crit_rate = round(pct_bonuses["crit_rate"], 3) # 0.05 = 5%
         self.stats.crit_dmg = round(0.50 + pct_bonuses["crit_dmg"], 3) # Base 150% (0.5 extra) + bonus? Usually Base is 150% total (1.5x)
-        # Let's say base crit dmg is 1.5x (50% bonus). So stats.crit_dmg = 0.5 + bonus.
+        self.stats.lifesteal = round(pct_bonuses["lifesteal"], 3)
         
         self.stats.attack_cooldown = round(base_cooldown, 2)
         

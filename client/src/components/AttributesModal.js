@@ -138,15 +138,15 @@ export default {
                                 <div class="grid grid-cols-3 gap-2">
                                     <div class="bg-gray-900/60 p-2 rounded border border-gray-700/50 flex flex-col items-center">
                                         <div class="text-gray-400 text-[9px] uppercase">Crit Rate</div>
-                                        <div class="text-xs font-mono font-bold text-purple-300">{{ (player.stats.crit_rate * 100).toFixed(1) }}%</div>
+                                        <div class="text-xs font-mono font-bold text-purple-300">{{ (projectedStats.crit_rate * 100).toFixed(1) }}%</div>
                                     </div>
                                     <div class="bg-gray-900/60 p-2 rounded border border-gray-700/50 flex flex-col items-center">
                                         <div class="text-gray-400 text-[9px] uppercase">Crit Dmg</div>
-                                        <div class="text-xs font-mono font-bold text-purple-300">{{ (player.stats.crit_dmg * 100).toFixed(0) }}%</div>
+                                        <div class="text-xs font-mono font-bold text-purple-300">{{ (projectedStats.crit_dmg * 100).toFixed(0) }}%</div>
                                     </div>
                                     <div class="bg-gray-900/60 p-2 rounded border border-gray-700/50 flex flex-col items-center">
                                         <div class="text-gray-400 text-[9px] uppercase">Lifesteal</div>
-                                        <div class="text-xs font-mono font-bold text-red-400">{{ (player.stats.lifesteal * 100).toFixed(1) }}%</div>
+                                        <div class="text-xs font-mono font-bold text-red-400">{{ (projectedStats.lifesteal * 100).toFixed(1) }}%</div>
                                     </div>
                                 </div>
                             </div>
@@ -242,12 +242,15 @@ export default {
             let mult_def = 1.0;
             let mult_speed = 1.0;
 
+            // Additive Stats
+            let add_crit_rate = 0.0;
+            let add_crit_dmg = 0.0;
+            let add_lifesteal = 0.0;
+
             if (player.value.equipment) {
                 Object.values(player.value.equipment).forEach(item => {
                     if (item) {
                         // Apply Enhancement Bonus (Compound)
-                        // Assume 5% per level (Default)
-                        // Note: Backend uses config. We approximate here.
                         let enh_mult = 1.0;
                         if (item.enhancement_level > 0) {
                             enh_mult = Math.pow(1.05, item.enhancement_level);
@@ -267,6 +270,9 @@ export default {
                                 if (buff.type === 'pct_atk') mult_atk += buff.value;
                                 if (buff.type === 'pct_def') mult_def += buff.value;
                                 if (buff.type === 'pct_speed') mult_speed += buff.value;
+                                if (buff.type === 'crit_rate') add_crit_rate += buff.value;
+                                if (buff.type === 'crit_dmg') add_crit_dmg += buff.value;
+                                if (buff.type === 'lifesteal') add_lifesteal += buff.value;
                             });
                         }
                     }
@@ -284,7 +290,10 @@ export default {
                 atk: Math.floor(atk),
                 def: Math.floor(def),
                 speed: parseFloat(speed.toFixed(2)),
-                cooldown: parseFloat(cooldown.toFixed(2))
+                cooldown: parseFloat(cooldown.toFixed(2)),
+                crit_rate: parseFloat((0.05 + add_crit_rate).toFixed(3)),
+                crit_dmg: parseFloat((0.50 + add_crit_dmg).toFixed(2)),
+                lifesteal: parseFloat((add_lifesteal).toFixed(3))
             };
         });
 
