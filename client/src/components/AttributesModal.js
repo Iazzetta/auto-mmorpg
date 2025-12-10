@@ -132,6 +132,24 @@ export default {
                                     </div>
                                 </div>
                             </div>
+                            <!-- Advanced Stats Group -->
+                            <div class="space-y-1 mt-2 border-t border-gray-700/50 pt-2">
+                                <div class="text-[10px] font-bold text-gray-500 uppercase tracking-widest pl-1 mb-0.5">Advanced Combat</div>
+                                <div class="grid grid-cols-3 gap-2">
+                                    <div class="bg-gray-900/60 p-2 rounded border border-gray-700/50 flex flex-col items-center">
+                                        <div class="text-gray-400 text-[9px] uppercase">Crit Rate</div>
+                                        <div class="text-xs font-mono font-bold text-purple-300">{{ (player.stats.crit_rate * 100).toFixed(1) }}%</div>
+                                    </div>
+                                    <div class="bg-gray-900/60 p-2 rounded border border-gray-700/50 flex flex-col items-center">
+                                        <div class="text-gray-400 text-[9px] uppercase">Crit Dmg</div>
+                                        <div class="text-xs font-mono font-bold text-purple-300">{{ (player.stats.crit_dmg * 100).toFixed(0) }}%</div>
+                                    </div>
+                                    <div class="bg-gray-900/60 p-2 rounded border border-gray-700/50 flex flex-col items-center">
+                                        <div class="text-gray-400 text-[9px] uppercase">Lifesteal</div>
+                                        <div class="text-xs font-mono font-bold text-red-400">{{ (player.stats.lifesteal * 100).toFixed(1) }}%</div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Action -->
@@ -193,6 +211,14 @@ export default {
             if (success) emit('close');
         };
 
+        // Format Buff Label Helper (Replicated/Imported logic)
+        const getBuffTypeMultiplier = (type, value) => {
+            // Mapping backend BuffType enums to stats
+            // This is simplified. Ideally share config.
+            // BuffType.PERCENT_ATK = "pct_atk"
+            return value;
+        };
+
         const projectedStats = computed(() => {
             if (!player.value) return {};
             const str = tempAttributes.value.str || 0;
@@ -200,23 +226,58 @@ export default {
             const vit = tempAttributes.value.vit || 0;
             const ini = tempAttributes.value.ini || 0;
 
-            let hp = 100 + (vit * 10);
+            // Base Stats (Backend Formulas)
+            let hp = 50 + (vit * 5);
             let atk = 5 + (str * 2) + (agi * 1);
             let def = 0 + (vit * 1) + (agi * 1);
             let speed = 20.0 + (ini * 0.1);
+
+            // Cooldown logic
             let cooldown = 1.5 - (ini * 0.05);
             if (cooldown < 0.3) cooldown = 0.3;
 
+            // Multipliers from Awakenings
+            let mult_hp = 1.0;
+            let mult_atk = 1.0;
+            let mult_def = 1.0;
+            let mult_speed = 1.0;
+
             if (player.value.equipment) {
                 Object.values(player.value.equipment).forEach(item => {
-                    if (item && item.stats) {
-                        hp += (item.stats.hp || 0);
-                        atk += (item.stats.atk || 0);
-                        def += (item.stats.def_ || 0);
-                        speed += (item.stats.speed || 0);
+                    if (item) {
+                        // Apply Enhancement Bonus (Compound)
+                        // Assume 5% per level (Default)
+                        // Note: Backend uses config. We approximate here.
+                        let enh_mult = 1.0;
+                        if (item.enhancement_level > 0) {
+                            enh_mult = Math.pow(1.05, item.enhancement_level);
+                        }
+
+                        if (item.stats) {
+                            hp += (item.stats.hp || 0) * enh_mult;
+                            atk += (item.stats.atk || 0) * enh_mult;
+                            def += (item.stats.def_ || 0) * enh_mult;
+                            speed += (item.stats.speed || 0) * enh_mult;
+                        }
+
+                        // Accumulate Awakening Multipliers
+                        if (item.awakenings) {
+                            item.awakenings.forEach(buff => {
+                                if (buff.type === 'pct_hp') mult_hp += buff.value;
+                                if (buff.type === 'pct_atk') mult_atk += buff.value;
+                                if (buff.type === 'pct_def') mult_def += buff.value;
+                                if (buff.type === 'pct_speed') mult_speed += buff.value;
+                            });
+                        }
                     }
                 });
             }
+
+            // Apply Multipliers
+            hp = hp * mult_hp;
+            atk = atk * mult_atk;
+            def = def * mult_def;
+            speed = speed * mult_speed;
 
             return {
                 hp: Math.floor(hp),

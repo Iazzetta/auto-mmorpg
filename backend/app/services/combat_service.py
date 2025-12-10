@@ -7,13 +7,28 @@ from .inventory_service import InventoryService
 class CombatService:
     
     @staticmethod
-    def calculate_damage(attacker_stats, defender_stats) -> int:
+    def calculate_damage(attacker_stats, defender_stats) -> tuple[int, bool]:
         # Handle both int (legacy/direct) and Stats objects
         atk = attacker_stats.atk if hasattr(attacker_stats, 'atk') else attacker_stats
         def_ = defender_stats.def_ if hasattr(defender_stats, 'def_') else defender_stats
         
-        damage = atk - (def_ // 2)
-        return max(1, damage) # Minimum 1 damage
+        # Crit Logic
+        crit_rate = getattr(attacker_stats, 'crit_rate', 0.05) if hasattr(attacker_stats, 'crit_rate') else 0.05
+        crit_dmg_mult = getattr(attacker_stats, 'crit_dmg', 0.50) if hasattr(attacker_stats, 'crit_dmg') else 0.50
+        
+        is_critical = random.random() < crit_rate
+        
+        base_damage = atk - (def_ // 2)
+        base_damage = max(1, base_damage)
+        
+        final_damage = base_damage
+        if is_critical:
+            # Base damage + (Base Damage * Crit Bonus) = Base * (1 + Bonus)
+            # Usually Crit Dmg is total multiplier (e.g. 150% = 1.5x) or bonus (e.g. +50%).
+            # Model default is 0.50. Let's treat it as BONUS (150% total).
+            final_damage = int(base_damage * (1.0 + crit_dmg_mult))
+            
+        return final_damage, is_critical
 
     @staticmethod
     def process_combat_round(player: Player, monster: Monster) -> dict:
@@ -28,9 +43,19 @@ class CombatService:
             return log # No combat if different maps
         
         # Player hits Monster
-        dmg_to_monster = CombatService.calculate_damage(player.stats.atk, monster.stats.def_)
+        dmg_to_monster, is_crit = CombatService.calculate_damage(player.stats, monster.stats)
         monster.stats.hp -= dmg_to_monster
         log['player_dmg'] = dmg_to_monster
+        if is_crit:
+            log['player_crit'] = True
+            
+        # Lifesteal Logic
+        lifesteal = player.stats.lifesteal if hasattr(player.stats, 'lifesteal') else 0.0
+        if lifesteal > 0 and dmg_to_monster > 0:
+            heal_amount = int(dmg_to_monster * lifesteal)
+            if heal_amount > 0:
+                player.stats.hp = min(player.stats.max_hp, player.stats.hp + heal_amount)
+                log['player_heal'] = heal_amount
         
         # Aggro Logic: If monster was passive/idle, it now fights back
         if monster.stats.hp > 0 and not monster.target_id:
@@ -120,7 +145,7 @@ class CombatService:
             return log
 
         # Monster hits Player
-        dmg_to_player = CombatService.calculate_damage(monster.stats, player.stats)
+        dmg_to_player, is_crit_m = CombatService.calculate_damage(monster.stats, player.stats)
         player.stats.hp -= dmg_to_player
         log['monster_dmg'] = dmg_to_player
         
@@ -200,7 +225,7 @@ class CombatService:
         log = {}
         if str(player.current_map_id) != str(monster.map_id): return log
         
-        dmg = CombatService.calculate_damage(monster.stats, player.stats)
+        dmg, is_crit = CombatService.calculate_damage(monster.stats, player.stats)
         player.stats.hp -= dmg
         log['monster_dmg'] = dmg
         
