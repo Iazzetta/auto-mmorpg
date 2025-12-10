@@ -250,7 +250,7 @@ class UpgradeService:
             (BuffType.PERCENT_HP,  0.01, 0.05),
             (BuffType.CRIT_RATE,   0.01, 0.03),   # 1% - 3%
             (BuffType.CRIT_DMG,    0.05, 0.10),   # 5% - 10%
-            #(BuffType.LIFESTEAL,   0.01, 0.02)    # Rare? Let's exclude for now or make very rare
+            (BuffType.LIFESTEAL,   0.01, 0.02)    # 1% - 2%
         ]
         
         # 2. Select Buff Type
