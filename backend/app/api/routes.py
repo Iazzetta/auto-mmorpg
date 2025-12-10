@@ -168,6 +168,7 @@ async def claim_reward(player_id: str, reward_id: str):
 
     # Grant Rewards
     granted_items = []
+    rewards_summary = [] # For frontend alerts
     
     for entry in reward_config.get("rewards", []):
         item_id = entry["item_id"]
@@ -175,8 +176,10 @@ async def claim_reward(player_id: str, reward_id: str):
         
         if item_id == "gold":
             player.gold += qty
+            rewards_summary.append({"type": "gold", "amount": qty, "icon": "💰", "name": "Gold"})
         elif item_id == "diamonds":
             player.diamonds += qty
+            rewards_summary.append({"type": "diamonds", "amount": qty, "icon": "💎", "name": "Diamonds"})
         else:
             # Item
             template = ITEMS.get(item_id)
@@ -196,12 +199,21 @@ async def claim_reward(player_id: str, reward_id: str):
                 )
                 InventoryService.add_item(player, new_item)
                 granted_items.append(new_item)
+                
+                rewards_summary.append({
+                    "type": "item",
+                    "amount": qty,
+                    "icon": template["icon"],
+                    "name": template["name"],
+                    "rarity": template["rarity"]
+                })
 
     # Update Claim Timestamp
     player.claimed_rewards[reward_id] = now
     
     return {
         "message": "Reward claimed",
+        "rewards_summary": rewards_summary, # Added this
         "inventory": player.inventory,
         "equipment": player.equipment,
         "gold": player.gold,

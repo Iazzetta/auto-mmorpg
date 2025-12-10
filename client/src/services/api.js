@@ -198,7 +198,20 @@ export const api = {
             player.value.claimed_rewards = data.claimed_rewards;
             if (data.stats) player.value.stats = data.stats;
 
-            addAlert('Reward Claimed!', 'success', '🎁');
+            // Show Alerts for specific rewards
+            if (data.rewards_summary && data.rewards_summary.length > 0) {
+                for (const r of data.rewards_summary) {
+                    if (r.type === 'gold') {
+                        addAlert(`${r.amount} Gold`, 'gold', r.icon, 'Reward');
+                    } else if (r.type === 'diamonds') {
+                        addAlert(`${r.amount} Diamonds`, 'success', r.icon, 'Reward');
+                    } else if (r.type === 'item') {
+                        addAlert(r.name, 'drop', r.icon, `x${r.amount}`, r.rarity);
+                    }
+                }
+            } else {
+                addAlert('Reward Claimed!', 'success', '🎁');
+            }
             return true;
         } else {
             const err = await res.json();

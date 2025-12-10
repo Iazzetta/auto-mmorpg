@@ -18,7 +18,7 @@ export default {
                  <div class="flex flex-col min-w-[100px]">
                      <span class="font-bold text-[10px] uppercase leading-none text-shadow-sm flex items-center gap-1">
                         {{ alert.message }}
-                        <span v-if="alert.count > 1" class="text-[8px] bg-white/20 px-1 rounded-sm">x{{alert.count}}</span>
+                        <span v-if="alert.subtext" class="text-[9px] bg-white/20 px-1 rounded-sm ml-1 text-white font-mono tracking-tight">{{ alert.subtext }}</span>
                      </span>
                  </div>
             </div>
