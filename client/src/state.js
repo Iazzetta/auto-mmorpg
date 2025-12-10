@@ -17,7 +17,7 @@ export const selectedMapId = ref('map_forest_1');
 export const autoSellInferior = ref(localStorage.getItem('rpg_auto_sell') !== 'false');
 export const pendingAttackId = ref(null);
 export const destinationMarker = ref(null);
-export const toasts = ref([]);
+
 export const currentMapData = ref(null);
 export const activeMission = ref(null);
 export const missions = ref({});
@@ -34,22 +34,24 @@ export const addLog = (message, color = 'text-gray-300') => {
     if (logs.value.length > 50) logs.value.shift();
 };
 
-let toastCounter = 0;
-export const showToast = (icon, title, message, color = 'text-gray-300') => {
-    const id = toastCounter++;
-    toasts.value.push({ id, icon, title, message, color });
-    setTimeout(() => {
-        toasts.value = toasts.value.filter(toast => toast.id !== id);
-    }, 5000);
+import { useGameAlerts } from './composables/useGameAlerts.js';
+
+// Legacy exports (for backward compatibility if needed, but we should migrate)
+export const toasts = ref([]);
+export const gameAlerts = ref([]); // Kept to avoid breaking imports immediately, but effectively unused by new UI
+
+// Shared Instance
+const { addAlert, alerts } = useGameAlerts();
+export { addAlert, alerts };
+
+// Adapter for legacy showToast/showGameAlert calls to use new system immediately
+export const showToast = (icon, title, message, color) => {
+    // Map legacy toast to new alert
+    // title is usually the main thing, message is subtext
+    addAlert(title, 'success', icon, message);
 };
-export const gameAlerts = ref([]);
-let alertCounter = 0;
+
 export const showGameAlert = (message, type = 'info', icon = null) => {
-    const id = alertCounter++;
-    // Types: info, success, warning, error, drop, levelup
-    gameAlerts.value.push({ id, message, type, icon });
-    if (gameAlerts.value.length > 4) gameAlerts.value.shift();
-    setTimeout(() => {
-        gameAlerts.value = gameAlerts.value.filter(a => a.id !== id);
-    }, 4000);
+    addAlert(message, type, icon);
 };
+

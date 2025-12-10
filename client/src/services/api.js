@@ -1,4 +1,4 @@
-import { player, logs, chatMessages, socket, currentMonster, addLog, showToast, mapMonsters, mapPlayers, mapNpcs, isFreeFarming, selectedTargetId, pendingAttackId, destinationMarker, inspectedPlayer, autoSellInferior, currentMapData, showGameAlert, isUpdating, worldData, isManuallyMoving } from '../state.js';
+import { player, logs, chatMessages, socket, currentMonster, addLog, addAlert, mapMonsters, mapPlayers, mapNpcs, isFreeFarming, selectedTargetId, pendingAttackId, destinationMarker, inspectedPlayer, autoSellInferior, currentMapData, isUpdating, worldData, isManuallyMoving } from '../state.js';
 import { checkAndAct, stopAutoFarm } from './autoFarm.js';
 
 export const API_URL = 'http://localhost:8000';
@@ -190,6 +190,7 @@ export const api = {
         const res = await fetch(`${API_URL}/player/${player.value.id}/reward/claim?reward_id=${rewardId}`, { method: 'POST' });
         if (res.ok) {
             const data = await res.json();
+            // Claim Reward
             player.value.inventory = data.inventory;
             player.value.equipment = data.equipment || player.value.equipment; // New Field 
             player.value.gold = data.gold;
@@ -197,11 +198,11 @@ export const api = {
             player.value.claimed_rewards = data.claimed_rewards;
             if (data.stats) player.value.stats = data.stats;
 
-            showToast('🎁', 'Reward Claimed!', 'Check your inventory.', 'text-green-400');
+            addAlert('Reward Claimed!', 'success', '🎁');
             return true;
         } else {
             const err = await res.json();
-            showGameAlert(err.detail || "Failed to claim", 'error');
+            addAlert(err.detail || "Failed to claim", 'error');
             return false;
         }
     },
@@ -219,17 +220,11 @@ export const api = {
 
     async sellItem(itemId) {
         if (!player.value) return;
-        // if (!confirm('Sell this item?')) return; // Removed confirm for auto-sell, or handled by caller? 
-        // Wait, manual sell needs confirm. Auto-sell doesn't.
-        // I should probably separate them or pass a flag.
-        // For now, let's assume manual sell calls this and we want confirm.
-        // But auto-sell calls this too.
-        // I'll remove confirm here and put it in UI component for manual sell.
         const res = await fetch(`${API_URL}/player/${player.value.id}/sell_item?item_id=${itemId}`, { method: 'POST' });
         if (res.ok) {
             const data = await res.json();
             addLog(`Sold item for ${data.gold_gained} Gold.`, 'text-yellow-300');
-            showGameAlert(`Sold item for ${data.gold_gained} Gold`, 'success');
+            addAlert(`${data.gold_gained} Gold`, 'gold', '💰', 'Item Sold');
             await this.refreshPlayer();
         }
     },
@@ -389,18 +384,24 @@ export const api = {
         const res = await fetch(`${API_URL}/player/${player.value.id}/gather?resource_id=${resourceId}`, { method: 'POST' });
         if (res.ok) {
             const data = await res.json();
-            let msg = data.message || 'Gathered!';
+
+            // Loop items to show distinct alerts (like premium games)
             if (data.items && data.items.length > 0) {
-                msg = `Got ${data.items.map(i => i.name).join(', ')}`;
+                for (const item of data.items) {
+                    // addAlert(message, type, icon, subtext, rarity)
+                    addAlert(item.name, 'drop', getItemIcon(item), `x${item.quantity || 1}`, item.rarity);
+                }
+            } else {
+                addAlert('Resource gathered', 'success', '🪵', 'Empty?');
             }
-            showToast('Wood', 'Gathered!', msg, 'text-green-400');
+
             await this.refreshPlayer();
             // Trigger refresh of map details to update cooldowns
             this.fetchMapDetails(player.value.current_map_id);
             return true;
         } else {
             const err = await res.json();
-            showToast('❌', 'Failed', err.detail, 'text-red-500');
+            addAlert(err.detail || "Failed to gather", 'error');
             return false;
         }
     }
@@ -606,8 +607,10 @@ const handleCombatUpdate = async (data) => {
     if (log.monster_dmg) addLog(`Monster hit you for ${log.monster_dmg} dmg.`, 'text-red-300');
     if (log.monster_died) {
         addLog(`Monster died! Gained ${log.xp_gained} XP.`, 'text-yellow-400');
-        showGameAlert(`+${log.xp_gained} XP`, 'success');
-        if (log.gold_gained) showGameAlert(`+${log.gold_gained} Gold`, 'warning', '💰');
+
+        // NEW ALERTS
+        if (log.xp_gained > 0) addAlert(`${log.xp_gained} XP`, 'exp');
+        if (log.gold_gained > 0) addAlert(`${log.gold_gained} Gold`, 'gold');
 
         // Remove from local state immediately using the ID from server
         if (data.monster_id) {
@@ -650,15 +653,14 @@ const handleCombatUpdate = async (data) => {
                         // Rule: Sell Common/Uncommon if equipped is strictly better rarity
                         if (dropRarityVal < equippedRarityVal) {
                             await api.sellItem(drop.id);
-                            showToast('💰', 'Auto-sold (Low Rarity)', `${drop.name}`, 'text-yellow-500');
-                            showGameAlert(`Auto-Sold: ${drop.name}`, 'warning');
+                            // Combine notifications
+                            addAlert(`Auto-Sold: ${drop.name}`, 'warning', '💰', 'Inferior Rarity');
                             sold = true;
                         }
                         // Rule: If same rarity (Common/Uncommon only), sell if inferior Power Score
                         else if (dropRarityVal === equippedRarityVal && drop.power_score <= equipped.power_score) {
                             await api.sellItem(drop.id);
-                            showToast('💰', 'Auto-sold (Inferior)', `${drop.name}`, 'text-yellow-500');
-                            showGameAlert(`Auto-Sold: ${drop.name}`, 'warning');
+                            addAlert(`Auto-Sold: ${drop.name}`, 'warning', '💰', 'Inferior Stats');
                             sold = true;
                         }
                     }
@@ -667,16 +669,15 @@ const handleCombatUpdate = async (data) => {
 
             if (!sold) {
                 const icon = getItemIcon(drop);
-                showToast(icon, drop.name, `x${drop.quantity || 1}`, getRarityColor(drop.rarity));
-                showGameAlert(`Dropped: ${drop.name} x${drop.quantity || 1}`, 'drop', icon);
+                // addAlert(message, type, icon, subtext, rarity)
+                addAlert(drop.name, 'drop', icon, `x${drop.quantity || 1}`, drop.rarity);
             }
         }
     }
 
     if (log.level_up) {
-        showToast('🆙', 'Level Up!', `You reached level ${log.new_level}!`, 'text-yellow-400');
         addLog(`Level Up! You are now level ${log.new_level}.`, 'text-yellow-400 font-bold');
-        showGameAlert(`LEVEL UP! Level ${log.new_level}`, 'levelup');
+        addAlert(`Level ${log.new_level}`, 'levelup', '🆙', 'Level Up!');
     }
 };
 

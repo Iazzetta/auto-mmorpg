@@ -11,7 +11,20 @@
         "legendary": 3
     },
     "failure_penalty_percent": 50,
-    "stat_bonus_percent": 5,
+    "stat_bonus_percent": {
+        "common": 5,
+        "uncommon": 5,
+        "rare": 5,
+        "epic": 5,
+        "legendary": 5
+    },
     "max_level": 15,
-    "failure_penalty": "consume_catalyst"
+    "failure_penalty": "consume_catalyst",
+    "cost_multipliers": {
+        "common": 1,
+        "uncommon": 1,
+        "rare": 1,
+        "epic": 2,
+        "legendary": 3
+    }
 }

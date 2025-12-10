@@ -21,7 +21,7 @@
                 }
             ],
             "spawns": [],
-            "texture": "floor/Brickwall3_Texture.png",
+            "texture": "floor/Brickwall2_Texture.png",
             "resources": [
                 {
                     "id": "res_1765041733109",
@@ -45,6 +45,26 @@
                             "min_qty": 1,
                             "max_qty": 3,
                             "chance": 0.2
+                        }
+                    ]
+                },
+                {
+                    "id": "res_1765395963944",
+                    "template_id": "res_tpl_1765395941791",
+                    "name": "Pedra",
+                    "type": "rock",
+                    "color": "#4f4f4f",
+                    "x": 46,
+                    "y": 60,
+                    "width": 1,
+                    "height": 1,
+                    "respawn_time": 10,
+                    "drops": [
+                        {
+                            "item_id": "mat_stone",
+                            "min_qty": 1,
+                            "max_qty": 1,
+                            "chance": 1
                         }
                     ]
                 }
@@ -167,7 +187,7 @@
                     ]
                 }
             ],
-            "texture": "pebbles spritesheet.png"
+            "texture": "floor/Brick2_Texture.jpg"
         },
         "map_forest_2": {
             "name": "Deep Forest",
@@ -550,6 +570,40 @@
                 },
                 {
                     "item_id": "mat_flower",
+                    "min_qty": 1,
+                    "max_qty": 1,
+                    "chance": 1
+                }
+            ],
+            "width": 1,
+            "height": 1
+        },
+        "res_tpl_1765395941791": {
+            "id": "res_tpl_1765395941791",
+            "name": "Pedra",
+            "type": "rock",
+            "color": "#4f4f4f",
+            "respawn_time": 10,
+            "drops": [
+                {
+                    "item_id": "mat_stone",
+                    "min_qty": 1,
+                    "max_qty": 1,
+                    "chance": 1
+                }
+            ],
+            "width": 1,
+            "height": 1
+        },
+        "res_tpl_1765395974474": {
+            "id": "res_tpl_1765395974474",
+            "name": "Pedra",
+            "type": "rock",
+            "color": "#4f4f4f",
+            "respawn_time": 10,
+            "drops": [
+                {
+                    "item_id": "mat_stone",
                     "min_qty": 1,
                     "max_qty": 1,
                     "chance": 1
