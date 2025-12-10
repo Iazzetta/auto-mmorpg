@@ -995,6 +995,8 @@ async def gather_resource(player_id: str, resource_id: str):
     
     # Grant Loot
     inv_service = InventoryService()
+    enriched_loot = []
+
     for item_drop in loot:
         item_id = item_drop['item_id']
         qty = item_drop['qty']
@@ -1019,6 +1021,16 @@ async def gather_resource(player_id: str, resource_id: str):
                 quantity=qty
             )
             inv_service.add_item(player, new_item)
+            
+            # Add to enriched loot for frontend alerts
+            enriched_loot.append({
+                "item_id": item_id,
+                "quantity": qty,
+                "name": item_def['name'],
+                "rarity": item_def.get('rarity', 'common'),
+                "icon": item_def.get('icon', '📦')
+            })
+            
         except Exception as e:
             print(f"Error creating item {item_id}: {e}")
             
@@ -1034,7 +1046,7 @@ async def gather_resource(player_id: str, resource_id: str):
             "respawn_time": resource.respawn_time
         })
 
-    return {"message": "Gathered successfully", "loot": loot, "cooldown": resource.respawn_time, "inventory": player.inventory}
+    return {"message": "Gathered successfully", "loot": enriched_loot, "cooldown": resource.respawn_time, "inventory": player.inventory}
 
 @router.get("/editor/world")
 async def get_editor_world():

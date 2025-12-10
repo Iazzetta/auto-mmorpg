@@ -386,10 +386,11 @@ export const api = {
             const data = await res.json();
 
             // Loop items to show distinct alerts (like premium games)
-            if (data.items && data.items.length > 0) {
-                for (const item of data.items) {
+            // Backend now returns 'loot' with name/icon/rarity/quantity
+            if (data.loot && data.loot.length > 0) {
+                for (const item of data.loot) {
                     // addAlert(message, type, icon, subtext, rarity)
-                    addAlert(item.name, 'drop', getItemIcon(item), `x${item.quantity || 1}`, item.rarity);
+                    addAlert(item.name, 'drop', item.icon, `x${item.quantity || 1}`, item.rarity);
                 }
             } else {
                 addAlert('Resource gathered', 'success', '🪵', 'Empty?');
