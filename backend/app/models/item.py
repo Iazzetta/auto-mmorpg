@@ -46,6 +46,10 @@ class Item(BaseModel):
     icon: str = "📦"
     quantity: int = 1
     stackable: bool = False
+    
+    # Enhancement System
+    enhancement_level: int = 0
+    awakenings: list[str] = [] # List of awakening effect IDs
 
     def calculate_power_score(self):
         # Simple power score calculation

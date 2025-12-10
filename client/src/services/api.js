@@ -1,8 +1,8 @@
 import { player, logs, chatMessages, socket, currentMonster, addLog, showToast, mapMonsters, mapPlayers, mapNpcs, isFreeFarming, selectedTargetId, pendingAttackId, destinationMarker, inspectedPlayer, autoSellInferior, currentMapData, showGameAlert, isUpdating, worldData, isManuallyMoving } from '../state.js';
 import { checkAndAct, stopAutoFarm } from './autoFarm.js';
 
-const API_URL = 'http://localhost:8000';
-const WS_URL = 'ws://localhost:8000/ws';
+export const API_URL = 'http://localhost:8000';
+export const WS_URL = 'ws://localhost:8000/ws';
 
 export const api = {
     async fetchPlayer(id) {
@@ -247,6 +247,39 @@ export const api = {
             return true;
         }
         return false;
+    },
+
+    async upgradeItem(itemId) {
+        if (!player.value) return { success: false, message: 'No player loaded' };
+
+        try {
+            const res = await fetch(`${API_URL}/player/${player.value.id}/upgrade?item_id=${itemId}`, { method: 'POST' });
+            const data = await res.json();
+
+            if (res.ok && data.success) {
+                // Success
+                await this.refreshPlayer();
+                showToast('✨', 'Upgrade Successful!', data.message, 'text-yellow-400');
+                return data; // Return full data so caller can use it
+            } else {
+                // Failure (Network ok, but logic failed)
+                await this.refreshPlayer(); // Even on failure, catalysts might be consumed
+                showGameAlert(data.message || 'Upgrade Failed', 'error');
+                return data;
+            }
+        } catch (e) {
+            console.error(e);
+            return { success: false, message: 'Connection Error' };
+        }
+    },
+
+    // Auto-sell trigger
+    async triggerAutoSell() {
+        if (!player.value) return;
+        // Logic handled by server usually, but here we might need endpoint.
+        // Assuming /sell_junk or similar exists?
+        // Or we iterate client side (bad).
+        // For now, placeholder.
     },
 
     async triggerAutoSell() {

@@ -23,6 +23,7 @@ export default {
                     <button @click="activeTab = 'missions'" :class="{'bg-green-600 text-white': activeTab === 'missions', 'text-gray-400 hover:text-white hover:bg-gray-700': activeTab !== 'missions'}" class="px-4 py-1.5 rounded text-sm font-bold transition-colors">Missions</button>
                     <button @click="activeTab = 'resources'" :class="{'bg-teal-600 text-white': activeTab === 'resources', 'text-gray-400 hover:text-white hover:bg-gray-700': activeTab !== 'resources'}" class="px-4 py-1.5 rounded text-sm font-bold transition-colors">Resources</button>
                     <button @click="activeTab = 'rewards'" :class="{'bg-pink-600 text-white': activeTab === 'rewards', 'text-gray-400 hover:text-white hover:bg-gray-700': activeTab !== 'rewards'}" class="px-4 py-1.5 rounded text-sm font-bold transition-colors">Rewards</button>
+                    <button @click="activeTab = 'enhancement'" :class="{'bg-yellow-600 text-white': activeTab === 'enhancement', 'text-gray-400 hover:text-white hover:bg-gray-700': activeTab !== 'enhancement'}" class="px-4 py-1.5 rounded text-sm font-bold transition-colors">Enhancement</button>
                 </div>
 
                 <div class="ml-auto flex gap-2">
@@ -818,6 +819,74 @@ export default {
                         </div>
                     </div>
 
+                    <!-- ENHANCEMENT SIDEBAR -->
+                    <div v-if="activeTab === 'enhancement'" class="flex-1 flex flex-col p-4 overflow-y-auto gap-4">
+                        <div class="bg-yellow-900/20 p-3 rounded border border-yellow-700/50 mb-2">
+                             <h3 class="font-bold text-yellow-500 text-sm mb-1">Enhancement System Config</h3>
+                             <p class="text-[10px] text-gray-400">Configure global settings for item upgrades.</p>
+                        </div>
+
+                        <div v-if="enhancementConfig" class="flex flex-col gap-4">
+                            <!-- GENERAL SETTINGS -->
+                             <div class="bg-black/50 p-2 rounded border border-gray-700">
+                                <h4 class="text-[10px] font-bold text-gray-400 uppercase mb-2">General Settings</h4>
+                                <div class="grid grid-cols-2 gap-2">
+                                     <div>
+                                        <label class="text-[9px] text-gray-500 uppercase">Max Level</label>
+                                        <input v-model.number="enhancementConfig.max_level" type="number" class="w-full bg-black border border-gray-700 rounded px-2 py-1 text-xs">
+                                     </div>
+                                     <div>
+                                        <label class="text-[9px] text-gray-500 uppercase">Failure Penalty</label>
+                                        <select v-model="enhancementConfig.failure_penalty" class="w-full bg-black border border-gray-700 rounded px-2 py-1 text-xs">
+                                            <option value="none">None</option>
+                                            <option value="downgrade">Downgrade Level</option>
+                                            <option value="break">Break Item</option>
+                                            <option value="consume_catalyst">Consume Catalysts (Default)</option>
+                                        </select>
+                                     </div>
+                                </div>
+                            </div>
+
+                            <!-- SUCCESS RATES -->
+                            <div class="bg-black/50 p-2 rounded border border-gray-700">
+                                <h4 class="text-[10px] font-bold text-gray-400 uppercase mb-2">Success Rates (%)</h4>
+                                <div class="space-y-1">
+                                    <div v-for="(rate, lvl) in enhancementConfig.success_rates" :key="lvl" class="flex items-center gap-2">
+                                        <span class="text-xs text-gray-300 w-12 font-bold">+{{ lvl }}</span>
+                                        <input v-model.number="enhancementConfig.success_rates[lvl]" type="number" class="flex-1 bg-black border border-gray-700 rounded px-2 py-1 text-xs" min="0" max="100">
+                                        <span class="text-xs text-gray-500">%</span>
+                                    </div>
+                                    <button @click="addSuccessRateParams" class="text-[9px] text-blue-400 hover:text-white mt-1">+ Add Range (TODO)</button>
+                                </div>
+                            </div>
+
+                             <!-- COST MULTIPLIERS -->
+                             <div class="bg-black/50 p-2 rounded border border-gray-700">
+                                <h4 class="text-[10px] font-bold text-gray-400 uppercase mb-1">Cost Multipliers</h4>
+                                <p class="text-[9px] text-gray-500 mb-2">Multiplier for catalyst cost based on item rarity.</p>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div v-for="rarity in ['common', 'uncommon', 'rare', 'epic', 'legendary']" :key="rarity">
+                                        <label class="text-[9px] text-gray-500 uppercase">{{ rarity }}</label>
+                                        <input v-if="enhancementConfig.cost_multipliers" v-model.number="enhancementConfig.cost_multipliers[rarity]" type="number" step="0.1" class="w-full bg-black border border-gray-700 rounded px-2 py-1 text-xs" placeholder="1.0">
+                                    </div>
+                                </div>
+                             </div>
+
+                             <!-- STAT BONUSES -->
+                             <div class="bg-black/50 p-2 rounded border border-gray-700">
+                                <h4 class="text-[10px] font-bold text-gray-400 uppercase mb-1">Stat Bonuses per Level (%)</h4>
+                                <p class="text-[9px] text-gray-500 mb-2">Percentage increase to all stats per level (Compound).</p>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div v-for="rarity in ['common', 'uncommon', 'rare', 'epic', 'legendary']" :key="rarity">
+                                         <label class="text-[9px] text-gray-500 uppercase">{{ rarity }}</label>
+                                        <input v-if="enhancementConfig.stat_bonus_percent" v-model.number="enhancementConfig.stat_bonus_percent[rarity]" type="number" step="0.01" class="w-full bg-black border border-gray-700 rounded px-2 py-1 text-xs" placeholder="5.0">
+                                    </div>
+                                </div>
+                             </div>
+                        </div>
+                        <div v-else class="text-gray-500 text-xs italic">Loading config...</div>
+                    </div>
+
                 </div>
 
                 <!-- MAIN CONTENT AREA (VISUAL EDITOR) -->
@@ -984,6 +1053,7 @@ export default {
         const selectedNpcId = ref(null);
         const selectedResourceId = ref(null);
         const floorTextures = ref([]);
+        const enhancementConfig = ref(null);
 
         const monsterPreviewContainer = ref(null);
         let mpScene, mpCamera, mpRenderer, mpModel, mpControls, mpFrameId;
@@ -1488,7 +1558,30 @@ export default {
         };
         const handleMouseUp = () => dragging.value = null;
 
-        onMounted(fetchWorld);
+        const fetchEnhancementConfig = async () => {
+            try {
+                const res = await fetch('http://localhost:8000/editor/enhancement');
+                if (res.ok) enhancementConfig.value = await res.json();
+            } catch (e) { console.error(e); }
+        };
+
+        const saveEnhancementConfig = async () => {
+            if (!enhancementConfig.value) return;
+            await fetch('http://localhost:8000/editor/enhancement', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(enhancementConfig.value)
+            });
+        };
+
+        const addSuccessRateParams = () => {
+            alert('Not implemented in UI yet. Edit JSON manually or wait for update.');
+        };
+
+        onMounted(async () => {
+            await fetchWorld();
+            await fetchEnhancementConfig();
+        });
 
         return {
             worldData, missions, availableItems, rewardsData, npcs,
@@ -1506,8 +1599,13 @@ export default {
             addTemplateDrop,
             removeTemplateDrop,
             saveResourceAsTemplate,
-            saveAll,
-            startDrag, handleMouseMove, handleMouseUp, cursorX, cursorY, floorTextures
+            saveAll: async () => {
+                await saveAll();
+                await saveEnhancementConfig();
+            },
+            startDrag, handleMouseMove, handleMouseUp, cursorX, cursorY, floorTextures,
+            // Enhancement
+            enhancementConfig, addSuccessRateParams, saveEnhancementConfig
         };
     }
 };

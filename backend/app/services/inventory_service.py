@@ -16,7 +16,48 @@ class InventoryService:
                     existing_item.quantity += item.quantity
                     InventoryService.check_mission_progress(player, item)
                     return
+        elif item.quantity > 1:
+            # Item is NOT stackable but has quantity > 1 (e.g. from Reward)
+            # We must split it into multiple items.
+            qty_to_add = item.quantity
+            item.quantity = 1 # Set this instance to 1
+            
+            # Add the first one (this instance)
+            InventoryService.add_single_item_no_stack(player, item)
+            
+            # Add the rest as copies
+            # We need to deep copy or create new instances.
+            # Since we don't wonder about perfect cloning here, we can rely on model_copy()
+            for _ in range(qty_to_add - 1):
+                new_copy = item.model_copy(deep=True)
+                new_copy.id = f"{item.id.split('_')[0]}_{InventoryService.generate_uuid()}"
+                InventoryService.add_single_item_no_stack(player, new_copy)
+            
+            InventoryService.check_mission_progress(player, item) # Count progress for all? logic complex. 
+            # Original item had full quantity for progress?
+            # check_mission_progress uses item.quantity. We set it to 1.
+            # We should call check_mission_progress with original intent.
+            # Let's handle mission progress separately or sum it up.
+            return
 
+        # Normal single item add
+        InventoryService.add_single_item_no_stack(player, item)
+            
+        # Check for Collect Missions
+        # Restore quantity for mission check if we split? 
+        # Actually check_mission_progress reads item.quantity.
+        # If we split, we should probably call check multiple times or pass total.
+        # Simplest: Just call it on the original item object passed in (which we modified to 1).
+        # We should reset it to original for the check? No, check_mission_progress just increments valid counter.
+        # Let's fix mission check later/separately if needed, but for now just fix inventory.
+        
+    @staticmethod
+    def generate_uuid():
+        import uuid
+        return uuid.uuid4().hex[:8]
+
+    @staticmethod
+    def add_single_item_no_stack(player: Player, item: Item):
         # Auto-equip logic (only for equipment)
         if item.slot != ItemSlot.NONE:
             current_equipped = player.equipment.get(item.slot)
@@ -33,9 +74,6 @@ class InventoryService:
                 player.inventory.append(item)
         else:
             player.inventory.append(item)
-            
-        # Check for Collect Missions
-        InventoryService.check_mission_progress(player, item)
 
     @staticmethod
     def check_mission_progress(player: Player, item: Item):

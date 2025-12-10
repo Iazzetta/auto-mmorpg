@@ -9,7 +9,9 @@ from ..models.player import Player, PlayerClass, PlayerStats, Position, PlayerSt
 from ..models.item import Item, ItemType, ItemSlot, ItemRarity, ItemStats
 from ..models.map import GameMap
 from ..engine.state_manager import StateManager
+from ..engine.state_manager import StateManager
 from ..services.inventory_service import InventoryService
+from ..services.upgrade_service import UpgradeService
 
 router = APIRouter()
 state_manager = StateManager.get_instance()
@@ -740,12 +742,24 @@ async def equip_item_endpoint(player_id: str, item_id: str):
         raise HTTPException(status_code=404, detail="Item not found in inventory")
         
     # Equip logic
-    # We need to remove it from inventory first as InventoryService.equip_item expects it to be separate or handles it?
-    # InventoryService.equip_item takes (player, item). It puts old item in inventory.
-    # It does NOT remove the new item from inventory if it's already there.
-    # So we must remove it from inventory list first.
-    player.inventory.remove(item_to_equip)
-    InventoryService.equip_item(player, item_to_equip)
+    if item_to_equip.quantity > 1 and not item_to_equip.stackable:
+        # Split item for equipping because it's a stack of unstackable items (bug fix)
+        # Create a clone for equip
+        final_item = item_to_equip.model_copy(deep=True)
+        final_item.quantity = 1
+        # Generate new UUID suffix
+        base_id = item_to_equip.id.split('_')[0]
+        final_item.id = f"{base_id}_{uuid.uuid4().hex[:8]}"
+        
+        # Decrement original stack
+        item_to_equip.quantity -= 1
+        
+        # Equip the new single item
+        InventoryService.equip_item(player, final_item)
+    else:
+        # Normal behavior: Remove and equip
+        player.inventory.remove(item_to_equip)
+        InventoryService.equip_item(player, item_to_equip)
     
     return {"message": "Item equipped", "equipment": player.equipment, "stats": player.stats, "inventory": player.inventory}
 
@@ -764,6 +778,40 @@ async def unequip_item_endpoint(player_id: str, slot: str):
     InventoryService.unequip_item(player, slot)
     
     return {"message": "Item unequipped", "equipment": player.equipment, "stats": player.stats, "inventory": player.inventory}
+
+@router.post("/player/{player_id}/upgrade")
+async def upgrade_item_endpoint(player_id: str, item_id: str):
+    player = state_manager.get_player(player_id)
+    if not player:
+        raise HTTPException(status_code=404, detail="Player not found")
+        
+    result = UpgradeService.upgrade_item(player, item_id)
+    
+    if result["success"]:
+        return {
+            "success": True, 
+            "message": result["message"], 
+            "item": result["item"],
+            "player_stats": player.stats # Return updated stats if item was equipped
+        }
+    else:
+         # Return ok even on fail, but with success=False
+         return {
+             "success": False,
+             "message": result["message"],
+             "item": result.get("item"),
+             "catalysts_consumed": result.get("catalysts_consumed", 0)
+         }
+
+@router.get("/editor/enhancement")
+async def get_enhancement_config():
+    return UpgradeService.config
+
+@router.post("/editor/enhancement")
+async def save_enhancement_config(config: dict):
+    UpgradeService.config = config
+    UpgradeService.save_config()
+    return {"message": "Config saved"}
 
 @router.get("/map/{map_id}/monsters")
 async def get_map_monsters(map_id: str):

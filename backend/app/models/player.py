@@ -106,11 +106,22 @@ class Player(BaseModel):
         # Add Equipment Bonuses
         for slot, item in self.equipment.items():
             if item:
-                # print(f"[Stats] Slot {slot} Item {item.name}: +{item.stats.hp} HP")
-                base_hp += item.stats.hp
-                base_atk += item.stats.atk
-                base_def += item.stats.def_
-                base_speed += item.stats.speed
+                # Calculate Enhancement Bonus
+                # Import here to avoid circular dependency at module level
+                from ..services.upgrade_service import UpgradeService
+                
+                # Default 5% if config missing
+                bonus_pct = UpgradeService.config.get("stat_bonus_percent", {}).get(item.rarity.value, 5.0)
+                
+                mult = 1.0
+                if item.enhancement_level > 0:
+                    # Compound formula: (1 + pct/100) ^ level
+                    mult = ((1.0 + (bonus_pct / 100.0)) ** item.enhancement_level)
+                
+                base_hp += int(item.stats.hp * mult)
+                base_atk += int(item.stats.atk * mult)
+                base_def += int(item.stats.def_ * mult)
+                base_speed += (item.stats.speed * mult)
 
         self.stats.max_hp = int(base_hp)
         self.stats.atk = int(base_atk)

@@ -1,0 +1,17 @@
+{
+    "success_rates": {
+        "0-3": 100,
+        "4-6": 85,
+        "7-9": 75,
+        "10-15": 65
+    },
+    "base_cost": {
+        "rate": 1,
+        "epic": 2,
+        "legendary": 3
+    },
+    "failure_penalty_percent": 50,
+    "stat_bonus_percent": 5,
+    "max_level": 15,
+    "failure_penalty": "consume_catalyst"
+}

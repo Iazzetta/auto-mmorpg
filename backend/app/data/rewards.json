@@ -67,6 +67,54 @@
                 }
             ],
             "icon": "\ud83c\udf81"
+        },
+        {
+            "id": "sdsadas",
+            "name": "sworrrd",
+            "type": "one_time",
+            "description": "Description",
+            "requirements": {
+                "level": 1
+            },
+            "rewards": [
+                {
+                    "item_id": "item_sword_03",
+                    "quantity": 1
+                }
+            ],
+            "icon": "\ud83c\udf81"
+        },
+        {
+            "id": "catalysts",
+            "name": "catalyst",
+            "type": "one_time",
+            "description": "Description",
+            "requirements": {
+                "level": 1
+            },
+            "rewards": [
+                {
+                    "item_id": "item_catalyst",
+                    "quantity": 999999
+                }
+            ],
+            "icon": "\ud83c\udf81"
+        },
+        {
+            "id": "dasdsadas",
+            "name": "New Reward",
+            "type": "one_time",
+            "description": "Description",
+            "requirements": {
+                "level": 1
+            },
+            "rewards": [
+                {
+                    "item_id": "item_sword_03",
+                    "quantity": 1
+                }
+            ],
+            "icon": "\ud83c\udf81"
         }
     ]
 }

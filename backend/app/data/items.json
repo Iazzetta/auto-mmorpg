@@ -198,5 +198,25 @@
         "power_score": 1,
         "icon": "\ud83c\udf38",
         "stackable": true
+    },
+    "item_catalyst": {
+        "name": "Catalyst",
+        "type": "material",
+        "slot": "none",
+        "rarity": "rare",
+        "stats": {
+            "strength": 0,
+            "intelligence": 0,
+            "atk": 0,
+            "def_": 0,
+            "speed": 0,
+            "hp": 0,
+            "xp": 0,
+            "gold": 50,
+            "diamonds": 0
+        },
+        "power_score": 5,
+        "icon": "\ud83d\udc80",
+        "stackable": true
     }
 }
