@@ -1,6 +1,6 @@
 import { ref, computed, watch } from 'vue';
-import { player, activeMission, missions, mapNpcs, showToast, selectedTargetId, selectedTargetType } from '../state.js';
-import { startMission, stopMission, startAutoFarm } from '../services/autoFarm.js';
+import { player, activeMission, missions, mapNpcs, selectedTargetId, selectedTargetType } from '../state.js';
+import { startMission, stopMission } from '../services/autoFarm.js';
 import { api } from '../services/api.js';
 
 export default {
@@ -67,13 +67,12 @@ export default {
     setup() {
         const showOverlay = ref(false);
         const completingId = ref(null);
-        const newMissionId = ref(null); // Track new mission for entrance animation
+        const newMissionId = ref(null);
 
         // Watch for Active Mission changing to something valid
         watch(() => player.value?.active_mission_id, (newId, oldId) => {
             if (newId && newId !== oldId) {
                 newMissionId.value = newId;
-                // Clear animation faster (1.5s)
                 setTimeout(() => {
                     if (newMissionId.value === newId) {
                         newMissionId.value = null;
@@ -103,7 +102,6 @@ export default {
                 visibleMainQuests = mainQuests.filter(m => m.id === activeId);
             } else {
                 // If none active, show the first available (lowest level/ID)
-                // Assuming sequential progression, show only one.
                 if (mainQuests.length > 0) {
                     mainQuests.sort((a, b) => a.level_requirement - b.level_requirement);
                     visibleMainQuests = [mainQuests[0]];
@@ -117,7 +115,6 @@ export default {
                 return a.level_requirement - b.level_requirement;
             });
 
-            // Inject 'newlyAdded' flag for template if matches
             return list.map(m => ({
                 ...m,
                 newlyAdded: m.id === newMissionId.value
@@ -152,9 +149,6 @@ export default {
             const requiredQty = mission.target_count || 1;
             const inv = player.value?.inventory || [];
 
-            // Debug Log to catch Item ID issues
-            console.log(`[MissionTracker] Checking '${requiredItem}' in Inv: `, inv.map(i => i.id));
-
             const hasItem = inv.find(i => i.id === requiredItem || i.id.startsWith(requiredItem));
             const currentQty = hasItem ? (hasItem.quantity || 1) : 0;
 
@@ -168,13 +162,9 @@ export default {
         const getMissionClass = (mission) => {
             if (mission.id === completingId.value) return 'scale-90 opacity-0 transition-all duration-500 bg-yellow-400/50';
 
-            // Entrance Animation (High Priority)
             if (mission.newlyAdded) return 'border-4 border-yellow-400 shadow-[0_0_20px_gold] bg-yellow-900/80';
-
             if (isLocked(mission)) return 'border-red-600 bg-red-900/40 opacity-70 grayscale cursor-not-allowed';
-
-            if (mission.is_main_quest) return 'border-yellow-500 bg-yellow-900/40 shadow-lg shadow-yellow-900/20'; // Main Quest Style
-
+            if (mission.is_main_quest) return 'border-yellow-500 bg-yellow-900/40 shadow-lg shadow-yellow-900/20';
             if (isCompleted(mission)) return 'border-green-500 bg-green-900/20';
             if (isActive(mission)) return 'border-blue-500 bg-blue-900/20';
             return 'border-gray-600 hover:border-gray-400';
@@ -185,110 +175,25 @@ export default {
             if (isLocked(mission)) return;
             if (isCompleted(mission)) return;
 
-            // Auto-Walk for NPC Missions
-            if (isTalkOrDelivery(mission)) {
-                // Set as active first (this stops previous actions/movement via stopAutoFarm)
-                if (!isActive(mission) && mission.source === 'board') {
-                    startMission(mission);
-                }
-
-                // Delivery Logic Check
-                if (mission.type === 'delivery') {
-                    const requiredItem = mission.target_item_id;
-                    const requiredQty = mission.target_count || 1;
-
-                    // Check Inventory
-                    const inv = player.value.inventory || [];
-                    const hasItem = inv.find(i => i.id === requiredItem || i.id.startsWith(requiredItem));
-                    const currentQty = hasItem ? (hasItem.quantity || 1) : 0;
-
-                    if (currentQty < requiredQty) {
-                        // Phase 1: Go Gather
-                        // Check if we are on the source map
-                        if (mission.map_id && mission.map_id !== player.value.current_map_id) {
-                            showToast('🌲', 'Go Gather', `Go to ${mission.map_id} to find items.`, 'text-blue-400');
-                            // Move to Portal/Map logic? Or just tell user?
-                            // Ideally, auto-walk to portal if possible, for now just Toast + Move if user has map coords?
-                            // Actually, just telling them to go there is better than trying to pathfind across maps safely without complex logic.
-                            // BUT user asked for "perfect auto walk".
-                            // If we have map portals data, we could find portal to target map. 
-                            // For now, let's at least NOT try to walk to the NPC who is in another map.
-                            return;
-                        } else {
-                            // On source map: Tell them to farm
-
-                            // AUTO-FARM LOGIC FOR DELIVERY
-                            if (mission.target_source_type === 'monster' && mission.target_source_id) {
-                                selectedTargetType.value = 'monster';
-                                selectedTargetId.value = mission.target_source_id;
-                                startAutoFarm();
-                                showToast('⚔️', 'Auto Hunt', `Hunting for ${requiredItem}...`, 'text-red-400');
-                                return;
-                            } else if (mission.target_source_type === 'resource' && mission.target_source_id) {
-                                selectedTargetType.value = 'resource';
-                                selectedTargetId.value = mission.target_source_id;
-                                startAutoFarm();
-                                showToast('🪓', 'Auto Gather', `Gathering ${requiredItem}...`, 'text-green-400');
-                                return;
-                            }
-
-                            showToast('🪓', 'Gather Time', `Find ${requiredItem} here!`, 'text-green-400');
-                            // Maybe verify if we can target a resource?
-                            return;
-                        }
-                    }
-                }
-
-                // Phase 2: Go to NPC (Talk or Delivery Ready)
-                if (!mission.target_npc_id) {
-                    showToast('❌', 'Error', 'Mission has no target NPC.', 'text-red-400');
-                    return;
-                }
-
-                // Find NPC
-                // First check current map NPCs
-                const targetNpc = mapNpcs.value.find(n => n.id === mission.target_npc_id);
-
-                if (targetNpc) {
-                    // Slight delay to ensure stopMovement passed
-                    setTimeout(() => {
-                        api.movePlayer(player.value.current_map_id, targetNpc.x, targetNpc.y);
-                        showToast('🚶', 'Moving', `Walking to ${targetNpc.name}...`, 'text-blue-400');
-                    }, 100);
-                } else {
-                    // Check if NPC is on another map (Destination Map usually Castle for quests)
-                    // Config might not have target_map_id for NPC, usually standard is Castle for guides.
-                    // If we can't find NPC, warn user.
-                    showToast('❓', 'Where is he?', `Cannot find NPC ${mission.target_npc_id} here.`, 'text-red-400');
-                }
-                return;
-            }
-
-            // Kill/Collect -> Auto Farm
+            // Simplified: All missions (talk, delivery, combat, gather) are handled by autoFarm service
             startMission(mission);
         };
 
-
-
-        // ... (existing computed/functions)
-
         const claimReward = async () => {
-            const activeId = player.value?.active_mission_id;
-            if (activeId) {
-                // Animation Start
-                completingId.value = activeId;
+            const mission = allMissions.value.find(m => isCompleted(m) && isActive(m));
+            if (!mission) return;
 
-                // Wait for Card Animation (e.g. 500ms)
-                setTimeout(async () => {
-                    const success = await api.claimMission();
-                    if (success) {
-                        stopMission();
-                    }
-                    completingId.value = null; // Reset
-                }, 600);
+            completingId.value = mission.id;
+
+            try {
+                // stopMission("Mission Completed"); // Optional: Stop farm while claiming
+                await api.claimMission(mission.id);
+                stopMission("Mission Completed");
+            } catch (e) {
+                console.error(e);
+                completingId.value = null;
             }
         };
-
 
         return {
             allMissions,
@@ -301,8 +206,8 @@ export default {
             claimReward,
             isTalkOrDelivery,
             getDeliveryStatus,
-
-            completingId
+            completingId,
+            showOverlay
         };
     }
 };

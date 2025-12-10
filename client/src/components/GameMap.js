@@ -2,7 +2,7 @@
 import { ref, onMounted, onUnmounted, watch } from 'vue';
 import * as THREE from 'three';
 import {
-    player, currentMonster, isFreeFarming, showGameAlert, addLog, socket,
+    player, currentMonster, isFreeFarming, addAlert, addLog, socket,
     mapPlayers, mapMonsters, mapNpcs, currentMapData
 } from '../state.js';
 import { api } from '../services/api.js';
@@ -209,7 +209,7 @@ export default {
 
             // UI Alert
             addLog(`Level Up!`, 'text-yellow-400 font-bold text-xl');
-            showGameAlert("LEVEL UP!", "success", "✨");
+            addAlert("LEVEL UP!", "levelup", "✨", `Level ${player.value?.level || '?'}`);
 
             // Audio Effect
             try {

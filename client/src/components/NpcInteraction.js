@@ -1,6 +1,6 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { api } from '../services/api.js';
-import { player, showToast, missions } from '../state.js';
+import { player, addAlert, missions } from '../state.js';
 
 export default {
     props: ['npc'],
@@ -153,11 +153,11 @@ export default {
 
                 if (res2.ok) {
                     const data = await res2.json();
-                    alert(data.message);
+                    addAlert(data.message, 'success', '📜');
                     await api.refreshPlayer();
                     emit('close');
                 } else {
-                    alert("Failed to accept quest.");
+                    addAlert("Failed to accept quest.", 'error');
                 }
             } catch (e) { console.error(e); }
         };
@@ -190,10 +190,10 @@ export default {
                     const data = await res.json();
                     player.value.gold = data.gold;
                     player.value.inventory = data.inventory;
-                    showToast('💰', 'Item Purchased', `You bought ${getItemName(itemId)}`, 'text-yellow-400');
+                    addAlert(`Bought ${getItemName(itemId)}`, 'success', '💰');
                 } else {
                     const err = await res.json();
-                    showToast('❌', 'Error', err.detail || "Failed to buy.", 'text-red-400');
+                    addAlert(err.detail || "Failed to buy.", 'error');
                 }
             } catch (e) { console.error(e); }
         };
@@ -239,7 +239,7 @@ export default {
                 const res = await fetch(`http://localhost:8000/player/${player.value.id}/npc/${props.npc.id}/action?action=talk`, { method: 'POST' });
                 if (!res.ok) {
                     const err = await res.json();
-                    showToast('❌', 'Talk Failed', err.detail || 'Could not talk to NPC', 'text-red-400');
+                    addAlert(err.detail || 'Could not talk to NPC', 'error', '❌');
                     return;
                 }
                 const data = await res.json();
@@ -253,7 +253,7 @@ export default {
                 emit('close');
             } catch (e) {
                 console.error("Complete Mission Error:", e);
-                showToast('❌', 'Error', 'Failed to complete mission.', 'text-red-400');
+                addAlert('Failed to complete mission', 'error');
             }
         };
 

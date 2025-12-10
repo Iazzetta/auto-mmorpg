@@ -1,5 +1,7 @@
-import { player, isFreeFarming, selectedMapId, selectedTargetId, selectedTargetType, mapMonsters, addLog, pendingAttackId, destinationMarker, currentMapData, activeMission, missions, worldData, currentMonster } from '../state.js';
+
+import { player, isFreeFarming, selectedMapId, selectedTargetId, selectedTargetType, mapMonsters, mapNpcs, addLog, pendingAttackId, destinationMarker, currentMapData, activeMission, missions, worldData, currentMonster } from '../state.js';
 import { api } from './api.js';
+import { pathfinder } from './Pathfinder.js';
 
 let autoFarmInterval = null;
 
@@ -7,6 +9,7 @@ export const startAutoFarm = () => {
     if (autoFarmInterval) {
         clearInterval(autoFarmInterval);
     }
+    addLog("Starting Auto-Farm Logic...", "text-gray-500");
     checkAndAct();
     autoFarmInterval = setInterval(checkAndAct, 1000);
 };
@@ -32,6 +35,7 @@ export const stopAutoFarm = (stopServer = true) => {
 export const startMission = async (mission) => {
     stopAutoFarm(); // Stop current
     addLog(`Starting Mission: ${mission.title}`, "text-yellow-400");
+    console.log(`[AutoFarm] Starting Mission: ${mission.title} (${mission.type}) Target: ${mission.target_template_id || mission.target_npc_id}`);
 
     // Notify Backend
     await api.startMission(mission.id);
@@ -40,15 +44,14 @@ export const startMission = async (mission) => {
     selectedMapId.value = mission.map_id;
     selectedTargetId.value = mission.target_template_id;
 
-    // Only start Auto-Farm loop for combat/gathering missions
-    if (mission.type !== 'talk' && mission.type !== 'delivery') {
-        startAutoFarm();
-    }
+    // Start Auto-Farm loop for ALL mission types (including Talk/Delivery)
+    startAutoFarm();
 };
 
 export const stopMission = (reason = "") => {
     stopAutoFarm();
     addLog(`Mission Paused. ${reason}`, "text-yellow-400");
+    console.log(`[AutoFarm] Mission Paused: ${reason}`);
 };
 
 export const toggleFreeFarm = () => {
@@ -71,7 +74,6 @@ export const toggleFreeFarm = () => {
 let isProcessing = false;
 
 export const checkAndAct = async () => {
-    // console.log("checkAndAct Tick");
     if (isProcessing) return;
     if (!player.value) return;
 
@@ -83,80 +85,158 @@ export const checkAndAct = async () => {
         }
 
         if (player.value.state === 'combat') {
-            // console.log("checkAndAct: Player in combat stay.");
             if (player.value.current_map_id !== selectedMapId.value) {
-                addLog("Waiting for combat to end before teleporting...", "text-yellow-500");
+                addLog("Waiting for combat to end...", "text-yellow-500");
             }
             return;
         }
 
-        // 1. Check Map
+        // 1. Resolve Target Map
         let requiredMapId = selectedMapId.value;
-
-        // BUG FIX: If we have an active mission with a target map, FORCE that map
-        // This fixes the issue where resource gathering on another map wouldn't trigger teleport
         if (activeMission.value && activeMission.value.map_id) {
             requiredMapId = activeMission.value.map_id;
-            // Also update the global preference so UI reflects it
-            if (selectedMapId.value !== requiredMapId) {
-                selectedMapId.value = requiredMapId;
-            }
+            selectedMapId.value = requiredMapId;
         }
 
+        // LOG: Current Status
+        // console.log(`[AutoFarm] Tick. Map: ${player.value.current_map_id} | Target Map: ${requiredMapId}`);
+
+        // 2. Map Traversal (Pathfinding)
         if (player.value.current_map_id !== requiredMapId) {
 
-            const targetMap = worldData.value?.maps?.[requiredMapId];
+            console.log(`[AutoFarm] Wrong Map. Finding path from ${player.value.current_map_id} to ${requiredMapId}...`);
 
-            if (targetMap) {
-                // Check Level Requirement
-                if (player.value.level >= (targetMap.level_requirement || 0)) {
-                    addLog(`Teleporting to ${formatMapName(selectedMapId.value)}...`, "text-blue-400");
+            // Lazy load world data
+            if (!pathfinder.worldData) await pathfinder.init();
 
-                    await api.movePlayer(selectedMapId.value, targetMap.respawn_x || 50, targetMap.respawn_y || 50);
+            const path = pathfinder.findPath(player.value.current_map_id, requiredMapId);
 
-                    // Wait a bit for server to process
-                    await new Promise(r => setTimeout(r, 500));
-                    await api.refreshPlayer();
-
-                    if (!isFreeFarming.value && !activeMission.value) return; // Check call after await
-
-                    // If map changed successfully, continue to scan immediately
-                    if (player.value.current_map_id !== selectedMapId.value) {
-                        addLog("Waiting for map transition...", "text-yellow-400");
-                        return;
-                    }
-                    addLog("Arrived. Scanning targets...", "text-green-400");
-
-                } else {
-                    addLog(`Cannot enter ${targetMap.name}. Level ${targetMap.level_requirement} required.`, "text-red-500");
-                    stopMission();
-                    return;
+            if (!path || path.length === 0) {
+                // Fallback to old teleport if path fails (e.g. islands) or disconnected map
+                const currentMapName = player.value.current_map_id;
+                if (currentMapName !== requiredMapId) {
+                    addLog(`No path found. Teleporting to ${requiredMapId}...`, "text-blue-400");
+                    console.warn(`[AutoFarm] Pathfinding failed. Fallback teleport.`);
+                    await api.movePlayer(requiredMapId, 50, 50);
+                    await new Promise(r => setTimeout(r, 1000));
                 }
-            } else {
-                // Try to fetch world data if missing map
-                try {
-                    const res = await fetch('http://localhost:8000/editor/world');
-                    if (res.ok) {
-                        worldData.value = await res.json();
-                        // Retry next tick
-                        return;
-                    }
-                } catch (e) { }
+                return;
+            }
 
-                addLog(`Unknown map: ${selectedMapId.value}`, "text-red-400");
-                stopMission();
+            const nextStep = path[0]; // { mapId, portal, targetMap }
+            const portalId = nextStep.portal.id;
+
+            // Find Portal in current map
+            const portals = currentMapData.value?.portals || [];
+            const portalDef = portals.find(p => p.id === portalId);
+
+            if (!portalDef) {
+                // Portal mismatch?
+                addLog("Portal not found locally. Teleporting fallback...", "text-red-500");
+                console.error(`[AutoFarm] Portal ${portalId} not found in map data.`);
+                await api.movePlayer(requiredMapId, 50, 50);
+                return;
+            }
+
+            // Move to Portal
+            const dist = Math.sqrt((player.value.position.x - portalDef.x) ** 2 + (player.value.position.y - portalDef.y) ** 2);
+
+            if (dist < 1.5) {
+                addLog(`Using Portal to ${nextStep.targetMap}...`, "text-blue-400");
+                console.log(`[AutoFarm] Entering portal to ${nextStep.targetMap}`);
+                // Use Portal
+                const tx = portalDef.target_x !== undefined ? portalDef.target_x : portalDef.x;
+                const ty = portalDef.target_y !== undefined ? portalDef.target_y : portalDef.y;
+                await api.movePlayer(nextStep.targetMap, tx, ty);
+
+                // Pause for load
+                // addLog("Loading map...", "text-gray-500");
+                await new Promise(r => setTimeout(r, 2000));
+                return;
+            } else {
+                // Walk to Portal
+                console.log(`[AutoFarm] Moving to Portal at ${portalDef.x}, ${portalDef.y}`);
+                destinationMarker.value = { x: portalDef.x, y: portalDef.y, isGameCoords: true };
+                await api.movePlayer(player.value.current_map_id, portalDef.x, portalDef.y);
                 return;
             }
         }
 
-        // 2. Scan for Targets
-        if (selectedTargetType.value === 'resource') {
-            findAndGatherResource();
+        // 3. Execute Mission on Target Map
+        if (activeMission.value) {
+            if (activeMission.value.type === 'talk' || activeMission.value.type === 'delivery') {
+                await findAndInteractWithNPC();
+            } else if (activeMission.value.target_source_type === 'resource') {
+                await findAndGatherResource();
+            } else {
+                await findAndAttackTarget();
+            }
         } else {
-            findAndAttackTarget();
+            // Free Farm (Combat only)
+            await findAndAttackTarget();
         }
+
+    } catch (e) {
+        console.error("AutoFarm Error:", e);
     } finally {
         isProcessing = false;
+    }
+};
+
+const findAndInteractWithNPC = async () => {
+    if (!player.value) return;
+    const targetNpcId = activeMission.value.target_npc_id;
+
+    if (!targetNpcId) {
+        addLog("Mission has no target NPC?", "text-red-500");
+        return;
+    }
+
+    // console.log(`[AutoFarm] Looking for NPC: ${targetNpcId}`);
+
+    // Check if NPC is in current map list
+    // Ensure mapNpcs is populated (api.fetchMapNpcs is called on map load)
+    const npc = mapNpcs.value.find(n => n.id === targetNpcId);
+
+    if (npc) {
+        const px = player.value.position.x;
+        const py = player.value.position.y;
+        const dist = Math.sqrt((px - npc.x) ** 2 + (py - npc.y) ** 2);
+
+        if (dist > 2.0) {
+            // Move to NPC
+            // console.log(`[AutoFarm] Moving to NPC ${npc.name} at ${npc.x}, ${npc.y} (Dist: ${dist.toFixed(1)})`);
+            // Determine if we are already moving to this spot? 
+            // api.movePlayer sends command every tick if we call it, which might be spammy but ensures correction.
+            // Ideally we check if destination is already set. For to keep it simple, we just call it.
+            await api.movePlayer(player.value.current_map_id, npc.x, npc.y);
+            destinationMarker.value = { x: npc.x, y: npc.y, isGameCoords: true };
+        } else {
+            // We are at the NPC
+            // console.log(`[AutoFarm] Arrrived at NPC ${npc.name}.`);
+            // Trigger "Talk" or just stop?
+            // For now, stop moving and maybe show alert?
+            if (destinationMarker.value) destinationMarker.value = null;
+
+            // Optionally, Auto-Complete if API supports it or just notify user
+            // addLog(`Arrived at ${npc.name}. Talk to them!`, "text-green-400");
+
+            // If we want to simulate talking (not fully implemented in backend maybe?)
+            // Just stop farming so user can click?
+            // Actually user asked for "perfect auto walk".
+            // Stopping at NPC is good.
+            // We can check if mission is "Talk to Complete" or "Talk to Start"
+            // But for now, just idling near them is the goal.
+
+            // To prevent spamming "Arrived" logs or stop calls, check state
+            // But we are in a loop.
+            // Let's just return.
+        }
+    } else {
+        console.warn(`[AutoFarm] NPC ${targetNpcId} NOT found in mapNpcs. Map: ${player.value.current_map_id}`);
+        // Maybe we are on the wrong map and data is desynced?
+        // Or NPC is missing from map data.
+        addLog(`Cannot find NPC ${targetNpcId} here.`, "text-red-500");
     }
 };
 
@@ -180,7 +260,7 @@ const findAndGatherResource = async () => {
     const target = resources
         .filter(r => {
             // Must match ID if specified
-            if (huntId && r.template_id !== huntId) return false;
+            if (huntId && r.template_id !== huntId && r.id !== huntId) return false;
             // Must not be on cooldown
             if (activeCooldowns[r.id]) return false;
             return true;
@@ -196,6 +276,7 @@ const findAndGatherResource = async () => {
 
         if (dist > 1.5) {
             // addLog(`Moving to ${target.name}...`, 'text-blue-300');
+            console.log(`[AutoFarm] Moving to Resource ${target.name}`);
             api.movePlayer(player.value.current_map_id, target.x, target.y);
         } else {
             // Secure Gathering Flow
@@ -203,7 +284,7 @@ const findAndGatherResource = async () => {
             const duration = await api.startGathering(target.id);
 
             if (duration) {
-                // console.log(`Gathering for ${duration}ms...`);
+                console.log(`[AutoFarm] Gathering ${target.name} for ${duration}ms...`);
                 // Wait for the duration (plus small buffer)
                 await new Promise(r => setTimeout(r, duration));
 
@@ -214,11 +295,14 @@ const findAndGatherResource = async () => {
             // Allow cooldown refresh
             await new Promise(r => setTimeout(r, 500));
         }
+    } else {
+        // No resource found?
+        // addLog("Waiting for resource...", "text-gray-500");
     }
 };
 
 const findAndAttackTarget = async () => {
-    console.log("Scanning for targets...");
+    // console.log("Scanning for targets...");
     if (!player.value) return;
     if (player.value.state === 'combat') return;
 
@@ -229,7 +313,6 @@ const findAndAttackTarget = async () => {
     const py = player.value.position.y;
 
     // Determine what we are hunting
-    // If active mission has a specific target monster (e.g. for collection), use it.
     let huntId = selectedTargetId.value;
 
     if (activeMission.value && activeMission.value.target_monster_id) {
@@ -261,39 +344,11 @@ const findAndAttackTarget = async () => {
 
         if (dist > 1.5) {
             // addLog(`Moving to ${target.name}...`, 'text-blue-300');
+            // console.log(`[AutoFarm] Moving to Monster ${target.name}`);
             api.movePlayer(player.value.current_map_id, target.position_x, target.position_y);
         } else {
+            console.log(`[AutoFarm] Attacking ${target.name}`);
             api.attackMonster(target.id);
         }
     }
-};
-
-const formatMapName = (id) => {
-    if (!id) return '';
-    return id.replace('map_', '').replace('_', ' ').toUpperCase();
-};
-
-const findPath = (startId, endId, maps) => {
-    const queue = [[startId]];
-    const visited = new Set();
-    visited.add(startId);
-
-    while (queue.length > 0) {
-        const path = queue.shift();
-        const currentId = path[path.length - 1];
-
-        if (currentId === endId) return path;
-
-        const map = maps[currentId];
-        if (map && map.portals) {
-            for (const portal of map.portals) {
-                if (!visited.has(portal.target_map_id) && maps[portal.target_map_id]) {
-                    visited.add(portal.target_map_id);
-                    const newPath = [...path, portal.target_map_id];
-                    queue.push(newPath);
-                }
-            }
-        }
-    }
-    return null;
 };

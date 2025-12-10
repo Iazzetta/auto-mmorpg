@@ -116,7 +116,7 @@ export const api = {
         const res = await fetch(`${API_URL}/player/${player.value.id}/move?target_map_id=${mapId}&x=${x}&y=${y}`, { method: 'POST' });
         if (!res.ok) {
             const data = await res.json();
-            showGameAlert(data.detail || "Cannot move there!", "error");
+            addAlert(data.detail || "Cannot move there!", 'error', '🚫');
         } else {
             const data = await res.json();
             if (data.map_id && data.map_id !== player.value.current_map_id) {
@@ -324,7 +324,7 @@ export const api = {
         }
 
         if (soldCount > 0) {
-            showToast('💰', 'Auto-Clean', `Sold ${soldCount} items`, 'text-yellow-500');
+            addAlert(`Sold ${soldCount} items`, 'gold', '💰', 'Auto-Clean');
         }
     },
 
@@ -372,7 +372,7 @@ export const api = {
         const res = await fetch(`${API_URL}/player/${player.value.id}/mission/claim`, { method: 'POST' });
         if (res.ok) {
             const data = await res.json();
-            showToast('🎁', 'Mission Complete!', `XP: ${data.rewards.xp}, Gold: ${data.rewards.gold}`, 'text-yellow-400');
+            addAlert('Mission Complete!', 'success', '🎁', `XP: ${data.rewards.xp}, Gold: ${data.rewards.gold}`);
             await this.refreshPlayer();
         }
     },
@@ -386,7 +386,7 @@ export const api = {
                 return data.duration_ms || 2000;
             } else {
                 const err = await res.json();
-                showToast('❌', 'Start Failed', err.detail, 'text-red-500');
+                addAlert('Start Failed', 'error', '❌', err.detail);
                 return false;
             }
         } catch (e) { console.error(e); return false; }
@@ -539,7 +539,7 @@ export const connectWebSocket = (playerId) => {
             // Hide modal after a short delay
             setTimeout(() => {
                 isUpdating.value = false;
-                showToast('✅', 'Server Updated', 'World data has been refreshed.', 'text-green-400');
+                addAlert('Server Updated', 'success', '✅', 'World data refreshed');
             }, 2000);
         } else if (data.type === 'player_left') {
             mapPlayers.value = mapPlayers.value.filter(p => p.id !== data.player_id);
