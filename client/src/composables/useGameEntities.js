@@ -377,6 +377,35 @@ export function useGameEntities(scene, geometries, materials, resourceCooldowns)
                     mesh.rotation.y += rotDiff * 0.2;
                 }
 
+                // --- Visual Separation / Collision Force ---
+                // Pushes monsters apart if they are too close to neighbors
+                if (mesh.userData.type === 'monster' && mesh.userData.entity.hp > 0) {
+                    let sepX = 0;
+                    let sepZ = 0;
+                    const radius = 1.0; // Minimum distance
+                    const force = 0.15; // Strength of push
+
+                    for (const [otherId, otherMesh] of meshes) {
+                        if (id === otherId) continue;
+                        // Only collide with other monsters to keep it simple, or players too if desired
+                        if (otherMesh.userData.type !== 'monster') continue;
+
+                        const diffX = mesh.position.x - otherMesh.position.x;
+                        const diffZ = mesh.position.z - otherMesh.position.z;
+                        const distance = Math.sqrt(diffX * diffX + diffZ * diffZ);
+
+                        if (distance < radius && distance > 0.01) {
+                            const push = (radius - distance) / radius; // 0.0 to 1.0
+                            sepX += (diffX / distance) * push * force;
+                            sepZ += (diffZ / distance) * push * force;
+                        }
+                    }
+
+                    // Apply Separation
+                    mesh.position.x += sepX;
+                    mesh.position.z += sepZ;
+                }
+
                 // Anim Logic (Monster)
                 if (mesh.userData.type === 'monster' && mesh.userData.anims) {
                     const anims = mesh.userData.anims;
