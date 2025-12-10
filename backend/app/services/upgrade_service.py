@@ -186,18 +186,31 @@ class UpgradeService:
 
         if is_success:
             cls.consume_catalysts(player, cost)
-            target_item.enhancement_level += 1
-            cls.apply_stats_bonus(target_item)
+            item = target_item # Alias
+            item.enhancement_level += 1
+            cls.apply_stats_bonus(item)
+            
+            # Awakening Check
+            new_buff = None
+            if item.enhancement_level % 3 == 0:
+                new_buff = cls.roll_awakening(item)
             
             # Recalculate player stats if equipped
             if in_equipment:
                 player.calculate_stats()
                 
+            msg = f"Upgrade Successful! (+{item.enhancement_level})"
+            if new_buff:
+                # Format friendly message
+                from ..models.buff import Buff
+                b_obj = Buff(**new_buff.dict())
+                msg += f" \n✨ AWAKENED: {b_obj.description()}!"
+                
             return {
                 "success": True, 
-                "message": f"Upgrade Successful! (+{target_item.enhancement_level})",
-                "new_level": target_item.enhancement_level,
-                "item": target_item,
+                "message": msg,
+                "new_level": item.enhancement_level,
+                "item": item,
                 "catalysts_consumed": cost
             }
         else:
@@ -223,6 +236,40 @@ class UpgradeService:
         # We now calculate stats dynamically in Player.calculate_stats to avoid rounding errors and accumulation drift.
         # This method is kept for compatibility or advanced one-off mutations if needed, but for standard enhancement we do nothing to base stats.
         pass
+
+    @classmethod
+    def roll_awakening(cls, item: Item):
+        """Rolls a random buff and adds it to the item's awakenings."""
+        from ..models.buff import Buff, BuffType
+        
+        # 1. Define Pool
+        # For now, uniform distribution. Later can add weights to Config.
+        pool = [
+            (BuffType.PERCENT_ATK, 0.01, 0.05),   # 1% - 5%
+            (BuffType.PERCENT_DEF, 0.01, 0.05),
+            (BuffType.PERCENT_HP,  0.01, 0.05),
+            (BuffType.CRIT_RATE,   0.01, 0.03),   # 1% - 3%
+            (BuffType.CRIT_DMG,    0.05, 0.10),   # 5% - 10%
+            #(BuffType.LIFESTEAL,   0.01, 0.02)    # Rare? Let's exclude for now or make very rare
+        ]
+        
+        # 2. Select Buff Type
+        selected = random.choice(pool)
+        b_type, min_val, max_val = selected
+        
+        # 3. Roll Value
+        val = random.uniform(min_val, max_val)
+        val = round(val, 3) # Round to 3 decimal places (e.g. 0.035 = 3.5%)
+        
+        # 4. Create Buff
+        buff = Buff(type=b_type, value=val)
+        
+        # 5. Add to Item (Append only, or stack?)
+        # For awakenings, we usually append new slots.
+        # Check duplicate constraints? For now, allow duplicates (stacking stats).
+        item.awakenings.append(buff.dict())
+        
+        return buff
 
 # Initialize config
 UpgradeService.load_config()

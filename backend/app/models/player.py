@@ -24,6 +24,9 @@ class PlayerStats(BaseModel):
     def_: int
     speed: float
     attack_cooldown: float = 1.0
+    crit_rate: float = 0.05
+    crit_dmg: float = 0.50
+    lifesteal: float = 0.0
 
 class Player(BaseModel):
     id: str
@@ -104,6 +107,14 @@ class Player(BaseModel):
         if base_cooldown < 0.3: base_cooldown = 0.3
 
         # Add Equipment Bonuses
+        # Track Percentage Increases from Awakenings
+        pct_bonuses = {
+            "atk": 0.0, "def": 0.0, "hp": 0.0, "speed": 0.0,
+            "crit_rate": 0.0, "crit_dmg": 0.0, "lifesteal": 0.0
+        }
+        
+        from ..models.buff import BuffType # Import locally to avoid circular
+
         for slot, item in self.equipment.items():
             if item:
                 # Calculate Enhancement Bonus
@@ -122,11 +133,37 @@ class Player(BaseModel):
                 base_atk += int(item.stats.atk * mult)
                 base_def += int(item.stats.def_ * mult)
                 base_speed += (item.stats.speed * mult)
+                
+                # Apply Awakenings
+                for buff_dict in item.awakenings:
+                    # buff_dict is {type: '...', value: 0.05}
+                    b_type = buff_dict.get('type')
+                    val = buff_dict.get('value', 0.0)
+                    
+                    if b_type == BuffType.PERCENT_ATK: pct_bonuses["atk"] += val
+                    elif b_type == BuffType.PERCENT_DEF: pct_bonuses["def"] += val
+                    elif b_type == BuffType.PERCENT_HP: pct_bonuses["hp"] += val
+                    elif b_type == BuffType.PERCENT_SPEED: pct_bonuses["speed"] += val
+                    elif b_type == BuffType.CRIT_RATE: pct_bonuses["crit_rate"] += val
+                    elif b_type == BuffType.CRIT_DMG: pct_bonuses["crit_dmg"] += val
+                    elif b_type == BuffType.LIFESTEAL: pct_bonuses["lifesteal"] += val
 
-        self.stats.max_hp = int(base_hp)
-        self.stats.atk = int(base_atk)
-        self.stats.def_ = int(base_def)
-        self.stats.speed = round(base_speed, 2)
+        # Apply Percentage Bonuses (Base + Equipment Flat) * (1 + Pct)
+        self.stats.max_hp = int(base_hp * (1 + pct_bonuses["hp"]))
+        self.stats.atk = int(base_atk * (1 + pct_bonuses["atk"]))
+        self.stats.def_ = int(base_def * (1 + pct_bonuses["def"]))
+        self.stats.speed = round(base_speed * (1 + pct_bonuses["speed"]), 2)
+        
+        # New Stats (Need to add fields to PlayerStats desc later, storing in meta for now or expanding model)
+        # Assuming PlayerStats has these fields or we just store them somewhere?
+        # User asked to "implement buffs", implying stats should exist.
+        # PlayerStats model currently has: strength, intelligence, atk, def_, speed, hp, xp, gold, diamonds.
+        # Needs crit_rate, crit_dmg, etc.
+        # For now, let's attach them effectively.
+        self.stats.crit_rate = round(pct_bonuses["crit_rate"], 3) # 0.05 = 5%
+        self.stats.crit_dmg = round(0.50 + pct_bonuses["crit_dmg"], 3) # Base 150% (0.5 extra) + bonus? Usually Base is 150% total (1.5x)
+        # Let's say base crit dmg is 1.5x (50% bonus). So stats.crit_dmg = 0.5 + bonus.
+        
         self.stats.attack_cooldown = round(base_cooldown, 2)
         
         # Clamp current HP

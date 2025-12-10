@@ -30,10 +30,15 @@ class ItemStats(BaseModel):
     atk: int = 0
     def_: int = 0
     speed: float = 0.0
-    hp: int = 0 
+    hp: int = 0
     xp: int = 0
     gold: int = 0
     diamonds: int = 0
+    
+    # Advanced Stats (from Buffs/Awakenings)
+    crit_rate: float = 0.05 # 5% Base
+    crit_dmg: float = 0.50  # 50% Bonus (Total 150%)
+    lifesteal: float = 0.0
 
 class Item(BaseModel):
     id: str
@@ -49,7 +54,8 @@ class Item(BaseModel):
     
     # Enhancement System
     enhancement_level: int = 0
-    awakenings: list[str] = [] # List of awakening effect IDs
+    # We store buffs as dicts for easy JSON serialization, matching the Buff model
+    awakenings: list[dict] = [] 
 
     def calculate_power_score(self):
         # Simple power score calculation

@@ -227,12 +227,54 @@ export default {
                     <div class="bg-gray-800/50 p-3 rounded-lg mb-4 space-y-1.5 border border-gray-700/50">
                         <div v-if="selectedItem.power_score" class="flex justify-between items-center pb-1.5 border-b border-gray-700/50">
                             <span class="text-gray-400 text-xs">Power Score</span> 
-                            <span class="text-yellow-400 font-bold font-mono text-base">{{ selectedItem.power_score }}</span>
+                            <div class="flex items-center gap-1">
+                                <span class="text-yellow-400 font-bold font-mono text-base">{{ selectedItem.power_score }}</span>
+                                <span v-if="selectedItem.enhancement_level" class="text-[10px] text-yellow-600 font-bold">(+{{ Math.floor(selectedItem.power_score * ((Math.pow(1.05, selectedItem.enhancement_level) - 1))) }})</span>
+                            </div>
                         </div>
+                        
+                        <!-- Enhancement Stats Breakdown -->
                         <div v-for="(val, stat) in selectedItem.stats" :key="stat">
                             <div v-if="val > 0" class="flex justify-between text-xs">
                                 <span class="text-gray-400 capitalize">{{ stat.replace('def_', 'Defense') }}</span>
-                                <span class="font-bold text-gray-200">+{{ val }}</span>
+                                <div class="flex items-center gap-1">
+                                    <span class="font-bold text-gray-200">{{ val }}</span>
+                                    <!-- Show Bonus if enhanced -->
+                                    <span v-if="selectedItem.enhancement_level" class="text-yellow-500 font-bold text-[10px]">
+                                        (+{{ Math.floor(val * ((Math.pow(1.05, selectedItem.enhancement_level)) - 1)) }})
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Awakenings Preview -->
+                        <div v-if="selectedItem.enhancement_level" class="mt-3 pt-2 border-t border-gray-700/50">
+                            <div class="flex justify-between items-center mb-1">
+                                <div class="text-[10px] text-gray-500 uppercase font-bold">Awakenings</div>
+                                <div class="text-[8px] text-gray-600 italic">Unlocks at +3, +6, +9, +12, +15</div>
+                            </div>
+                            
+                            <!-- Progress Bar -->
+                            <div class="grid grid-cols-5 gap-1 mb-2">
+                                <div v-for="lvl in [3, 6, 9, 12, 15]" :key="lvl" 
+                                    class="h-1.5 rounded-full transition-all duration-300"
+                                    :class="selectedItem.enhancement_level >= lvl ? 'bg-purple-500 shadow-[0_0_5px_rgba(168,85,247,0.5)]' : 'bg-gray-800'">
+                                </div>
+                            </div>
+
+                            <!-- Active Buffs List -->
+                            <div v-if="selectedItem.awakenings && selectedItem.awakenings.length > 0" class="flex flex-col gap-1">
+                                <div v-for="(buff, idx) in selectedItem.awakenings" :key="idx" 
+                                     class="flex items-center gap-2 text-xs text-purple-300 bg-purple-900/20 px-2 py-1 rounded border border-purple-500/20">
+                                    <span>✨</span>
+                                    <span class="font-bold">
+                                        {{ formatBuffLabel(buff.type) }} 
+                                        <span class="text-purple-100">+{{ Math.round(buff.value * 1000) / 10 }}%</span>
+                                    </span>
+                                </div>
+                            </div>
+                            <div v-else-if="selectedItem.enhancement_level >= 3" class="text-[10px] text-gray-500 italic text-center">
+                                No buffs found (Old item? Re-roll needed)
                             </div>
                         </div>
                     </div>
@@ -246,6 +288,7 @@ export default {
                             <button v-else-if="selectedItem.type === 'weapon' || selectedItem.type === 'armor'" @click="equipItem(selectedItem.id)" class="flex-1 bg-blue-600 hover:bg-blue-500 py-2 rounded-lg font-bold text-white text-sm transition-colors shadow-lg shadow-blue-900/20">Equip</button>
                             <button @click="sellItem(selectedItem.id)" class="flex-1 bg-red-900/80 hover:bg-red-700 py-2 rounded-lg font-bold text-red-200 text-sm border border-red-800 transition-colors">Sell</button>
                         </template>
+
                     </div>
                 </div>
             </div>
@@ -378,6 +421,19 @@ export default {
             );
         });
 
+        const formatBuffLabel = (type) => {
+            const labels = {
+                "pct_atk": "Attack",
+                "pct_def": "Defense",
+                "pct_hp": "Max HP",
+                "pct_speed": "Speed",
+                "crit_rate": "Crit Rate",
+                "crit_dmg": "Crit Dmg",
+                "lifesteal": "Lifesteal"
+            };
+            return labels[type] || type;
+        };
+
         return {
             player,
             selectedItem,
@@ -402,7 +458,8 @@ export default {
             canUpgrade,
             selectForUpgrade,
             handleUpgrade,
-            upgradeableItems
+            upgradeableItems,
+            formatBuffLabel
         };
     }
 };
