@@ -11,6 +11,7 @@ import { useGameRenderer } from '../composables/useGameRenderer.js';
 import { useGameEntities } from '../composables/useGameEntities.js';
 import { useGameInteractions } from '../composables/useGameInteractions.js';
 import { useGameInput } from '../composables/useGameInput.js';
+import { useGameCombatEvents } from '../composables/useGameCombatEvents.js';
 
 export default {
     emits: ['interact-npc'],
@@ -38,6 +39,26 @@ export default {
                     :class="label.isPlayer ? 'bg-green-500' : 'bg-red-500'"
                     :style="{ width: (label.hp / label.max_hp * 100) + '%' }"></div>
             </div>
+        </div>
+
+        <!-- Floating Combat Text (FCT) -->
+        <div v-for="ft in floatingTexts" :key="ft.id"
+            class="absolute pointer-events-none transform -translate-x-1/2 -translate-y-1/2 font-black z-40 text-shadow-heavy whitespace-nowrap"
+            :class="{
+                'text-orange-400 text-2xl': ft.type === 'crit',
+                'text-white text-xl': ft.type === 'normal',
+                'text-red-500 text-xl': ft.type === 'monster_dmg',
+                'text-green-400 text-xl': ft.type === 'heal',
+                'text-red-400 text-xl': ft.type === 'lifesteal'
+            }"
+            :style="{ 
+                left: ft.x + 'px', 
+                top: ft.y + 'px', 
+                opacity: ft.opacity,
+                transform: 'scale(' + ft.scale + ') translate(-50%, -50%)'
+            }">
+            <span v-if="ft.type === 'crit'" class="text-xs uppercase text-yellow-300 block text-center leading-none mb-[-2px]">Critical</span>
+            {{ ft.text }}
         </div>
 
         <!-- Minimap -->
@@ -86,7 +107,7 @@ export default {
             container, minimapCanvas, cameraZoom,
             scene, getCamera, getRenderer,
             geometries, materials,
-            initThree, drawMinimap
+            initThree, drawMinimap, toScreenPosition
         } = useGameRenderer();
 
         // --- 2. Interaction System ---
@@ -106,7 +127,14 @@ export default {
         // --- 4. Input System ---
         const { updateMovement, keys } = useGameInput(scene, meshes, getCamera, getRenderer, container, interactions);
 
-        // --- 5. FX & Local Logic ---
+        // --- 5. Combat Events (FCT) ---
+        const {
+            floatingTexts,
+            handleCombatUpdate,
+            updateFloatingTexts
+        } = useGameCombatEvents(toScreenPosition, meshes);
+
+        // --- 6. FX & Local Logic ---
         const fps = ref(0);
         const entityLabels = ref([]);
         let animationId;
@@ -206,6 +234,9 @@ export default {
                     if (data.player_id === player.value.id) {
                         player.value.level = data.new_level;
                     }
+                } else if (data.type === 'combat_update') {
+                    // DELEGATE TO FCT
+                    handleCombatUpdate(data);
                 }
             } catch (e) { }
         };
@@ -241,29 +272,7 @@ export default {
         }, { immediate: true });
 
 
-        // Temp Vec for Projection
-        const tempVec = new THREE.Vector3();
-
-        const toScreenPosition = (obj) => {
-            if (!container.value || !getCamera()) return { x: 0, y: 0 };
-
-            obj.updateMatrixWorld();
-            tempVec.setFromMatrixPosition(obj.matrixWorld);
-
-            // Offset based on type
-            const offset = obj.userData.type === 'player' ? 4.0 : (obj.userData.type === 'portal' ? 3.0 : (obj.userData.type === 'npc' ? 3.2 : 2.5));
-            tempVec.y += offset;
-
-            tempVec.project(getCamera());
-
-            const widthHalf = 0.5 * container.value.clientWidth;
-            const heightHalf = 0.5 * container.value.clientHeight;
-
-            return {
-                x: (tempVec.x * widthHalf) + widthHalf,
-                y: -(tempVec.y * heightHalf) + heightHalf
-            };
-        };
+        // toScreenPosition is now imported from useGameRenderer
 
         // --- 6. Main Loop ---
         let frameCount = 0;
@@ -281,6 +290,7 @@ export default {
             updateAnimations(delta);
             updateMovement();
             checkInteractions();
+            updateFloatingTexts(delta);
 
             // 2. Render
             const renderer = getRenderer();
@@ -360,7 +370,8 @@ export default {
             canInteractNpc, closestNpc, interactNpc,
             canGather, closestResource, startGathering, isGathering, gatherProgress,
             isFreeFarming, toggleAutoAttack,
-            entityLabels
+            entityLabels,
+            floatingTexts
         };
     }
 };

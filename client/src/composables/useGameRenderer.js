@@ -197,25 +197,44 @@ export function useGameRenderer() {
         }
     });
 
+    // toScreenPosition Helper
+    const tempVec = new THREE.Vector3();
+    const toScreenPosition = (obj, offsetY = 0) => {
+        if (!container.value || !camera) return { x: 0, y: 0 };
+
+        obj.updateMatrixWorld();
+        tempVec.setFromMatrixPosition(obj.matrixWorld);
+
+        // Default offsets if no explicit offset provided
+        if (offsetY === 0) {
+            const type = obj.userData.type;
+            offsetY = type === 'player' ? 4.0 : (type === 'portal' ? 3.0 : (type === 'npc' ? 3.2 : 2.5));
+        }
+        tempVec.y += offsetY;
+
+        tempVec.project(camera);
+
+        const widthHalf = 0.5 * container.value.clientWidth;
+        const heightHalf = 0.5 * container.value.clientHeight;
+
+        return {
+            x: (tempVec.x * widthHalf) + widthHalf,
+            y: -(tempVec.y * heightHalf) + heightHalf
+        };
+    };
+
     return {
         container,
         minimapCanvas,
         cameraZoom,
         scene,
-        // Since these are assigned later, usage might need getters or just relying on the object reference
-        // But for composables, simple exports of the let variables won't work if they are primitives. 
-        // Objects (scene) are fine. `camera` and `renderer` need to be accessed via a getter or ref if they change completely.
-        // However, `useGameRenderer` is created once. Let's export getters or make them refs if needed.
-        // Actually, for simplicity, let's export a getter for camera/renderer or just expose them if we trust execution order.
-        // Better: Make them refs or part of a reactive state if needed outside. 
-        // Current GameMap only uses camera for Raycaster/Project.
         getCamera: () => camera,
         getRenderer: () => renderer,
-
         geometries,
         materials,
         initThree,
         drawMinimap,
-        onWindowResize
+        onWindowResize,
+        toScreenPosition
     };
 }
