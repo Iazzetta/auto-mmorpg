@@ -79,5 +79,25 @@
         "target_item_id": "mat_flower",
         "target_source_type": "resource",
         "target_source_id": "res_tpl_1765053472053"
+    },
+    "mission_1765421782965": {
+        "id": "mission_1765421782965",
+        "title": "Just kill monsters",
+        "description": "Description",
+        "level_requirement": 1,
+        "map_id": "map_forest_1",
+        "target_template_id": "wolf",
+        "target_count": 5,
+        "reward_xp": 100,
+        "reward_gold": 50,
+        "type": "kill",
+        "source": "board",
+        "target_monster_id": "goblin",
+        "reward_items": [
+            {
+                "item_id": "Beta",
+                "quantity": 1
+            }
+        ]
     }
 }

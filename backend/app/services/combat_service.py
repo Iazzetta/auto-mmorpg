@@ -229,17 +229,26 @@ class CombatService:
             mission = sm.missions.get(player.active_mission_id)
             
             if mission:
-                # Check if the killed monster matches the mission target
-                # Support both old 'target_monster_id' and new 'target_template_id'
-                target_id = mission.get("target_template_id") or mission.get("target_monster_id")
+                m_type = mission.get("type", "kill")
                 
-                if monster.template_id == target_id:
-                    player.mission_progress += 1
+                # [MISSION DEBUG]
+                print(f"[MISSION DEBUG] Kill Event. Mission Type: {m_type} | Monster: {monster.template_id}")
+
+                if m_type == 'kill':
+                    # Support both old 'target_monster_id' and new 'target_template_id'
+                    # Prioritize target_monster_id for kill missions
+                    target_id = mission.get("target_monster_id") or mission.get("target_template_id")
                     
-                    # Check completion (Optional: Auto-complete or just cap progress)
-                    if player.mission_progress >= mission["target_count"]:
-                        player.mission_progress = mission["target_count"]
-                        # We could send a notification here "Mission Ready to Claim"
+                    print(f"[MISSION DEBUG] Checking Match: {monster.template_id} vs Target: {target_id}")
+
+                    if monster.template_id == target_id:
+                        player.mission_progress += 1
+                        print(f"[MISSION DEBUG] Progress Updated: {player.mission_progress}/{mission.get('target_count')}")
+                        
+                        # Check completion
+                        if player.mission_progress >= mission["target_count"]:
+                            player.mission_progress = mission["target_count"]
+                            # We could send a notification here "Mission Ready to Claim"
 
     @staticmethod
     def monster_attack(monster: Monster, player: Player) -> dict:

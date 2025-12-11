@@ -42,7 +42,8 @@ export const startMission = async (mission) => {
 
     activeMission.value = mission;
     selectedMapId.value = mission.map_id;
-    selectedTargetId.value = mission.target_template_id;
+    // Fix: Prioritize monster ID for combat missions, otherwise template ID
+    selectedTargetId.value = mission.target_monster_id || mission.target_template_id;
 
     // Start Auto-Farm loop for ALL mission types (including Talk/Delivery)
     startAutoFarm();
@@ -99,7 +100,7 @@ export const checkAndAct = async () => {
         }
 
         // LOG: Current Status
-        // console.log(`[AutoFarm] Tick. Map: ${player.value.current_map_id} | Target Map: ${requiredMapId}`);
+        console.log(`[AutoFarm] Tick. State: ${player.value.state} | Map: ${player.value.current_map_id} | Target Map: ${requiredMapId} | Mission: ${activeMission.value?.type}`);
 
         // 2. Map Traversal (Pathfinding)
         if (player.value.current_map_id !== requiredMapId) {
@@ -112,6 +113,7 @@ export const checkAndAct = async () => {
             const path = pathfinder.findPath(player.value.current_map_id, requiredMapId);
 
             if (!path || path.length === 0) {
+                console.warn(`[AutoFarm] NO KEY FOUND from ${player.value.current_map_id} to ${requiredMapId}`);
                 // Fallback to old teleport if path fails (e.g. islands) or disconnected map
                 const currentMapName = player.value.current_map_id;
                 if (currentMapName !== requiredMapId) {
@@ -151,7 +153,7 @@ export const checkAndAct = async () => {
 
                 // Pause for load
                 // addLog("Loading map...", "text-gray-500");
-                await new Promise(r => setTimeout(r, 2000));
+                await new Promise(r => setTimeout(r, 700));
                 return;
             } else {
                 // Walk to Portal
@@ -164,6 +166,8 @@ export const checkAndAct = async () => {
 
         // 3. Execute Mission on Target Map
         if (activeMission.value) {
+            console.log(`[AutoFarm] On Target Map. Executing Mission Logic. Type: ${activeMission.value.type}`);
+
             if (activeMission.value.type === 'delivery') {
                 // Dynamic Delivery Logic: Check if we have the item
                 const m = activeMission.value;
@@ -175,12 +179,14 @@ export const checkAndAct = async () => {
                 const hasItem = inv.find(i => i.id === requiredItem || i.id.startsWith(requiredItem));
                 const currentQty = hasItem ? (hasItem.quantity || 1) : 0;
 
+                console.log(`[AutoFarm] Delivery Check: Need ${requiredItem} x${requiredQty}. Have: ${currentQty}`);
+
                 if (currentQty >= requiredQty) {
                     addLog("Delivery Ready. Finding NPC...", "text-green-400");
                     await findAndInteractWithNPC();
                 } else {
                     // Need to acquire item
-                    // console.log(`[AutoFarm] Delivery: Missing ${requiredItem} (${currentQty}/${requiredQty}). Switching to Acquisition.`);
+                    console.log(`[AutoFarm] Delivery: Missing Items. Source: ${m.target_source_type} ID: ${m.target_source_id}`);
                     if (m.target_source_type === 'resource') {
                         await findAndGatherResource(m.target_source_id);
                     } else if (m.target_source_type === 'monster') {
@@ -196,10 +202,12 @@ export const checkAndAct = async () => {
             } else if (activeMission.value.target_source_type === 'resource') {
                 await findAndGatherResource();
             } else {
+                console.log(`[AutoFarm] Default/Kill Mission. Hunting: ${activeMission.value.target_monster_id}`);
                 await findAndAttackTarget();
             }
         } else {
             // Free Farm (Combat only)
+            console.log(`[AutoFarm] Free Farm Mode.`);
             await findAndAttackTarget();
         }
 
@@ -347,6 +355,8 @@ const findAndAttackTarget = async (overrideTargetId = null) => {
     if (!huntId && activeMission.value && activeMission.value.target_monster_id) {
         huntId = activeMission.value.target_monster_id;
     }
+
+    console.log(`[AutoFarm] Hunting: ${huntId || 'ANY'} in Map: ${player.value.current_map_id}. Monsters visible: ${monsters.length}`);
 
     let target = null;
 
