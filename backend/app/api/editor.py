@@ -20,7 +20,7 @@ async def verify_admin(x_player_id: str = Header(None, alias="X-Player-ID")):
     
     return player
 
-@router.get("/editor/world", dependencies=[Depends(verify_admin)])
+@router.get("/editor/world")
 async def get_world_data():
     if not hasattr(state_manager, 'world_data'):
         # Try to load if not present
@@ -116,7 +116,7 @@ async def save_npcs_editor(data: dict):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.get("/editor/textures/floors", dependencies=[Depends(verify_admin)])
+@router.get("/editor/textures/floors")
 async def get_floor_textures():
     try:
         path = "client/public/maps/floor"
