@@ -37,10 +37,13 @@ Players have 4 primary attributes that influence derived stats:
 
 ## Missions
 *   **Types**:
-    *   **Kill**: Eliminate N monsters of a specific type.
-    *   **Collect**: Gather N items (drops or resources).
+    *   **Kill**: Eliminate N monsters. Logic prioritizes `target_monster_id` (specific) or `target_template_id` (generic). Backend strictly validates monster ID matches.
+    *   **Collect**: Gather N items (drops or resources). Verified by Inventory changes.
     *   **Talk**: Go to an NPC and interact.
-*   **Auto-Play**: Clicking a mission tracks it and enables Auto-Pilot (moves to map/NPC/monster).
+*   **Auto-Play (Auto-Farm)**: 
+    *   **Pathfinding**: Uses BFS graph navigation (`Pathfinder.js`) to route through portals across maps.
+    *   **State Management**: Automatically handles map transitions, re-engages target upon arrival, and stops combat for delivery steps.
+    *   **Input Handling**: Intelligent override prevents "stuttering" when user wants to take control (Input vs Auto-Move conflict resolution).
 *   **Main Quest**: Always displayed at top with Gold border.
 
 ## Rewards System

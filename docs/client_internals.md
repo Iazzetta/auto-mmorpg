@@ -52,4 +52,16 @@ The component relies on `client/src/state.js` for data:
 *   `player`: Local player data.
 *   `mapPlayers`: List of other players in map.
 *   `mapMonsters`: List of monsters.
-*   `meshes`: A `Map<ID, THREE.Mesh>` acts as the bridge between Vue State and Three.js Scene.
+## Auto-Farming & Pathfinding
+*   **Pathfinder (`src/services/Pathfinder.js`)**:
+    *   **Initialization**: Fetches world graph from API (`/editor/world`).
+    *   **Algorithm**: Breadth-First Search (BFS) to find shortest path of Maps/Portals.
+    *   **Reconstruction**: Returns step-by-step navigation list (Portals) to target.
+*   **Auto-Farm Cycle**:
+    1.  **Check Map**: Am I on the target map?
+    2.  **Navigation**: If not, query `Pathfinder`, find next portal, move to it (`api.movePlayer`), and wait for transition.
+    3.  **Mission Execution**:
+        *   **Kill**: `findAndAttackTarget()` (filters by Mission Target ID).
+        *   **Deliver/Talk**: `findAndInteractWithNPC()`.
+        *   **Gather**: `findAndGatherResource()`.
+    4.  **Loop**: Runs every 1s (`checkAndAct`).

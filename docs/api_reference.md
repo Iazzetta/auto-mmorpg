@@ -31,7 +31,7 @@ Base URL: `http://localhost:8000`
 *   `GET /content/missions`: List all available missions.
 
 ## Editor Endpoints
-*   `GET /editor/world`: Get full world data (Maps, Monsters).
+*   `GET /editor/world`: Get full world data (Maps, Monsters, Portals). Used by Client Pathfinder for graph building.
 *   `POST /editor/world`: Save world data.
 *   `GET /editor/missions`: Get all missions.
 *   `POST /editor/missions`: Save missions.
