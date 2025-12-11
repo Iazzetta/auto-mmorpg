@@ -1,6 +1,7 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { api } from '../services/api.js';
 import { player, addAlert, missions } from '../state.js';
+import { API_BASE_URL } from '../config.js';
 
 export default {
     props: ['npc'],
@@ -147,7 +148,7 @@ export default {
 
         const acceptQuest = async () => {
             try {
-                const res2 = await fetch(`http://localhost:8000/player/${player.value.id}/npc/${props.npc.id}/action?action=accept_quest`, {
+                const res2 = await fetch(`${API_BASE_URL}/player/${player.value.id}/npc/${props.npc.id}/action?action=accept_quest`, {
                     method: 'POST'
                 });
 
@@ -165,7 +166,7 @@ export default {
         const openShop = async () => {
             mode.value = 'shop';
             try {
-                const res = await fetch('http://localhost:8000/editor/items');
+                const res = await fetch(`${API_BASE_URL}/editor/items`);
                 if (res.ok) {
                     shopItemsDetails.value = await res.json();
                 }
@@ -183,7 +184,7 @@ export default {
 
         const buyItem = async (itemId) => {
             try {
-                const res = await fetch(`http://localhost:8000/player/${player.value.id}/shop/buy?npc_id=${props.npc.id}&item_id=${itemId}`, {
+                const res = await fetch(`${API_BASE_URL}/player/${player.value.id}/shop/buy?npc_id=${props.npc.id}&item_id=${itemId}`, {
                     method: 'POST'
                 });
                 if (res.ok) {
@@ -236,7 +237,7 @@ export default {
         const completeMission = async () => {
             try {
                 // 1. Mark as talked
-                const res = await fetch(`http://localhost:8000/player/${player.value.id}/npc/${props.npc.id}/action?action=talk`, { method: 'POST' });
+                const res = await fetch(`${API_BASE_URL}/player/${player.value.id}/npc/${props.npc.id}/action?action=talk`, { method: 'POST' });
                 if (!res.ok) {
                     const err = await res.json();
                     addAlert(err.detail || 'Could not talk to NPC', 'error', '❌');

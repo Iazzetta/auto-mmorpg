@@ -1,5 +1,6 @@
 
 import { ref } from 'vue';
+import { API_BASE_URL } from '../config.js';
 
 // Graph Node: Map ID
 // Edge: Portal (Target Map ID, Portal ID, Portal X, Portal Y)
@@ -14,6 +15,7 @@ export class Pathfinder {
         // Fetch World Data if not passed
         // For now, we assume we might need to fetch it or it's passed globally.
         // Let's try to fetch it from the editor endpoint if possible, or expect it to be initialized with data.
+        // Let's try to fetch it from the editor endpoint if possible, or expect it to be initialized with data.
         // Actually, importing `currentMapData` isn't enough, we need ALL maps.
         // The client usually doesn't have ALL maps loaded.
         // But for pathfinding we need the relationships.
@@ -23,12 +25,10 @@ export class Pathfinder {
         // Best approach: A specialized API endpoint `GET /world/graph` or just use the `api.js` to get world data.
         // For this task, strict requirement: "detecte como chegar no mapa... atraves dos portais".
         // I will assume I can fetch the world data.
-
+        // Using a hardcoded fetch to the config file location (public) or API.
+        // Let's try the editor endpoint which usually serves the world.json structure.
         try {
-            // Ideally this would be an API call generic for all players.
-            // Using a hardcoded fetch to the config file location (public) or API.
-            // Let's try the editor endpoint which usually serves the world.json structure.
-            const res = await fetch('http://localhost:8000/editor/world');
+            const res = await fetch(`${API_BASE_URL}/editor/world`);
             if (res.ok) {
                 const data = await res.json();
                 this.buildGraph(data);

@@ -6,6 +6,7 @@ import {
     mapPlayers, mapMonsters, mapNpcs, currentMapData
 } from '../state.js';
 import { api } from '../services/api.js';
+import { API_BASE_URL } from '../config.js';
 
 import { useGameRenderer } from '../composables/useGameRenderer.js';
 import { useGameEntities } from '../composables/useGameEntities.js';
@@ -259,13 +260,13 @@ export default {
 
                 // Fetch NPCs
                 try {
-                    const res = await fetch(`http://localhost:8000/map/${newMapId}/npcs`);
+                    const res = await fetch(`${API_BASE_URL}/map/${newMapId}/npcs`);
                     if (res.ok) mapNpcs.value = await res.json();
                 } catch (e) { console.error(e); }
 
                 // Fetch Map Data
                 try {
-                    const res = await fetch(`http://localhost:8000/map/${newMapId}`);
+                    const res = await fetch(`${API_BASE_URL}/map/${newMapId}`);
                     if (res.ok) currentMapData.value = await res.json();
                 } catch (e) { console.error(e); }
             }

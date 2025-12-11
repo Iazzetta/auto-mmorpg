@@ -4,6 +4,7 @@ import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { missions } from '../state.js';
 import { api } from '../services/api.js';
+import { API_BASE_URL } from '../config.js';
 
 export default {
     emits: ['close'],
@@ -904,7 +905,7 @@ export default {
                             <div v-if="worldData.maps[selectedMapId].texture"
                                  class="absolute inset-0 pointer-events-none"
                                  :style="{
-                                     backgroundImage: 'url(http://localhost:8000/maps/' + worldData.maps[selectedMapId].texture + ')',
+                                     backgroundImage: 'url(' + API_BASE_URL + '/maps/' + worldData.maps[selectedMapId].texture + ')',
                                      backgroundSize: (worldData.maps[selectedMapId].texture_scale || 10) + '% ' + (worldData.maps[selectedMapId].texture_scale || 10) + '%',
                                      backgroundRepeat: 'repeat'
                                  }">
@@ -1168,7 +1169,7 @@ export default {
 
         const fetchWorld = async () => {
             try {
-                const res = await fetch('http://localhost:8000/editor/world');
+                const res = await fetch(`${API_BASE_URL}/editor/world`);
                 if (res.ok) {
                     worldData.value = await res.json();
                     if (!worldData.value.resource_templates) worldData.value.resource_templates = {};
@@ -1176,11 +1177,11 @@ export default {
                         selectedMapId.value = Object.keys(worldData.value.maps)[0];
                     }
                 }
-                const itemsRes = await fetch('http://localhost:8000/editor/items');
+                const itemsRes = await fetch(`${API_BASE_URL}/editor/items`);
                 if (itemsRes.ok) {
                     availableItems.value = await itemsRes.json();
                 }
-                const rewardsRes = await fetch('http://localhost:8000/editor/rewards');
+                const rewardsRes = await fetch(`${API_BASE_URL}/editor/rewards`);
                 if (rewardsRes.ok) {
                     const data = await rewardsRes.json();
                     // Migration / Default
@@ -1188,12 +1189,12 @@ export default {
                     else rewardsData.value = data;
                 }
                 // Fetch NPCs
-                const npcsRes = await fetch('http://localhost:8000/editor/npcs');
+                const npcsRes = await fetch(`${API_BASE_URL}/editor/npcs`);
                 if (npcsRes.ok) {
                     npcs.value = await npcsRes.json();
                 }
                 // Fetch Textures
-                const texRes = await fetch('http://localhost:8000/editor/textures/floors');
+                const texRes = await fetch(`${API_BASE_URL}/editor/textures/floors`);
                 if (texRes.ok) {
                     floorTextures.value = await texRes.json();
                 }
@@ -1228,35 +1229,35 @@ export default {
                 for (const m of Object.values(worldData.value.monster_templates)) {
                     m.stats.hp = m.stats.max_hp;
                 }
-                const worldRes = await fetch('http://localhost:8000/editor/world', {
+                const worldRes = await fetch(`${API_BASE_URL}/editor/world`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(worldData.value)
                 });
 
                 // Save Missions
-                const missionsRes = await fetch('http://localhost:8000/admin/missions', {
+                const missionsRes = await fetch(`${API_BASE_URL}/admin/missions`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(missions.value)
                 });
 
                 // Save Items
-                const itemsRes = await fetch('http://localhost:8000/editor/items', {
+                const itemsRes = await fetch(`${API_BASE_URL}/editor/items`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(availableItems.value)
                 });
 
                 // Save Rewards
-                const rewardsRes = await fetch('http://localhost:8000/editor/rewards', {
+                const rewardsRes = await fetch(`${API_BASE_URL}/editor/rewards`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(rewardsData.value)
                 });
 
                 // Save NPCs
-                const npcsRes = await fetch('http://localhost:8000/editor/npcs', {
+                const npcsRes = await fetch(`${API_BASE_URL}/editor/npcs`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(npcs.value)
@@ -1560,14 +1561,14 @@ export default {
 
         const fetchEnhancementConfig = async () => {
             try {
-                const res = await fetch('http://localhost:8000/editor/enhancement');
+                const res = await fetch(`${API_BASE_URL}/editor/enhancement`);
                 if (res.ok) enhancementConfig.value = await res.json();
             } catch (e) { console.error(e); }
         };
 
         const saveEnhancementConfig = async () => {
             if (!enhancementConfig.value) return;
-            await fetch('http://localhost:8000/editor/enhancement', {
+            await fetch(`${API_BASE_URL}/editor/enhancement`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(enhancementConfig.value)

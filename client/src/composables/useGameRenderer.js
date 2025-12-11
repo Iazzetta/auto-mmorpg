@@ -2,6 +2,7 @@
 import { ref, watch, onUnmounted } from 'vue';
 import * as THREE from 'three';
 import { currentMapData, player, mapMonsters, mapPlayers, mapNpcs } from '../state.js';
+import { API_BASE_URL } from '../config.js';
 
 export function useGameRenderer() {
     const container = ref(null);
@@ -107,7 +108,7 @@ export function useGameRenderer() {
 
         if (newData && newData.texture) {
             const loader = new THREE.TextureLoader();
-            loader.load(`http://localhost:8000/maps/floor/${newData.texture}`, (tex) => {
+            loader.load(`${API_BASE_URL}/maps/floor/${newData.texture}`, (tex) => {
                 tex.wrapS = THREE.RepeatWrapping;
                 tex.wrapT = THREE.RepeatWrapping;
 

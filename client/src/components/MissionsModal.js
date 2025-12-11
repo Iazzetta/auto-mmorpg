@@ -3,6 +3,7 @@ import { player, availableMissions, addLog, activeMission } from '../state.js';
 import { api } from '../services/api.js';
 import { startAutoFarm, stopAutoFarm } from '../services/autoFarm.js';
 import { selectedMapId, selectedTargetId } from '../state.js';
+import { API_BASE_URL } from '../config.js';
 
 export default {
     props: ['isOpen'],
@@ -54,7 +55,7 @@ export default {
     `,
     setup(props, { emit }) {
         const fetchMissions = async () => {
-            const res = await fetch(`http://localhost:8000/content/missions`);
+            const res = await fetch(`${API_BASE_URL}/content/missions`);
             availableMissions.value = await res.json();
         };
 
@@ -125,7 +126,7 @@ export default {
             stopAutoFarm();
 
             try {
-                const res = await fetch(`http://localhost:8000/player/${player.value.id}/mission/start?mission_id=${missionId}`, { method: 'POST' });
+                const res = await fetch(`${API_BASE_URL}/player/${player.value.id}/mission/start?mission_id=${missionId}`, { method: 'POST' });
                 if (!res.ok) throw new Error("Failed to start mission");
 
                 const data = await res.json();
@@ -149,7 +150,7 @@ export default {
             if (!player.value) return;
             stopAutoFarm();
             try {
-                const res = await fetch(`http://localhost:8000/player/${player.value.id}/mission/claim`, { method: 'POST' });
+                const res = await fetch(`${API_BASE_URL}/player/${player.value.id}/mission/claim`, { method: 'POST' });
                 if (!res.ok) throw new Error("Failed to claim mission");
                 const data = await res.json();
                 addLog(`Mission Complete! Rewards: ${data.rewards.xp} XP, ${data.rewards.gold} Gold`, "text-yellow-400 font-bold");

@@ -1,8 +1,9 @@
 import { player, logs, chatMessages, socket, currentMonster, addLog, addAlert, mapMonsters, mapPlayers, mapNpcs, isFreeFarming, selectedTargetId, pendingAttackId, destinationMarker, inspectedPlayer, autoSellInferior, currentMapData, isUpdating, worldData, isManuallyMoving } from '../state.js';
 import { checkAndAct, stopAutoFarm } from './autoFarm.js';
+import { API_BASE_URL, WS_BASE_URL } from '../config.js';
 
-export const API_URL = 'http://localhost:8000';
-export const WS_URL = 'ws://localhost:8000/ws';
+export const API_URL = API_BASE_URL;
+export const WS_URL = `${WS_BASE_URL}/ws`;
 
 export const api = {
     async fetchPlayer(id) {
@@ -521,7 +522,7 @@ export const connectWebSocket = (playerId) => {
 
             // Reload world data
             try {
-                const worldRes = await fetch('http://localhost:8000/editor/world');
+                const worldRes = await fetch(`${API_URL}/editor/world`);
                 if (worldRes.ok) worldData.value = await worldRes.json();
 
                 // Refresh current map
@@ -530,7 +531,7 @@ export const connectWebSocket = (playerId) => {
                     api.fetchMapMonsters(player.value.current_map_id);
 
                     try {
-                        const npcsRes = await fetch(`http://localhost:8000/map/${player.value.current_map_id}/npcs`);
+                        const npcsRes = await fetch(`${API_URL}/map/${player.value.current_map_id}/npcs`);
                         if (npcsRes.ok) mapNpcs.value = await npcsRes.json();
                     } catch (e) { console.error(e); }
                 }

@@ -2,6 +2,7 @@ import { player, availableMissions } from '../state.js';
 
 import { computed, onMounted, ref, Teleport } from 'vue';
 import { api } from '../services/api.js';
+import { API_BASE_URL } from '../config.js';
 
 export default {
     emits: ['open-inventory', 'open-missions', 'open-attributes', 'open-rewards'],
@@ -113,7 +114,7 @@ export default {
         onMounted(async () => {
             // Ensure missions are loaded
             if (Object.keys(availableMissions.value).length === 0) {
-                const res = await fetch('http://localhost:8000/content/missions');
+                const res = await fetch(`${API_BASE_URL}/content/missions`);
                 if (res.ok) {
                     availableMissions.value = await res.json();
                 }

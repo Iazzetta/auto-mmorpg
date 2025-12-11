@@ -1,5 +1,6 @@
-import { ref, computed, watch } from 'vue';
+import { computed, ref, onMounted, onUnmounted, watch } from 'vue';
 import { getRarityColor } from '../services/api.js';
+import { API_BASE_URL } from '../config.js';
 
 export default {
     props: ['player', 'isOpen'],
@@ -60,7 +61,7 @@ export default {
                     // Reuse fetchPlayer but don't set global player state?
                     // Or create a specific inspect fetch.
                     // Let's use a direct fetch here to avoid messing with global state.
-                    const res = await fetch(`http://localhost:8000/player/${newPlayer.id}`);
+                    const res = await fetch(`${API_BASE_URL}/player/${newPlayer.id}`);
                     if (res.ok) {
                         details.value = await res.json();
                     }

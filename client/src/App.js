@@ -2,6 +2,7 @@ import { ref, onMounted, onUnmounted, nextTick, watch, computed } from 'vue';
 import { player, logs, chatMessages, isFreeFarming, toasts, missions, inspectedPlayer, worldData, isUpdating } from './state.js';
 import { api } from './services/api.js';
 import { toggleFreeFarm } from './services/autoFarm.js';
+import { API_BASE_URL } from './config.js';
 
 import GameMap from './components/GameMap.js';
 import Navbar from './components/Navbar.js';
@@ -280,14 +281,14 @@ export default {
             }
             // Load missions
             try {
-                fetch('http://localhost:8000/content/missions').then(res => {
+                fetch(`${API_BASE_URL}/content/missions`).then(res => {
                     if (res.ok) return res.json();
                 }).then(data => {
                     if (data) missions.value = data;
                 });
 
                 // Load World Data for Navigation
-                fetch('http://localhost:8000/editor/world').then(res => {
+                fetch(`${API_BASE_URL}/editor/world`).then(res => {
                     if (res.ok) return res.json();
                 }).then(data => {
                     if (data) worldData.value = data;
