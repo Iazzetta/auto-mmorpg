@@ -108,9 +108,9 @@ export default {
             <NpcInteraction v-if="showNpcInteraction && activeNpc" :npc="activeNpc" @close="closeNpcInteraction" />
 
             <!-- Login/Register Screen -->
-            <div v-if="!player && !showEditor" class="absolute inset-0 bg-gray-900 flex items-center justify-center z-50">
+            <div v-if="!player && !showEditor" class="absolute inset-0 bg-black flex items-center justify-center z-50">
                 <div class="text-center bg-gray-800 p-8 rounded-lg border border-gray-700 shadow-2xl w-96">
-                    <h1 class="text-4xl font-bold text-yellow-500 mb-8">⚔️ Auto RPG</h1>
+                    <h1 class="text-4xl font-bold text-yellow-500 mb-8">Obscure World</h1>
                     
                     <div class="flex gap-2 mb-6 bg-gray-700 p-1 rounded">
                         <button @click="isLoginMode = true" class="flex-1 py-1 rounded transition-colors" :class="isLoginMode ? 'bg-blue-600 text-white shadow' : 'text-gray-400 hover:text-white'">Login</button>

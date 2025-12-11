@@ -6,12 +6,32 @@
         "level_requirement": 1,
         "map_id": "map_castle_1",
         "target_template_id": "wolf",
-        "target_count": 10,
+        "target_count": 1,
         "reward_xp": 1000,
         "reward_gold": 500,
         "reward_items": [
             {
                 "item_id": "item_sword_03",
+                "quantity": 1
+            },
+            {
+                "item_id": "high_helmet",
+                "quantity": 1
+            },
+            {
+                "item_id": "high_legs",
+                "quantity": 1
+            },
+            {
+                "item_id": "high_boots",
+                "quantity": 1
+            },
+            {
+                "item_id": "high_shield",
+                "quantity": 1
+            },
+            {
+                "item_id": "high_chest",
                 "quantity": 1
             }
         ],

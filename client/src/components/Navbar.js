@@ -49,7 +49,7 @@ export default {
 
             <!-- Center: Logo -->
             <div class="absolute left-1/2 transform -translate-x-1/2 flex items-center gap-2 pointer-events-none">
-                <h1 class="text-2xl font-bold text-yellow-500 tracking-wider shadow-yellow-500/20 drop-shadow-lg font-serif">⚔️ AUTO RPG</h1>
+                <h1 class="text-2xl font-bold text-yellow-500 tracking-wider shadow-yellow-500/20 drop-shadow-lg font-serif">Obscure World</h1>
             </div>
 
             <!-- Right: Menus -->
