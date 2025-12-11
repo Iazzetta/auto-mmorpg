@@ -2,7 +2,7 @@ import { ref, onMounted, computed, reactive, watch, onBeforeUnmount, nextTick } 
 import * as THREE from 'three';
 import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { missions } from '../state.js';
+import { missions, player } from '../state.js';
 import { api } from '../services/api.js';
 import { API_BASE_URL } from '../config.js';
 
@@ -1169,7 +1169,7 @@ export default {
 
         const fetchWorld = async () => {
             try {
-                const res = await fetch(`${API_BASE_URL}/editor/world`);
+                const res = await fetch(`${API_BASE_URL}/editor/world`, { headers: { 'X-Player-ID': player.value?.id } });
                 if (res.ok) {
                     worldData.value = await res.json();
                     if (!worldData.value.resource_templates) worldData.value.resource_templates = {};
@@ -1177,11 +1177,11 @@ export default {
                         selectedMapId.value = Object.keys(worldData.value.maps)[0];
                     }
                 }
-                const itemsRes = await fetch(`${API_BASE_URL}/editor/items`);
+                const itemsRes = await fetch(`${API_BASE_URL}/editor/items`, { headers: { 'X-Player-ID': player.value?.id } });
                 if (itemsRes.ok) {
                     availableItems.value = await itemsRes.json();
                 }
-                const rewardsRes = await fetch(`${API_BASE_URL}/editor/rewards`);
+                const rewardsRes = await fetch(`${API_BASE_URL}/editor/rewards`, { headers: { 'X-Player-ID': player.value?.id } });
                 if (rewardsRes.ok) {
                     const data = await rewardsRes.json();
                     // Migration / Default
@@ -1189,12 +1189,12 @@ export default {
                     else rewardsData.value = data;
                 }
                 // Fetch NPCs
-                const npcsRes = await fetch(`${API_BASE_URL}/editor/npcs`);
+                const npcsRes = await fetch(`${API_BASE_URL}/editor/npcs`, { headers: { 'X-Player-ID': player.value?.id } });
                 if (npcsRes.ok) {
                     npcs.value = await npcsRes.json();
                 }
                 // Fetch Textures
-                const texRes = await fetch(`${API_BASE_URL}/editor/textures/floors`);
+                const texRes = await fetch(`${API_BASE_URL}/editor/textures/floors`, { headers: { 'X-Player-ID': player.value?.id } });
                 if (texRes.ok) {
                     floorTextures.value = await texRes.json();
                 }
@@ -1225,41 +1225,42 @@ export default {
 
         const saveAll = async () => {
             try {
+                const headers = { 'Content-Type': 'application/json', 'X-Player-ID': player.value?.id };
                 // Save World (Maps & Monsters)
                 for (const m of Object.values(worldData.value.monster_templates)) {
                     m.stats.hp = m.stats.max_hp;
                 }
                 const worldRes = await fetch(`${API_BASE_URL}/editor/world`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: headers,
                     body: JSON.stringify(worldData.value)
                 });
 
                 // Save Missions
-                const missionsRes = await fetch(`${API_BASE_URL}/admin/missions`, {
+                const missionsRes = await fetch(`${API_BASE_URL}/editor/missions`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: headers,
                     body: JSON.stringify(missions.value)
                 });
 
                 // Save Items
                 const itemsRes = await fetch(`${API_BASE_URL}/editor/items`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: headers,
                     body: JSON.stringify(availableItems.value)
                 });
 
                 // Save Rewards
                 const rewardsRes = await fetch(`${API_BASE_URL}/editor/rewards`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: headers,
                     body: JSON.stringify(rewardsData.value)
                 });
 
                 // Save NPCs
                 const npcsRes = await fetch(`${API_BASE_URL}/editor/npcs`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: headers,
                     body: JSON.stringify(npcs.value)
                 });
 
@@ -1561,7 +1562,7 @@ export default {
 
         const fetchEnhancementConfig = async () => {
             try {
-                const res = await fetch(`${API_BASE_URL}/editor/enhancement`);
+                const res = await fetch(`${API_BASE_URL}/editor/enhancement`, { headers: { 'X-Player-ID': player.value?.id } });
                 if (res.ok) enhancementConfig.value = await res.json();
             } catch (e) { console.error(e); }
         };
@@ -1570,7 +1571,7 @@ export default {
             if (!enhancementConfig.value) return;
             await fetch(`${API_BASE_URL}/editor/enhancement`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', 'X-Player-ID': player.value?.id },
                 body: JSON.stringify(enhancementConfig.value)
             });
         };

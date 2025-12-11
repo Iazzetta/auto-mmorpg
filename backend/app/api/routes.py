@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect, Header
 from typing import List
 import uuid
 import random
@@ -224,21 +224,6 @@ async def claim_reward(player_id: str, reward_id: str):
 
 # ... (existing code)
 
-@router.get("/editor/rewards")
-async def get_editor_rewards():
-    import json
-    try:
-        with open("backend/app/data/rewards.json", "r") as f:
-            return json.load(f)
-    except FileNotFoundError:
-        return {"starter_chest": []}
-
-@router.post("/editor/rewards")
-async def save_editor_rewards(data: dict):
-    import json
-    with open("backend/app/data/rewards.json", "w") as f:
-        json.dump(data, f, indent=4)
-    return {"message": "Rewards saved"}
 
 @router.get("/map/{map_id}/npcs")
 async def get_map_npcs(map_id: str):
@@ -537,17 +522,6 @@ async def allocate_attributes(player_id: str, attributes: dict):
     
     return {"message": "Attributes allocated", "player": player}
 
-@router.post("/admin/missions")
-async def save_missions(missions: dict):
-    # Save to file
-    import json
-    with open("backend/app/data/missions.json", "w") as f:
-        json.dump(missions, f, indent=4)
-    
-    # Reload in state manager
-    state_manager.load_missions()
-    
-    return {"message": "Missions saved"}
 
 import json
 import os
@@ -815,15 +789,6 @@ async def upgrade_item_endpoint(player_id: str, item_id: str):
              "catalysts_consumed": result.get("catalysts_consumed", 0)
          }
 
-@router.get("/editor/enhancement")
-async def get_enhancement_config():
-    return UpgradeService.config
-
-@router.post("/editor/enhancement")
-async def save_enhancement_config(config: dict):
-    UpgradeService.config = config
-    UpgradeService.save_config()
-    return {"message": "Config saved"}
 
 @router.get("/map/{map_id}/monsters")
 async def get_map_monsters(map_id: str):
@@ -919,20 +884,6 @@ async def respawn_player(player_id: str):
         player.position.y = 50
         
     return {"message": "Respawned", "map_id": player.current_map_id, "position": player.position}
-@router.get("/editor/items")
-async def get_editor_items():
-    from ..data.items import ITEMS
-    return ITEMS
-
-@router.post("/editor/items")
-async def save_editor_items(items: dict):
-    import json
-    from ..data.items import load_items
-    
-    with open("backend/app/data/items.json", "w") as f:
-        json.dump(items, f, indent=4)
-    
-    load_items()
     
 @router.post("/player/{player_id}/action/start_gather")
 async def start_gather(player_id: str, resource_id: str):
@@ -1060,83 +1011,8 @@ async def gather_resource(player_id: str, resource_id: str):
 
     return {"message": "Gathered successfully", "loot": enriched_loot, "cooldown": resource.respawn_time, "inventory": player.inventory}
 
-@router.get("/editor/world")
-async def get_editor_world():
-    return state_manager.world_data
 
-@router.post("/editor/world")
-async def save_world(data: dict):
-    import json
-    with open("backend/app/data/world.json", "w") as f:
-        json.dump(data, f, indent=4)
-    
-    state_manager.load_world_data()
-    
-    if hasattr(state_manager, 'connection_manager'):
-        await state_manager.connection_manager.broadcast({"type": "server_update"})
-    
-    return {"message": "World saved"}
 
-@router.get("/editor/npcs")
-async def get_editor_npcs():
-    import json
-    import os
-    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    path = os.path.join(base_dir, "data/npcs.json")
-    try:
-        with open(path, "r") as f:
-            return json.load(f)
-    except FileNotFoundError:
-        return {}
-
-@router.post("/editor/npcs")
-async def save_editor_npcs(npcs: dict):
-    import json
-    import os
-    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    path = os.path.join(base_dir, "data/npcs.json")
-    with open(path, "w") as f:
-        json.dump(npcs, f, indent=4)
-    
-    state_manager.load_npcs()
-    
-    if hasattr(state_manager, 'connection_manager'):
-        await state_manager.connection_manager.broadcast({"type": "server_update"})
-    
-    return {"message": "NPCs saved"}
-
-@router.get("/editor/rewards")
-async def get_editor_rewards():
-    import json
-    try:
-        with open("backend/app/data/rewards.json", "r") as f:
-            return json.load(f)
-    except FileNotFoundError:
-        return {"rewards": []}
-
-@router.post("/editor/rewards")
-async def save_editor_rewards(data: dict):
-    import json
-    with open("backend/app/data/rewards.json", "w") as f:
-        json.dump(data, f, indent=4)
-    return {"message": "Rewards saved"}
-
-@router.get("/editor/textures/floors")
-async def get_floor_textures():
-    import os
-    # Path relative to backend execution root (usually repo root)
-    path = "client/public/maps/floor"
-    try:
-        if not os.path.exists(path):
-            return []
-        
-        # List .png and .jpg files
-        # Return as "floor/filename" so it works with /maps/ mount
-        files = [f"floor/{f}" for f in os.listdir(path) if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
-        return files
-    except Exception as e:
-        print(f"Error listing textures: {e}")
-        return []
 
 @router.post("/player/{player_id}/npc/{npc_id}/action")
 async def npc_action(player_id: str, npc_id: str, action: str):
