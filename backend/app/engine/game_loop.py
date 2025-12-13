@@ -17,6 +17,13 @@ class GameLoop:
         self.running = True
         self.last_tick_time = time.time()
         while self.running:
+            # 1. Server Hibernation (Optimization)
+            online_count = sum(1 for p in self.state_manager.players.values() if p.is_online)
+            if online_count == 0:
+                await asyncio.sleep(1.0) # Hibernation mode
+                self.last_tick_time = time.time() # Reset tick time to avoid huge dt on wake up
+                continue
+
             await self.tick()
             await asyncio.sleep(0.05) 
 
@@ -172,8 +179,12 @@ class GameLoop:
         
         updates = []
         
+        # 3. Active Map Logic (Optimization)
+        active_maps = set(p.current_map_id for p in self.state_manager.players.values() if p.is_online)
+
         for monster_id, monster in self.state_manager.monsters.items():
             if monster.stats.hp <= 0: continue
+            if monster.map_id not in active_maps: continue # Skip empty maps
             
             moved = False
             initial_state = monster.state
@@ -191,6 +202,7 @@ class GameLoop:
                 closest_dist = monster.aggro_range
                 closest_p = None
                 for p in self.state_manager.players.values():
+                    if not p.is_online: continue # 2. Filter Offline Players
                     if str(p.current_map_id) == str(monster.map_id) and p.stats.hp > 0:
                         dist = math.sqrt((p.position.x - monster.position_x)**2 + (p.position.y - monster.position_y)**2)
                         if dist < closest_dist:
