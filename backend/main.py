@@ -61,7 +61,8 @@ class ConnectionManager:
 
     async def broadcast(self, message: dict):
         # Broadcast to all connected clients
-        for connection in self.active_connections.values():
+        # Iterate over a copy to allow safe disconnection during iteration
+        for connection in list(self.active_connections.values()):
             try:
                 await connection.send_json(message)
             except:
