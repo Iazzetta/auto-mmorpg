@@ -2,10 +2,14 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
 import asyncio
+import os
 from typing import List
+
 from .app.api.routes import router
 from .app.api.editor import router as editor_router
+from .app.api.admin import router as admin_router
 from .app.engine.game_loop import GameLoop
 from .app.engine.state_manager import StateManager
 from .app.models.monster import Monster, MonsterType, MonsterStats
@@ -23,15 +27,13 @@ app.add_middleware(
 
 app.include_router(router)
 app.include_router(editor_router)
+app.include_router(admin_router)
 
 templates = Jinja2Templates(directory="backend/app/templates")
 
 @app.get("/", response_class=HTMLResponse)
 async def landing_page(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
-
-from fastapi.staticfiles import StaticFiles
-import os
 
 # Mount maps directory to serve textures
 # We assume the code runs from repository root

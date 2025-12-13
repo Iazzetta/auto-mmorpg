@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AIM Admin - {% block title %}{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;500;700&display=swap');
+
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background-color: #050b14;
+            color: #e2e8f0;
+        }
+
+        .font-orbitron {
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #1f2937;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #4b5563;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-900 text-gray-100 min-h-screen flex">
+
+    <!-- Sidebar -->
+    <aside class="w-64 bg-black/50 border-r border-gray-800 flex flex-col">
+        <div class="p-6 border-b border-gray-800">
+            <h1
+                class="text-2xl font-bold font-orbitron text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-600">
+                AIM ADMIN
+            </h1>
+        </div>
+
+        <nav class="flex-1 p-4 space-y-2">
+            <a href="/admin/dashboard"
+                class="block px-4 py-3 rounded hover:bg-white/5 transition-colors {% if active_page == 'dashboard' %}bg-blue-600/20 text-blue-400 border border-blue-500/30{% else %}text-gray-400{% endif %}">
+                📊 Dashboard
+            </a>
+            <a href="/admin/users"
+                class="block px-4 py-3 rounded hover:bg-white/5 transition-colors {% if active_page == 'users' %}bg-blue-600/20 text-blue-400 border border-blue-500/30{% else %}text-gray-400{% endif %}">
+                👥 Users
+            </a>
+        </nav>
+
+        <div class="p-4 border-t border-gray-800">
+            <a href="/admin/logout"
+                class="block w-full text-center px-4 py-2 rounded border border-red-500/30 text-red-500 hover:bg-red-500/10 transition-colors">
+                Logout
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 overflow-y-auto bg-[radial-gradient(circle_at_top_left,#1e293b_0%,#050b14_100%)]">
+        <div class="p-8">
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+</body>
+
+</html>

@@ -1,0 +1,96 @@
+{% extends "admin/layout.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <!-- Stat Card: Online Players -->
+    <div class="p-6 bg-black/40 border border-gray-800 rounded-xl">
+        <div class="text-gray-400 text-sm uppercase tracking-wider mb-2">Online Players</div>
+        <div class="text-4xl font-bold text-green-400 font-orbitron">{{ stats.online_players }}</div>
+        <div class="text-xs text-gray-500 mt-2">Active now</div>
+    </div>
+
+    <!-- Stat Card: Total Accounts -->
+    <div class="p-6 bg-black/40 border border-gray-800 rounded-xl">
+        <div class="text-gray-400 text-sm uppercase tracking-wider mb-2">Total Accounts</div>
+        <div class="text-4xl font-bold text-blue-400 font-orbitron">{{ stats.total_players }}</div>
+        <div class="text-xs text-gray-500 mt-2">Registered</div>
+    </div>
+
+    <!-- Stat Card: CPU Usage -->
+    <div class="p-6 bg-black/40 border border-gray-800 rounded-xl">
+        <div class="text-gray-400 text-sm uppercase tracking-wider mb-2">CPU Load</div>
+        <div
+            class="text-4xl font-bold {% if stats.cpu_usage > 80 %}text-red-500{% else %}text-purple-400{% endif %} font-orbitron">
+            {{ stats.cpu_usage }}%</div>
+        <div class="w-full bg-gray-800 h-1 mt-3 rounded overflow-hidden">
+            <div class="h-full bg-purple-500" style="width: {{ stats.cpu_usage }}%"></div>
+        </div>
+    </div>
+
+    <!-- Stat Card: RAM Usage -->
+    <div class="p-6 bg-black/40 border border-gray-800 rounded-xl">
+        <div class="text-gray-400 text-sm uppercase tracking-wider mb-2">RAM Usage</div>
+        <div class="text-4xl font-bold text-yellow-400 font-orbitron">{{ stats.memory_usage }}%</div>
+        <div class="w-full bg-gray-800 h-1 mt-3 rounded overflow-hidden">
+            <div class="h-full bg-yellow-500" style="width: {{ stats.memory_usage }}%"></div>
+        </div>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- Server Info -->
+    <div class="p-6 bg-black/40 border border-gray-800 rounded-xl">
+        <h2 class="text-xl font-bold mb-4 font-orbitron text-white">Top Online Players</h2>
+        {% if top_players %}
+        <div class="overflow-x-auto">
+            <table class="w-full text-left">
+                <thead>
+                    <tr class="text-gray-500 border-b border-gray-800">
+                        <th class="pb-3 text-sm uppercase font-bold">Name</th>
+                        <th class="pb-3 text-sm uppercase font-bold">Level</th>
+                        <th class="pb-3 text-sm uppercase font-bold">Map</th>
+                        <th class="pb-3 text-sm uppercase font-bold">Action</th>
+                    </tr>
+                </thead>
+                <tbody class="text-sm">
+                    {% for p in top_players %}
+                    <tr class="border-b border-gray-800/50 hover:bg-white/5 transition-colors">
+                        <td class="py-3 font-bold text-white">{{ p.name }}</td>
+                        <td class="py-3 text-blue-300">Lvl {{ p.level }}</td>
+                        <td class="py-3 text-gray-400">{{ p.map_id }}</td>
+                        <td class="py-3">
+                            <a href="/admin/users/{{ p.id }}"
+                                class="text-xs bg-blue-600/20 text-blue-400 px-2 py-1 rounded border border-blue-500/30 hover:bg-blue-600 hover:text-white transition-colors">Edit</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-gray-500 italic">No players online.</p>
+        {% endif %}
+    </div>
+
+    <!-- Recent Activity / Logs (Placeholder) -->
+    <div class="p-6 bg-black/40 border border-gray-800 rounded-xl">
+        <h2 class="text-xl font-bold mb-4 font-orbitron text-white">System Status</h2>
+        <div class="space-y-3">
+            <div class="flex items-center justify-between p-3 bg-green-500/5 border border-green-500/20 rounded">
+                <span class="text-green-400 font-bold">Game Loop</span>
+                <span
+                    class="px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded uppercase font-bold">Running</span>
+            </div>
+            <div class="flex items-center justify-between p-3 bg-blue-500/5 border border-blue-500/20 rounded">
+                <span class="text-blue-400 font-bold">Uvicorn Workers</span>
+                <span class="text-gray-400 text-sm">Active</span>
+            </div>
+            <div class="p-4 bg-gray-900/50 rounded text-xs font-mono text-gray-500">
+                Server Time: {{ server_time }}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
