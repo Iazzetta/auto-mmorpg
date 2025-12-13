@@ -436,6 +436,8 @@ export const connectWebSocket = (playerId) => {
 
         if (data.type === 'combat_update') {
             handleCombatUpdate(data);
+        } else if (data.type === 'combat_drops') {
+            await handleDrops(data.drops);
         } else if (data.type === 'chat') {
             chatMessages.value.push({
                 id: Date.now(),
@@ -562,6 +564,50 @@ export const connectWebSocket = (playerId) => {
     };
 };
 
+const handleDrops = async (drops) => {
+    if (!drops || drops.length === 0) return;
+
+    const rarityValue = { common: 1, uncommon: 2, rare: 3, epic: 4, legendary: 5 };
+
+    // Use for...of to handle async operations sequentially
+    for (const drop of drops) {
+        let sold = false;
+
+        // Only consider auto-selling if enabled and item is equipment
+        if (autoSellInferior.value && (drop.type === 'weapon' || drop.type === 'armor')) {
+            // NEVER auto-sell Rare, Epic, or Legendary drops
+            if (drop.rarity !== 'rare' && drop.rarity !== 'epic' && drop.rarity !== 'legendary') {
+
+                const equipped = player.value.equipment[drop.slot];
+                if (equipped) {
+                    const dropRarityVal = rarityValue[drop.rarity] || 0;
+                    const equippedRarityVal = rarityValue[equipped.rarity] || 0;
+
+                    // Rule: Sell Common/Uncommon if equipped is strictly better rarity
+                    if (dropRarityVal < equippedRarityVal) {
+                        await api.sellItem(drop.id);
+                        // Combine notifications
+                        addAlert(`Auto-Sold: ${drop.name}`, 'warning', '💰', 'Inferior Rarity');
+                        sold = true;
+                    }
+                    // Rule: If same rarity (Common/Uncommon only), sell if inferior Power Score
+                    else if (dropRarityVal === equippedRarityVal && drop.power_score <= equipped.power_score) {
+                        await api.sellItem(drop.id);
+                        addAlert(`Auto-Sold: ${drop.name}`, 'warning', '💰', 'Inferior Stats');
+                        sold = true;
+                    }
+                }
+            }
+        }
+
+        if (!sold) {
+            const icon = getItemIcon(drop);
+            // addAlert(message, type, icon, subtext, rarity)
+            addAlert(drop.name, 'drop', icon, `x${drop.quantity || 1}`, drop.rarity);
+        }
+    }
+};
+
 const handleCombatUpdate = async (data) => {
     // Only process updates for the local player
     if (data.player_id !== player.value.id) return;
@@ -648,46 +694,48 @@ const handleCombatUpdate = async (data) => {
         pendingAttackId.value = null;
     }
 
-    if (data.drops && data.drops.length > 0) {
-        const rarityValue = { common: 1, uncommon: 2, rare: 3, epic: 4, legendary: 5 };
+    // Handle drops (Legacy support if backend sends them here, but moved to separate event)
+    if (data.drops) await handleDrops(data.drops);
 
-        // Use for...of to handle async operations sequentially
-        for (const drop of data.drops) {
-            let sold = false;
+    // Also handle level up here if present (though routes.py sends it separately now via send_personal_message, existing log might still have it?)
+    // Routes.py sends level_up event separately now.
+    // Logic in use_item sends level_up event.
+    // Logic in combat_service might just log it? CombatService returns 'leveled_up' in log.
+    // Let's keep this just in case, but usually we handle via event.
+    if (log.level_up) {
+        addLog(`Level Up! You are now level ${log.new_level}.`, 'text-yellow-400 font-bold');
+        // addAlert(`Level ${log.new_level}`, 'levelup', '🆙', 'Level Up!'); // Duplicate if event is also sent
+        // Since we refactored route level up to private event, we should check if combat level up is also refactored.
+        // Combat service just returns data, game_loop broadcasts. I didn't see level_up event in game_loop refactor?
+        // Ah, game_loop broadcasted 'combat_update'. If player leveled up during combat, it's in the log?
+        // CombatService.process_combat_round calls player.gain_xp -> returns result.
+        // Result is in log.
+        // So combat level up is still inside 'combat_update' log. This is fine, as long as it's not global.
+        // Wait, combat_update IS global (now filtered).
+        // I filtered drops. Did I filter 'leveled_up' from log?
+        // No. So everyone sees "X leveled up" in the log?
+        // Log is broadcasted: "log: public_log".
+        // public_log = log.copy(); del drops.
+        // So public log HAS 'leveled_up'.
+        // Is 'leveled_up' sensitive? No, usually fine to know someone leveled up.
+        // User asked "Level Up alert ... only for me".
+        // If I alert here based on log, does EVERYONE get this alert?
+        // handleCombatUpdate checks `if (data.player_id !== player.value.id) return;` at the very top.
+        // So only the player themselves processes their own combat update!
+        // Wait, correct. The frontend filters by ID.
+        // So previous bug was that EVERYONE received the message, and frontend didn't filter?
+        // No, line 567: `if (data.player_id !== player.value.id) return;`.
+        // So combat updates were ALREADY private-ish on client side?
+        // But the user said "appearece o alert de level up pro outro player".
+        // Maybe the LEVEL UP EVENT was global?
+        // `routes.py`: `use_item` -> `broadcast({type: level_up...})`. This was global WITHOUT ID check in frontend?
+        // Let's check `level_up` handler in frontend.
+        // `socket.value.onmessage`:
+        // It didn't have `level_up` handler in the snippet I saw!
+        // Wait, I saw `combat_update` logic handling `log.level_up`.
+        // But `routes.py` sends `type: level_up`.
+        // I need to check `socket.value.onmessage` again carefully.
 
-            // Only consider auto-selling if enabled and item is equipment
-            if (autoSellInferior.value && (drop.type === 'weapon' || drop.type === 'armor')) {
-                // NEVER auto-sell Rare, Epic, or Legendary drops
-                if (drop.rarity !== 'rare' && drop.rarity !== 'epic' && drop.rarity !== 'legendary') {
-
-                    const equipped = player.value.equipment[drop.slot];
-                    if (equipped) {
-                        const dropRarityVal = rarityValue[drop.rarity] || 0;
-                        const equippedRarityVal = rarityValue[equipped.rarity] || 0;
-
-                        // Rule: Sell Common/Uncommon if equipped is strictly better rarity
-                        if (dropRarityVal < equippedRarityVal) {
-                            await api.sellItem(drop.id);
-                            // Combine notifications
-                            addAlert(`Auto-Sold: ${drop.name}`, 'warning', '💰', 'Inferior Rarity');
-                            sold = true;
-                        }
-                        // Rule: If same rarity (Common/Uncommon only), sell if inferior Power Score
-                        else if (dropRarityVal === equippedRarityVal && drop.power_score <= equipped.power_score) {
-                            await api.sellItem(drop.id);
-                            addAlert(`Auto-Sold: ${drop.name}`, 'warning', '💰', 'Inferior Stats');
-                            sold = true;
-                        }
-                    }
-                }
-            }
-
-            if (!sold) {
-                const icon = getItemIcon(drop);
-                // addAlert(message, type, icon, subtext, rarity)
-                addAlert(drop.name, 'drop', icon, `x${drop.quantity || 1}`, drop.rarity);
-            }
-        }
     }
 
     if (log.level_up) {

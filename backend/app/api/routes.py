@@ -348,7 +348,7 @@ async def use_item(player_id: str, item_id: str):
             effects.append(f"Leveled Up to {res['new_level']}!")
             try:
                  import asyncio
-                 asyncio.create_task(state_manager.connection_manager.broadcast({
+                 asyncio.create_task(state_manager.connection_manager.send_personal_message(player.id, {
                      "type": "level_up",
                      "player_id": player.id,
                      "new_level": res["new_level"]
@@ -627,7 +627,7 @@ async def claim_mission(player_id: str):
     if result["leveled_up"]:
         try:
              import asyncio
-             asyncio.create_task(state_manager.connection_manager.broadcast({
+             asyncio.create_task(state_manager.connection_manager.send_personal_message(player.id, {
                  "type": "level_up",
                  "player_id": player.id,
                  "new_level": result["new_level"]

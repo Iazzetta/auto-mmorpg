@@ -208,9 +208,11 @@ export default {
             };
             requestAnimationFrame(animateFx);
 
-            // UI Alert
-            addLog(`Level Up!`, 'text-yellow-400 font-bold text-xl');
-            addAlert("LEVEL UP!", "levelup", "✨", `Level ${player.value?.level || '?'}`);
+            // UI Alert (Only for self)
+            if (String(targetId) === String(player.value.id)) {
+                addLog(`Level Up!`, 'text-yellow-400 font-bold text-xl');
+                addAlert("LEVEL UP!", "levelup", "✨", `Level ${player.value?.level || '?'}`);
+            }
 
             // Audio Effect
             try {

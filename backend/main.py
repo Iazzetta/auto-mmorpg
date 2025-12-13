@@ -48,19 +48,29 @@ state_manager = StateManager.get_instance()
 # Simple Connection Manager
 class ConnectionManager:
     def __init__(self):
-        self.active_connections: List[WebSocket] = []
+        # Map client_id -> WebSocket
+        self.active_connections: dict[str, WebSocket] = {}
 
-    async def connect(self, websocket: WebSocket):
+    async def connect(self, websocket: WebSocket, client_id: str):
         await websocket.accept()
-        self.active_connections.append(websocket)
+        self.active_connections[client_id] = websocket
 
-    def disconnect(self, websocket: WebSocket):
-        self.active_connections.remove(websocket)
+    def disconnect(self, websocket: WebSocket, client_id: str):
+        if client_id in self.active_connections:
+            del self.active_connections[client_id]
 
     async def broadcast(self, message: dict):
-        for connection in self.active_connections:
+        # Broadcast to all connected clients
+        for connection in self.active_connections.values():
             try:
                 await connection.send_json(message)
+            except:
+                pass
+
+    async def send_personal_message(self, client_id: str, message: dict):
+        if client_id in self.active_connections:
+            try:
+                await self.active_connections[client_id].send_json(message)
             except:
                 pass
 
@@ -88,7 +98,7 @@ import json
 
 @app.websocket("/ws/{client_id}")
 async def websocket_endpoint(websocket: WebSocket, client_id: str):
-    await manager.connect(websocket)
+    await manager.connect(websocket, client_id)
     state_manager.mark_player_online(client_id)
     try:
         while True:
@@ -109,4 +119,4 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
             
     except WebSocketDisconnect:
         await state_manager.remove_player(client_id)
-        manager.disconnect(websocket)
+        manager.disconnect(websocket, client_id)

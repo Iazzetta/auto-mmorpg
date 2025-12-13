@@ -75,17 +75,29 @@ class GameLoop:
                                 continue
                             
                             if hasattr(self, 'connection_manager'):
+                                # 1. Public Update (Animations, Damage, HP) - Remove drops/secrets
+                                public_log = log.copy()
+                                if 'drops' in public_log: del public_log['drops']
+                                
                                 await self.connection_manager.broadcast({
                                     "type": "combat_update",
                                     "player_id": player_id,
                                     "monster_id": monster.id,
-                                    "log": log,
+                                    "log": public_log,
                                     "player_hp": player.stats.hp,
                                     "monster_hp": monster.stats.hp,
                                     "monster_max_hp": monster.stats.max_hp,
-                                    "monster_name": monster.name,
-                                    "drops": log.get('drops', [])
+                                    "monster_name": monster.name
                                 })
+                                
+                                # 2. Private Update (Drops) - Only for the killer
+                                drops = log.get('drops', [])
+                                if drops:
+                                    await self.connection_manager.send_personal_message(player_id, {
+                                        "type": "combat_drops",
+                                        "monster_name": monster.name,
+                                        "drops": drops
+                                    })
 
                             if log.get('monster_died'):
                                 player.state = PlayerState.IDLE
