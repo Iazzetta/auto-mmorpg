@@ -1,7 +1,7 @@
-# Obscure World - Project Overview
+# AIM Online - Project Overview
 
 ## Introduction
-Obscure World is a **3D Multiplayer Online Role Playing Game (MMORPG)** that runs in the browser. It combines classic RPG elements (Exploration, Combat, Loot) with modern "idle" mechanics (Auto-Farm) and a dynamic 3D world built with Three.js.
+AIM Online is a **3D Multiplayer Online Role Playing Game (MMORPG)** that runs in the browser. It combines classic RPG elements (Exploration, Combat, Loot) with modern "idle" mechanics (Auto-Farm) and a dynamic 3D world built with Three.js.
 
 ## Core Gameplay Loop
 1.  **Create Hero**: Register a new account and choose a class (Warrior is the primary class with custom 3D models).

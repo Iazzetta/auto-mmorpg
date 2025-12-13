@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Obscure World</title>
+    <title>AIM Online</title>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -29,7 +29,7 @@
         <!-- Header -->
         <header class="bg-gray-800 p-4 border-b border-gray-700 flex justify-between items-center shrink-0">
             <div class="flex items-center gap-4">
-                <h1 class="text-xl font-bold text-yellow-500">⚔️ Obscure World</h1>
+                <h1 class="text-xl font-bold text-yellow-500">⚔️ AIM Online</h1>
 
                 <!-- Interactive Map Hint -->
                 <div v-if="player" class="text-xs text-gray-400 bg-gray-700 px-2 py-1 rounded">
