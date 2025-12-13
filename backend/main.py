@@ -1,5 +1,7 @@
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.templating import Jinja2Templates
+from fastapi.responses import HTMLResponse
 import asyncio
 from typing import List
 from .app.api.routes import router
@@ -9,7 +11,7 @@ from .app.engine.state_manager import StateManager
 from .app.models.monster import Monster, MonsterType, MonsterStats
 from .app.core.logger import logger
 
-app = FastAPI()
+app = FastAPI(docs_url=None, redoc_url=None)
 
 app.add_middleware(
     CORSMiddleware,
@@ -21,6 +23,12 @@ app.add_middleware(
 
 app.include_router(router)
 app.include_router(editor_router)
+
+templates = Jinja2Templates(directory="backend/app/templates")
+
+@app.get("/", response_class=HTMLResponse)
+async def landing_page(request: Request):
+    return templates.TemplateResponse("index.html", {"request": request})
 
 from fastapi.staticfiles import StaticFiles
 import os
