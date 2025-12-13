@@ -1,0 +1,1 @@
+python tools/ai_game_master/main.py --levels 100
