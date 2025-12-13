@@ -1,0 +1,1 @@
+python tools/bot_swarm.py --count 10 --leader admin

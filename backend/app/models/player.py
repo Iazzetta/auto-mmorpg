@@ -78,11 +78,11 @@ class Player(BaseModel):
     # Runtime State (Not persisted usually, but needed for game loop)
     last_attack_time: float = 0.0
     last_movement_broadcast: float = 0.0
-    last_movement_broadcast: float = 0.0
     death_time: Optional[float] = None
     gathering_start_time: float = 0.0
     gathering_resource_id: Optional[str] = None
     is_online: bool = True
+    last_seen: float = 0.0
 
     def calculate_stats(self):
         # Base stats from attributes

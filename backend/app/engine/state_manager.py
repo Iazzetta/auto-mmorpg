@@ -269,5 +269,25 @@ class StateManager:
             else:
                 remaining.append(item)
         
-        self.respawn_queue = remaining
+            self.respawn_queue = remaining
         return to_respawn
+
+    def update_player_activity(self, player_id: str):
+        import time
+        if player_id in self.players:
+            self.players[player_id].last_seen = time.time()
+            self.players[player_id].is_online = True
+
+    async def cleanup_inactive_players(self, timeout_seconds=30):
+        import time
+        now = time.time()
+        to_remove = []
+        
+        for p_id, player in self.players.items():
+            if player.is_online:
+                if (now - player.last_seen) > timeout_seconds:
+                    print(f"Player {player.name} timed out (Inactive > {timeout_seconds}s)")
+                    to_remove.append(p_id)
+        
+        for p_id in to_remove:
+            await self.remove_player(p_id)

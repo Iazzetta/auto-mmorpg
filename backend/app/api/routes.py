@@ -29,6 +29,20 @@ import hashlib
 def hash_password(password: str) -> str:
     return hashlib.sha256(password.encode()).hexdigest()
 
+@router.get("/find_player")
+async def find_player(name: str):
+    # Specialized endpoint for bots to find their leader
+    # In a real game, this might be restricted or friend-only
+    for p in state_manager.players.values():
+        if p.name == name and p.is_online:
+            return {
+                "map_id": p.current_map_id, 
+                "x": p.position.x, 
+                "y": p.position.y,
+                "hp": p.stats.hp
+            }
+    raise HTTPException(status_code=404, detail="Player not found or offline")
+
 @router.post("/register", response_model=Player)
 async def register(name: str, password: str, p_class: PlayerClass):
     # Check if name exists
@@ -107,6 +121,7 @@ async def get_player(player_id: str):
     player = state_manager.get_player(player_id)
     if not player:
         raise HTTPException(status_code=404, detail="Player not found")
+    state_manager.update_player_activity(player_id)
     return player
 
 @router.post("/player/{player_id}/open_chest")
@@ -132,6 +147,7 @@ async def claim_reward(player_id: str, reward_id: str):
     player = state_manager.get_player(player_id)
     if not player:
         raise HTTPException(status_code=404, detail="Player not found")
+    state_manager.update_player_activity(player_id)
 
     import time
     from ..data.items import ITEMS
@@ -237,6 +253,8 @@ async def interact_npc(player_id: str, npc_id: str):
     if not player or not npc:
         raise HTTPException(status_code=404, detail="Player or NPC not found")
         
+    state_manager.update_player_activity(player_id)
+
     if player.stats.hp <= 0:
         raise HTTPException(status_code=400, detail="Cannot interact while dead")
         
@@ -378,6 +396,8 @@ async def move_player(player_id: str, target_map_id: str, x: float, y: float):
     if not player:
         raise HTTPException(status_code=404, detail="Player not found")
     
+    state_manager.update_player_activity(player_id)
+    
     if player.stats.hp <= 0:
         raise HTTPException(status_code=400, detail="Cannot move while dead")
     
@@ -430,6 +450,8 @@ async def stop_movement(player_id: str):
     if not player:
         raise HTTPException(status_code=404, detail="Player not found")
         
+    state_manager.update_player_activity(player_id)
+
     player.state = PlayerState.IDLE
     player.target_position = None
     
@@ -456,6 +478,8 @@ async def attack_monster(player_id: str, monster_id: str):
     if not player:
         raise HTTPException(status_code=404, detail="Player not found")
         
+    state_manager.update_player_activity(player_id)
+
     if player.stats.hp <= 0:
         raise HTTPException(status_code=400, detail="Cannot attack while dead")
     
@@ -509,6 +533,9 @@ async def allocate_attributes(player_id: str, attributes: dict):
     if not player:
         raise HTTPException(status_code=404, detail="Player not found")
         
+    state_manager.update_player_activity(player_id)
+
+        
     cost = sum(attributes.values())
     if cost > player.attribute_points:
         raise HTTPException(status_code=400, detail="Not enough attribute points")
@@ -539,6 +566,8 @@ async def start_mission(player_id: str, mission_id: str):
     if not player:
         raise HTTPException(status_code=404, detail="Player not found")
         
+    state_manager.update_player_activity(player_id)
+        
     missions = load_missions()
     mission = missions.get(mission_id)
     if not mission:
@@ -558,6 +587,8 @@ async def claim_mission(player_id: str):
     player = state_manager.get_player(player_id)
     if not player:
         raise HTTPException(status_code=404, detail="Player not found")
+        
+    state_manager.update_player_activity(player_id)
         
     if not player.active_mission_id:
         raise HTTPException(status_code=400, detail="No active mission")

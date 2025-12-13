@@ -45,6 +45,10 @@ class GameLoop:
             respawn_count = len(getattr(self.state_manager, 'respawn_queue', []))
             print(f"[PERF] Tick: {self.tick_count} | FPS: {1/dt:.2f} | Players: {player_count} | Monsters: {monster_count} | RespawnQueue: {respawn_count}")
 
+        # Cleanup Inactive Players (Every 2s)
+        if self.tick_count % 40 == 0:
+            asyncio.create_task(self.state_manager.cleanup_inactive_players(timeout_seconds=5))
+
         movement_updates = []
 
         # Iterate over all players
