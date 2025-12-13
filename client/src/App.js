@@ -109,34 +109,54 @@ export default {
             <NpcInteraction v-if="showNpcInteraction && activeNpc" :npc="activeNpc" @close="closeNpcInteraction" />
 
             <!-- Login/Register Screen -->
-            <div v-if="!player && !showEditor" class="absolute inset-0 bg-black flex items-center justify-center z-50">
-                <div class="text-center bg-gray-800 p-8 rounded-lg border border-gray-700 shadow-2xl w-96">
-                    <h1 class="text-4xl font-bold text-yellow-500 mb-8">AIM Online</h1>
+            <div v-if="!player && !showEditor" class="absolute inset-0 flex items-center justify-center z-50 overflow-hidden font-rajdhani"
+                 style="background-color: #050b14; background-image: radial-gradient(circle at 50% 50%, #1e293b 0%, #050b14 70%);">
+                
+                <!-- Ambient Particles (Simulated with simple dots for now or use same JS logic if possible, but keeping it simple first) -->
+                
+                <div class="text-center p-12 rounded-2xl border border-gray-800 shadow-[0_0_50px_rgba(0,0,0,0.8)] w-[450px] relative z-10 backdrop-blur-sm bg-black/40 animate-fade-in-up">
+                    <span class="inline-block bg-blue-500/10 border border-blue-500/30 text-blue-400 px-3 py-1 rounded-full text-xs font-bold mb-4 tracking-widest">BETA ACCESS</span>
                     
-                    <div class="flex gap-2 mb-6 bg-gray-700 p-1 rounded">
-                        <button @click="isLoginMode = true" class="flex-1 py-1 rounded transition-colors" :class="isLoginMode ? 'bg-blue-600 text-white shadow' : 'text-gray-400 hover:text-white'">Login</button>
-                        <button @click="isLoginMode = false" class="flex-1 py-1 rounded transition-colors" :class="!isLoginMode ? 'bg-green-600 text-white shadow' : 'text-gray-400 hover:text-white'">Register</button>
+                    <h1 class="text-5xl font-extrabold mb-2 font-orbitron tracking-widest uppercase"
+                        style="background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 50%, #ec4899 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; text-shadow: 0 0 30px rgba(59, 130, 246, 0.3);">
+                        AIM Online
+                    </h1>
+                    <p class="text-gray-400 mb-8 text-lg uppercase tracking-widest font-medium">The Future of Automation</p>
+                    
+                    <div class="flex gap-4 mb-8 bg-black/50 p-1 rounded-lg border border-gray-800">
+                        <button @click="isLoginMode = true" class="flex-1 py-2 rounded-md font-bold transition-all duration-300 uppercase tracking-wider text-sm" 
+                            :class="isLoginMode ? 'bg-blue-600/20 text-blue-400 shadow-[0_0_15px_rgba(37,99,235,0.3)] border border-blue-500/30' : 'text-gray-500 hover:text-gray-300'">Login</button>
+                        <button @click="isLoginMode = false" class="flex-1 py-2 rounded-md font-bold transition-all duration-300 uppercase tracking-wider text-sm" 
+                            :class="!isLoginMode ? 'bg-green-600/20 text-green-400 shadow-[0_0_15px_rgba(22,163,74,0.3)] border border-green-500/30' : 'text-gray-500 hover:text-gray-300'">Register</button>
                     </div>
 
-                    <div class="mb-4 text-left">
-                        <label class="text-xs text-gray-400 block mb-1">Username</label>
-                        <input v-model="playerName" type="text" placeholder="Hero Name"
-                            class="bg-gray-700 text-white px-3 py-2 rounded w-full border border-gray-600 focus:border-blue-500 outline-none">
-                    </div>
+                    <div class="space-y-4 mb-8">
+                        <div class="text-left group">
+                            <label class="text-xs text-blue-300/70 font-bold uppercase tracking-wider ml-1 mb-1 block group-focus-within:text-blue-400 transition-colors">Hero Name</label>
+                            <input v-model="playerName" type="text" placeholder="Enter your legend..."
+                                class="w-full bg-black/50 border border-gray-800 rounded-lg px-4 py-3 text-gray-100 focus:border-blue-500 focus:bg-blue-900/10 outline-none transition-all duration-300 placeholder-gray-700 font-bold font-orbitron text-sm">
+                        </div>
 
-                    <div class="mb-6 text-left">
-                        <label class="text-xs text-gray-400 block mb-1">Password</label>
-                        <input v-model="password" type="password" placeholder="Secret Password"
-                            class="bg-gray-700 text-white px-3 py-2 rounded w-full border border-gray-600 focus:border-blue-500 outline-none"
-                            @keyup.enter="handleAuth">
+                        <div class="text-left group">
+                            <label class="text-xs text-blue-300/70 font-bold uppercase tracking-wider ml-1 mb-1 block group-focus-within:text-blue-400 transition-colors">Secret Password</label>
+                            <input v-model="password" type="password" placeholder="••••••••••••"
+                                class="w-full bg-black/50 border border-gray-800 rounded-lg px-4 py-3 text-gray-100 focus:border-blue-500 focus:bg-blue-900/10 outline-none transition-all duration-300 placeholder-gray-700 font-bold font-orbitron text-sm"
+                                @keyup.enter="handleAuth">
+                        </div>
                     </div>
 
                     <button @click="handleAuth"
-                        class="w-full py-3 rounded text-xl font-bold text-white shadow-lg transition-transform active:scale-95"
+                        class="w-full py-4 text-white font-orbitron font-bold text-lg uppercase tracking-widest relative overflow-hidden group transition-all duration-300"
                         :class="isLoginMode ? 'bg-blue-600 hover:bg-blue-500' : 'bg-green-600 hover:bg-green-500'"
+                        style="clip-path: polygon(5% 0, 100% 0, 100% 85%, 95% 100%, 0% 100%, 0% 15%);"
                         :disabled="!playerName || !password">
-                        {{ isLoginMode ? 'Enter World' : 'Create Hero' }}
+                        <div class="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-500 ease-in-out"></div>
+                        <span class="relative z-10">{{ isLoginMode ? 'Enter World' : 'Begin Journey' }}</span>
                     </button>
+                    
+                    <p class="text-[10px] text-gray-600 mt-6 uppercase tracking-widest">
+                        Server Status: <span class="text-green-500">Online</span>
+                    </p>
                 </div>
             </div>
 
