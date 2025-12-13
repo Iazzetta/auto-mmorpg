@@ -1,14 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AIM Online - Beta</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;500;700&display=swap');
-        
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
             background-color: #050b14;
             color: #e2e8f0;
@@ -19,7 +24,7 @@
             justify-content: center;
             align-items: center;
             overflow: hidden;
-            background-image: 
+            background-image:
                 radial-gradient(circle at 50% 50%, #1e293b 0%, #050b14 70%);
         }
 
@@ -37,6 +42,7 @@
             letter-spacing: 0.5rem;
             background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 50%, #ec4899 100%);
             -webkit-background-clip: text;
+            background-clip: text;
             -webkit-text-fill-color: transparent;
             margin-bottom: 0.5rem;
             text-shadow: 0 0 30px rgba(59, 130, 246, 0.3);
@@ -94,7 +100,7 @@
             left: -100%;
             width: 100%;
             height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
             transition: 0.5s;
         }
 
@@ -120,17 +126,35 @@
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         @keyframes float {
-            0% { transform: translateY(0) rotate(0deg); opacity: 0; }
-            50% { opacity: 0.5; }
-            100% { transform: translateY(-100vh) rotate(360deg); opacity: 0; }
+            0% {
+                transform: translateY(0) rotate(0deg);
+                opacity: 0;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+
+            100% {
+                transform: translateY(-100vh) rotate(360deg);
+                opacity: 0;
+            }
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <span class="beta-badge">PUBLIC BETA</span>
@@ -145,7 +169,7 @@
 
     <script>
         // Generate ambient particles
-        for(let i = 0; i < 50; i++) {
+        for (let i = 0; i < 50; i++) {
             const p = document.createElement('div');
             p.classList.add('particle');
             p.style.left = Math.random() * 100 + 'vw';
@@ -156,4 +180,5 @@
         }
     </script>
 </body>
+
 </html>
